@@ -1,0 +1,56 @@
+{
+  "name": "create-vessel",
+  "type": "module",
+  "version": "0.1.0",
+  "license": "MIT",
+  "main": "bin/create-vessel.js",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "contributors": [
+    "Rahim Alwer <rahim.alwer@gmail.com>"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vessel-js/vessel",
+    "directory": "packages/create"
+  },
+  "bugs": {
+    "url": "https://github.com/vessel-js/vessel/issues"
+  },
+  "bin": {
+    "create-vessel": "bin/create-vessel.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "template-*"
+  ],
+  "exports": {
+    ".": "./bin/create-vessel.js",
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "enquirer": "^2.3.6",
+    "kleur": "^4.1.4",
+    "minimist": "^1.2.5"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "app",
+    "docs",
+    "edge",
+    "esm",
+    "fast",
+    "lightweight",
+    "modern",
+    "nextjs",
+    "ssg",
+    "ssr",
+    "vercel",
+    "vite",
+    "vessel"
+  ]
+}

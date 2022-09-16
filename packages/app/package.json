@@ -1,0 +1,108 @@
+{
+  "name": "@vessel-js/app",
+  "version": "0.1.0",
+  "type": "module",
+  "types": "index.d.ts",
+  "sideEffects": false,
+  "license": "MIT",
+  "contributors": [
+    "Rahim Alwer <rahim.alwer@gmail.com>"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vessel-js/vessel.git",
+    "directory": "packages/app"
+  },
+  "bugs": {
+    "url": "https://github.com/vessel-js/vessel/issues"
+  },
+  "files": [
+    "dist/",
+    "index.d.ts",
+    "globals.d.ts",
+    "node.d.ts"
+  ],
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./dist/client.js"
+    },
+    "./node": {
+      "types": "./node.d.ts",
+      "default": "./dist/node.js"
+    },
+    "./server": {
+      "types": "./server.d.ts",
+      "default": "./dist/server.js"
+    },
+    "./vercel/*": "./dist/vercel/*",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "rimraf dist && tsup",
+    "dev": "pnpm run build --watch"
+  },
+  "dependencies": {
+    "@markdoc/markdoc": "^0.1.2",
+    "@rollup/pluginutils": "^4.1.1",
+    "@types/lru-cache": "^5.1.1",
+    "esbuild": "^0.14.47",
+    "globby": "^13.1.1",
+    "gray-matter": "^4.0.3",
+    "hast-util-to-html": "^8.0.3",
+    "js-yaml": "^4.1.0",
+    "lru-cache": "^6.0.0",
+    "magic-string": "^0.25.9",
+    "node-fetch": "^3.2.4",
+    "ora": "^6.0.0",
+    "pkg-up": "^2.0.0",
+    "set-cookie-parser": "^2.5.1",
+    "undici": "^5.10.0",
+    "urlpattern-polyfill": "^5.0.0"
+  },
+  "peerDependencies": {
+    "@wooorm/starry-night": "^1.0.0",
+    "shiki": "^0.10.1",
+    "vite": "^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "shiki": {
+      "optional": true
+    },
+    "@wooorm/starry-night": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^16.0.0",
+    "@wooorm/starry-night": "^1.0.0",
+    "fast-glob": "^3.2.11",
+    "kleur": "^4.1.4",
+    "rollup": "^2.58.0",
+    "shiki": "^0.10.1",
+    "tsup": "^6.2.3",
+    "typescript": "^4.7.4",
+    "vite": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "app",
+    "docs",
+    "edge",
+    "esm",
+    "fast",
+    "lightweight",
+    "modern",
+    "nextjs",
+    "ssg",
+    "ssr",
+    "vercel",
+    "vite",
+    "vessel"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "outDir": "dist",
+    "declarationDir": "types",
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "paths": {
+      ":virtual/vessel/app": ["virtual/app"],
+      ":virtual/vessel/manifest": ["virtual/manifest"]
+    }
+  },
+  "include": ["src"]
+}
