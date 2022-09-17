@@ -3,24 +3,26 @@ import { readFile } from 'fs/promises';
 import { toHtml } from 'hast-util-to-html';
 import kleur from 'kleur';
 import type { App } from 'node/app/App';
-import type { LeafModuleFile } from 'node/app/files';
+import type { RouteFile, RouteFileGroup } from 'node/app/files';
 import {
   clearMarkdownCache,
   type HighlightCodeBlock,
   parseMarkdown,
   type ParseMarkdownResult,
 } from 'node/markdoc';
+import { normalizePath } from 'node/utils';
 import type { MarkdownMeta } from 'shared/markdown';
 import type { ViteDevServer } from 'vite';
 
-import { invalidateLeafModule } from '../files/files-hmr';
+import { invalidateRouteModule } from '../files/files-hmr';
 import { type VesselPlugin } from '../Plugin';
 import { handleMarkdownHMR } from './hmr';
 
 export function markdownPlugin(): VesselPlugin {
   let app: App;
   let filter: (id: string) => boolean;
-  let currentFile: LeafModuleFile | undefined = undefined;
+  let currentFile: RouteFile | undefined = undefined;
+  let currentBranch: RouteFileGroup[] = [];
   let parse: (filePath: string, content: string) => ParseMarkdownResult;
   let highlight: HighlightCodeBlock | null = null;
 
@@ -100,12 +102,13 @@ export function markdownPlugin(): VesselPlugin {
       handleMarkdownHMR(app);
       server.ws.on('vessel::route_change', ({ id }) => {
         const filePath = app.dirs.app.resolve(id);
-        currentFile = app.files.findLeaf(filePath);
+        currentFile = app.files.routes.findLeafFile(filePath);
+        currentBranch = app.files.routes.getGroupBranch(filePath);
       });
     },
     transform(content, id) {
       if (filter(id)) {
-        const { output } = parse(id, content);
+        const { output } = parse(normalizePath(id), content);
         return output;
       }
 
@@ -117,18 +120,25 @@ export function markdownPlugin(): VesselPlugin {
       if (filter(file)) {
         const content = await read();
 
-        const layout = app.files.layouts.find(file);
+        const layout = app.files.routes.findWithType(file, 'layout');
 
-        if (layout && currentFile?.layouts.includes(layout)) {
-          clearMarkdownCache(currentFile.path);
-          invalidateLeafModule(server, currentFile);
+        if (currentFile) {
+          if (
+            layout &&
+            currentBranch.find(
+              (group) => group.layout?.rootPath === layout.rootPath,
+            )
+          ) {
+            clearMarkdownCache(currentFile.path);
+            invalidateRouteModule(server, currentFile);
 
-          const { meta } = parse(
-            currentFile.path,
-            await readFile(currentFile.path, { encoding: 'utf-8' }),
-          );
+            const { meta } = parse(
+              currentFile.path,
+              await readFile(currentFile.path, { encoding: 'utf-8' }),
+            );
 
-          handleMarkdownMetaHMR(server, currentFile.path, meta);
+            handleMarkdownMetaHMR(server, currentFile.path, meta);
+          }
         }
 
         const { output, meta } = parse(file, content);

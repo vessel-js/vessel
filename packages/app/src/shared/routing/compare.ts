@@ -81,15 +81,30 @@ export function calcRoutePathScore(pathname: string): number {
   return score;
 }
 
-export function isLayoutRoute(route: Route): boolean {
+export function isPageRoute(route: Pick<Route, 'type'>): boolean {
+  return route.type === 'page';
+}
+
+export function isLayoutRoute(route: Pick<Route, 'type'>): boolean {
   return route.type === 'layout';
 }
 
-export function isErrorRoute(route: Route): boolean {
+export function isErrorRoute(route: Pick<Route, 'type'>): boolean {
   return route.type === 'error';
 }
 
-export function compareRoutes(routeA: Route, routeB: Route) {
+export function isHttpRoute(route: Pick<Route, 'type'>): boolean {
+  return route.type === 'http';
+}
+
+export function getRouteTypes(): Route['type'][] {
+  return ['page', 'layout', 'error', 'http'];
+}
+
+export function compareRoutes(
+  routeA: { score: number; pattern: { pathname: string } },
+  routeB: { score: number; pattern: { pathname: string } },
+) {
   if (routeA.score !== routeB.score) {
     return routeB.score - routeA.score; // higher score first
   }

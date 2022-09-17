@@ -9,8 +9,8 @@ import type {
 
 import type { ResolvedAppConfig } from './config/AppConfig';
 import type { DisposalBin } from './create/DisposalBin';
-import type { Files } from './files';
-import type { Routes } from './routes';
+import type { AppFiles } from './files';
+import type { AppRoutes } from './routes';
 
 export type AppDetails = {
   version: string;
@@ -27,8 +27,8 @@ export type App = AppDetails & {
   /** Plugin extensions. */
   [x: string]: unknown;
   context: Map<string, unknown>;
-  files: Files;
-  routes: Routes;
+  files: AppFiles;
+  routes: AppRoutes;
   markdoc: MarkdocSchema;
   disposal: DisposalBin;
   logger: typeof logger;

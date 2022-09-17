@@ -15,8 +15,8 @@ import {
   resolveAppConfig,
   type ResolvedAppConfig,
 } from '../config';
-import { Files } from '../files';
-import { Routes } from '../routes';
+import { AppFiles } from '../files';
+import { AppRoutes } from '../routes';
 import { createAppDirectories } from './app-dirs';
 import { getAppVersion } from './app-utils';
 import { DisposalBin } from './DisposalBin';
@@ -62,8 +62,8 @@ export const createAppFactory = async (
         logger,
         vite: { user: viteConfig, env },
         context: new Map(),
-        files: new Files(),
-        routes: new Routes(),
+        files: new AppFiles(),
+        routes: new AppRoutes(),
         markdoc: new MarkdocSchema(),
         disposal: new DisposalBin(),
         destroy: () => $app.disposal.empty(),
@@ -116,16 +116,14 @@ export const createAppFactory = async (
 export function createAppEntries(app: App, { isSSR = false } = {}) {
   const entries: Record<string, string> = {};
 
-  const nodes = [
-    ...app.files.layouts.toArray(),
-    ...app.files.errors.toArray(),
-    ...app.files.pages.toArray(),
-    ...(isSSR || app.config.isSSR ? app.files.endpoints.toArray() : []),
-  ];
+  const files =
+    isSSR || app.config.isSSR
+      ? app.files.routes.toArray()
+      : app.files.routes.toArray().filter((file) => file.type !== 'http');
 
-  for (const node of nodes) {
-    const name = trimExt(node.rootPath);
-    entries[`nodes/${name}`] = node.path;
+  for (const file of files) {
+    const name = trimExt(file.rootPath);
+    entries[`nodes/${name}`] = file.path;
   }
 
   return entries;

@@ -19,9 +19,9 @@ export class MarkdocSchema {
   getOwnedConfig(ownerFilePath: string): MarkdocConfig {
     const base = this._app.config.markdown.markdoc;
 
-    const leafFile = this._app.files.findLeaf(ownerFilePath);
-    const nodes = leafFile ? this._getOwnedNodesConfig(ownerFilePath) : {};
-    const tags = leafFile ? this._getOwnedTagsConfig(ownerFilePath) : {};
+    const isLeaf = this._app.files.routes.isLeafFile(ownerFilePath);
+    const nodes = isLeaf ? this._getOwnedNodesConfig(ownerFilePath) : {};
+    const tags = isLeaf ? this._getOwnedTagsConfig(ownerFilePath) : {};
 
     const config: MarkdocConfig = {
       ...base,

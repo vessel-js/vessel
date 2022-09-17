@@ -1,5 +1,5 @@
 import kleur from 'kleur';
-import type { EndpointFileRoute, PageFileRoute, RoutesLoggerInput } from 'node';
+import type { AppRoute, RoutesLoggerInput } from 'node';
 import { LoggerIcon } from 'node/utils';
 import { noslash } from 'shared/utils/url';
 
@@ -14,10 +14,10 @@ export function logBadLinks(badLinks: BuildData['badLinks']) {
     '',
   ];
 
-  for (const [pathname, { page: route, reason }] of badLinks) {
+  for (const [pathname, { page, reason }] of badLinks) {
     logs.push(`- ${kleur.bold(pathname)}`);
     logs.push(`  - Reason: ${reason}`);
-    if (route) logs.push(`  - Location: ${route.file.rootPath}`);
+    if (page) logs.push(`  - Location: ${page.file.rootPath}`);
   }
 
   console.log(logs.join('\n'));
@@ -46,9 +46,7 @@ export function logRoutesList({ level, ...build }: RoutesLoggerInput) {
   if (level === 'info' && build.serverPages.size > 0) {
     logs.push('', `⚙️  ${kleur.bold(kleur.underline('SERVER PAGES'))}`, '');
     for (const route of Array.from(build.serverPages).reverse()) {
-      if (route.type === 'page') {
-        logs.push(`- ${kleur.cyan(route.file.routeDir)}`);
-      }
+      logs.push(`- ${kleur.cyan(route.file.routeDir)}`);
     }
   }
 
@@ -110,12 +108,12 @@ export function logRoutesTree({ level, ...build }: RoutesLoggerInput) {
   const errorOnly = level === 'error';
   const redirectLinks = new Set(build.staticRedirects.keys());
 
-  const serverPages = new Map<string, PageFileRoute>();
+  const serverPages = new Map<string, AppRoute>();
   for (const page of build.serverPages) {
     serverPages.set(page.file.pathname, page);
   }
 
-  const serverEndpoints = new Map<string, EndpointFileRoute>();
+  const serverEndpoints = new Map<string, AppRoute>();
   for (const endpoint of build.serverEndpoints) {
     serverEndpoints.set(endpoint.file.pathname, endpoint);
   }

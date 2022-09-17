@@ -1,4 +1,5 @@
 import type { App } from 'node/app/App';
+import { isErrorRoute, isHttpRoute, isLayoutRoute } from 'shared/routing';
 import { prettyJsonStr, stripImportQuotesFromJson } from 'shared/utils/json';
 
 import { virtualModuleRequestPath } from '../alias';
@@ -33,7 +34,7 @@ export function filesPlugin(): VesselPlugin {
 }
 
 export function loadClientManifestModule(app: App) {
-  const routes = app.routes.client;
+  const routes = app.routes.toArray().filter((route) => !isHttpRoute(route));
 
   const loaders = routes.map(
     (node) => `() => import('/${node.file.rootPath}')`,
@@ -58,7 +59,7 @@ export function loadClientManifestModule(app: App) {
       pathIndex = paths.length - 1;
     }
 
-    const type = route.type === 'layout' ? 0 : route.type === 'error' ? 1 : 2;
+    const type = isLayoutRoute(route) ? 0 : isErrorRoute(route) ? 1 : 2;
     _routes.push(
       type < 2 ? `${type}~${route.file.routePath}` : route.file.routePath,
     );

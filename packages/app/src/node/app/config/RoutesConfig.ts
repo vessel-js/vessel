@@ -80,7 +80,7 @@ export type ResolvedRoutesConfig = {
      */
     exclude: (string | RegExp)[];
   };
-  endpoints: {
+  http: {
     /**
      * Globs indicating serverless/edge functions to be included in Vessel (relative to `<app>`).
      */
@@ -115,15 +115,15 @@ export type SimpleRouteMatcher = {
 
 export type ComplexRouteMatcher = (
   route: string,
-  info: { filePath: string },
+  info: { path: string },
 ) => string | null | undefined | void;
 
 export type RouteMatcherConfig = (SimpleRouteMatcher | ComplexRouteMatcher)[];
 
 export type RoutesConfig = Partial<
-  Omit<ResolvedRoutesConfig, 'pages' | 'errors' | 'endpoints'>
+  Omit<ResolvedRoutesConfig, 'pages' | 'errors' | 'http'>
 > & {
   pages?: Partial<ResolvedRoutesConfig['pages']>;
   errors?: Partial<ResolvedRoutesConfig['errors']>;
-  endpoints?: Partial<ResolvedRoutesConfig['endpoints']>;
+  http?: Partial<ResolvedRoutesConfig['http']>;
 };

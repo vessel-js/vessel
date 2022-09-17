@@ -1,10 +1,5 @@
-import { normalizePath, trimExt } from 'node/utils';
 import path from 'node:path';
-import {
-  calcRoutePathScore,
-  isRoutePathDynamic,
-  type Route,
-} from 'shared/routing';
+import { calcRoutePathScore, type Route } from 'shared/routing';
 import { isFunction } from 'shared/utils/unit';
 import { endslash, slash } from 'shared/utils/url';
 
@@ -15,7 +10,7 @@ const PAGE_ORDER_RE = /^\[(\d+)\]/;
 const STRIP_PAGE_ORDER_RE = /\/\[(\d+)\]/g;
 const STRIP_ROUTE_GROUPS_RE = /\/\(.*?\)\//g;
 
-export function stripPageOrder(filePath: string) {
+export function stripRouteOrder(filePath: string) {
   return filePath.replace(STRIP_PAGE_ORDER_RE, '/');
 }
 
@@ -35,20 +30,15 @@ export function sortOrderedPageFiles(files: string[]): string[] {
     .sort(
       (fileA, fileB) => calcPageOrderScore(fileA) - calcPageOrderScore(fileB),
     )
-    .map(stripPageOrder);
-}
-
-export function stripRouteMeta(filePath: string) {
-  const basename = path.posix.basename(filePath);
-  return filePath.replace(basename, 'index.html');
+    .map(stripRouteOrder);
 }
 
 export function stripRouteGroups(filePath: string) {
   return filePath.replace(STRIP_ROUTE_GROUPS_RE, '');
 }
 
-export function stripRouteInfo(filePath: string) {
-  return stripRouteMeta(stripPageOrder(filePath));
+export function stripRouteMeta(dirname: string) {
+  return stripRouteGroups(stripRouteOrder(dirname));
 }
 
 function normalizeTransformMatcher(value: RouteMatcher) {
@@ -63,24 +53,43 @@ function normalizeTransformMatcher(value: RouteMatcher) {
 }
 
 export function resolveRouteFromFilePath(
+  id: string,
   type: Route['type'],
-  routesDir: string,
-  filePath: string,
+  routePath: string,
   matchers: RouteMatcherConfig = [],
 ): Route {
-  filePath = normalizePath(filePath);
-
-  const routePath = path.posix.relative(routesDir, filePath);
   const basename = path.posix.basename(routePath);
   const orderMatch = basename.match(PAGE_ORDER_RE)?.[1];
   const order = orderMatch ? Number(orderMatch) : undefined;
-  const isEndpoint = type === 'http';
+  const { pathname, dynamic, score } = resolveRouteInfoFromFilePath(
+    type,
+    routePath,
+    matchers,
+  );
+  const pattern = new URLPattern({ pathname });
+  return {
+    id,
+    type,
+    pathname,
+    pattern,
+    dynamic,
+    order,
+    score,
+  };
+}
 
-  let route = stripRouteInfo(routePath);
+export function resolveRouteInfoFromFilePath(
+  type: Route['type'],
+  routePath: string,
+  matchers: RouteMatcherConfig = [],
+) {
+  const isHttp = type === 'http';
+
+  let route = routePath === '.' ? '/' : stripRouteMeta(routePath);
 
   for (const matcher of matchers) {
     if (isFunction(matcher)) {
-      const result = matcher(route, { filePath });
+      const result = matcher(route, { path: routePath });
       if (result) route = result;
     } else {
       route = route.replace(
@@ -92,35 +101,19 @@ export function resolveRouteFromFilePath(
 
   const resolveStaticPath = () => {
     const url = new URL(route.toLowerCase(), 'http://v/');
-    return url.pathname
-      .replace(/\..+($|\\?)/i, '{.html}?')
-      .replace(/\/(README|index){.html}\?($|\?)/i, '{/}?{index}?{.html}?');
+    return `${url.pathname === '/' ? '' : url.pathname}{/}?{index}?{.html}?`;
   };
 
-  const dynamic = isRoutePathDynamic(route);
+  const dynamic = /\/\[.*?\](\/|$)/.test(routePath);
 
   const pathname =
-    dynamic || isEndpoint
-      ? slash(
-          trimExt(route).replace(
-            /\/(index)?(\.html)?$/,
-            isEndpoint ? '{/}?' : '{/}?{index}?{.html}?',
-          ),
-        )
+    dynamic || isHttp
+      ? slash(`${route}${isHttp ? '{/}?' : '{/}?{index}?{.html}?'}`)
       : resolveStaticPath();
 
   const score = calcRoutePathScore(pathname);
-  const pattern = new URLPattern({ pathname });
 
-  return {
-    id: routePath,
-    type,
-    pathname,
-    pattern,
-    dynamic,
-    order,
-    score,
-  };
+  return { pathname, dynamic, score };
 }
 
 export function resolveStaticRouteFromFilePath(
@@ -130,7 +123,7 @@ export function resolveStaticRouteFromFilePath(
   const routePath = endslash(path.posix.relative(routesDir, filePath));
 
   const url = new URL(
-    stripRouteInfo(routePath).toLowerCase(),
+    stripRouteMeta(routePath).toLowerCase(),
     'http://localhost',
   );
 

@@ -1,10 +1,6 @@
 import kleur from 'kleur';
 import type { App } from 'node/app/App';
-import {
-  createLoadablePageSegments,
-  type PageFileRoute,
-  type SystemFileRoute,
-} from 'node/app/routes';
+import type { AppRoute } from 'node/app/routes';
 import { logger } from 'node/utils';
 import { createStaticLoaderInput } from 'server';
 import type {
@@ -14,7 +10,6 @@ import type {
   StaticLoader,
   StaticLoaderCacheKeyBuilder,
   StaticLoaderCacheMap,
-  StaticLoaderInput,
   StaticLoaderOutput,
 } from 'server/types';
 import { MatchedRoute } from 'shared/routing';
@@ -28,28 +23,29 @@ export type LoadStaticRouteResult = {
 export async function loadStaticRoute(
   app: App,
   url: URL,
-  page: PageFileRoute,
-  load: (route: SystemFileRoute) => Promise<ServerModule>,
-  canLoad: (route: SystemFileRoute) => boolean = () => true,
+  page: AppRoute,
+  load: (route: AppRoute) => Promise<ServerModule>,
+  canLoad: (route: AppRoute) => boolean = () => true,
 ): Promise<LoadStaticRouteResult> {
   const input = createStaticLoaderInput(url, page);
-  const segments = createLoadablePageSegments(app, page, load);
 
-  const loaded = await Promise.all(
-    segments.map(async (segment) => {
-      //
-    }),
-  );
+  // @ts-expect-error - .
+  return { route: { ...page, branch: [], url } };
 
+  // const segments = createLoadablePageSegments(app, page, load);
+  // const loaded = await Promise.all(
+  //   segments.map(async (segment) => {
+  //     const matched = createMatchedRoute();
+  //     //
+  //   }),
+  // );
   // if (output.redirect) {
   //   const path = isString(output.redirect)
   //     ? output.redirect
   //     : output.redirect.path;
-
   //   const status = isString(output.redirect)
   //     ? 302
   //     : output.redirect.status ?? 302;
-
   //   const normalizedPath = !isLinkExternal(path, app.vite.resolved!.base)
   //     ? slash(path)
   //     : path;

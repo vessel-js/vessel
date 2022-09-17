@@ -71,10 +71,10 @@ export function resolveAppConfig(
       exclude: [],
       ...routes.errors,
     },
-    endpoints: {
+    http: {
       include: [`**/+http.{${endpointExts}}`, `**/http.{${endpointExts}}`],
       exclude: [],
-      ...routes.endpoints,
+      ...routes.http,
     },
   };
 

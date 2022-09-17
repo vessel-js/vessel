@@ -1,6 +1,22 @@
 import LRUCache from 'lru-cache';
 import { slashedSplit } from 'shared/utils/url';
 
+export function sortedInsert<T>(
+  items: T[],
+  item: T,
+  comparator: (a: T, b: T) => number,
+) {
+  const lastItem = items[items.length - 1];
+  if (!lastItem || comparator(item, lastItem) >= 0) {
+    // fast path
+    items.push(item);
+  } else {
+    let i = 0;
+    while (i < items.length && comparator(item, items[i]) >= 0) i++;
+    items.splice(i, 0, item);
+  }
+}
+
 export function comparePathDepth(pathA: string, pathB: string) {
   const segmentsA = pathA.split('/');
   const segmentsB = pathB.split('/');

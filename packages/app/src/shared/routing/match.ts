@@ -48,10 +48,6 @@ export function filterRouteSegments<T extends LoadableRoute>(
   return segments.reverse();
 }
 
-export function groupRoutes<T extends LoadableRoute>(url: URL, routes: T[]) {
-  const group: { page: T; layout?: T; error?: T }[] = [];
-}
-
 export function matchRoute<T extends LoadableRoute>(
   url: URL,
   routes: T[],

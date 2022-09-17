@@ -1,12 +1,7 @@
 import kleur from 'kleur';
 import type { App } from 'node/app/App';
 import { createAppEntries } from 'node/app/create/app-factory';
-import {
-  type EndpointFileRoute,
-  type PageFileRoute,
-  resolvePageSegments,
-  type SystemFileRoute,
-} from 'node/app/routes';
+import type { AppRoute } from 'node/app/routes';
 import { loadStaticRoute } from 'node/vite/core';
 import fs from 'node:fs';
 import type { OutputAsset, OutputBundle, OutputChunk } from 'rollup';
@@ -30,7 +25,9 @@ export async function build(
   clientBundle: OutputBundle,
   serverBundle: OutputBundle,
 ): Promise<void> {
-  if (app.routes.pages.size === 0) {
+  const pageRoutes = app.routes.filterByType('page');
+
+  if (pageRoutes.length === 0) {
     console.log(kleur.bold(`❓ No pages were resolved`));
     return;
   }
@@ -40,7 +37,6 @@ export async function build(
   const ssrProtocol = app.vite.resolved!.server.https ? 'https' : 'http';
   const ssrOrigin = `${ssrProtocol}://localhost`;
 
-  const pageRoutes = app.routes.pages.toArray();
   const entries = createAppEntries(app, { isSSR: true });
   const viteManifestPath = app.dirs.client.resolve('vite-manifest.json');
   const { chunks, assets } = collectOutput(clientBundle);
@@ -83,23 +79,27 @@ export async function build(
     staticRedirects: new Map(),
     staticRenders: new Map(),
     serverPages: new Set(),
-    serverEndpoints: new Set(app.routes.endpoints),
+    serverEndpoints: new Set(app.routes.filterByType('http')),
     routeChunks: new Map(),
     routeChunkFile: new Map(),
     ...resolveLoaderChunks(app, bundles.server),
   };
 
   // staticPages + serverPages
-  for (const page of app.routes.pages) {
-    const segments = resolvePageSegments(app, page);
-    if (segments.some((route) => build.serverLoaderRoutes.has(route))) {
+  for (const page of app.routes.filterByType('page')) {
+    const branch = [
+      ...app.routes.getGroupBranch(page).map((group) => group.layout),
+      page,
+    ];
+
+    if (branch.some((route) => route && build.serverLoaderRoutes.has(route))) {
       build.serverPages.add(page);
     } else {
       build.staticPages.add(page);
     }
   }
 
-  for (const route of app.routes.all) {
+  for (const route of app.routes) {
     const chunk = bundles.server.chunks.find(
       (chunk) => chunk.facadeModuleId === route.file.path,
     );
@@ -126,9 +126,9 @@ export async function build(
 
   const fetch = globalThis.fetch;
   globalThis.fetch = (input, init) => {
-    if (typeof input === 'string' && app.routes.endpoints.test(input)) {
+    if (typeof input === 'string' && app.routes.test('http', input)) {
       const url = new URL(`${ssrOrigin}${input}`);
-      const route = findRoute(url, app.routes.endpoints.toArray());
+      const route = findRoute(url, app.routes.filterByType('http'));
 
       if (!route) {
         return Promise.resolve(handleHttpError(httpError('not found', 404)));
@@ -148,13 +148,13 @@ export async function build(
     return fetch(input, init);
   };
 
-  const routeLoader = (route: SystemFileRoute) =>
+  const routeLoader = (route: AppRoute) =>
     import(build.routeChunkFile.get(route.id)!);
 
-  const canLoadStaticData = (route: SystemFileRoute) =>
+  const canLoadStaticData = (route: AppRoute) =>
     build.staticLoaderRoutes.has(route);
 
-  async function loadRoute(url: URL, page: PageFileRoute) {
+  async function loadRoute(url: URL, page: AppRoute) {
     const { route, redirect } = await loadStaticRoute(
       app,
       url,
@@ -200,11 +200,9 @@ export async function build(
   const serverEntryPath = app.dirs.server.resolve('entry.js');
   const validPathname = /(\/|\.html)$/;
 
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { render } = (await import(serverEntryPath)) as ServerEntryModule;
 
-  // eslint-disable-next-line no-inner-declarations
-  async function buildPage(url: URL, page: PageFileRoute) {
+  async function buildPage(url: URL, page: AppRoute) {
     const normalizedURL = $.normalizeURL(url);
     const pathname = normalizedURL.pathname;
 
@@ -249,7 +247,7 @@ export async function build(
     }
   }
 
-  async function onFoundLink(page: PageFileRoute, href: string) {
+  async function onFoundLink(page: AppRoute, href: string) {
     if (href.startsWith('#') || $.isLinkExternal(href)) return;
 
     const url = new URL(`${ssrOrigin}${$.slash(href)}`);
@@ -356,17 +354,17 @@ export type BuildData = {
   /**
    * Valid links and their respective routes that were found during the static build process.
    */
-  links: Map<string, PageFileRoute>;
+  links: Map<string, AppRoute>;
   /**
    * Map of invalid links that were either malformed or matched no route pattern during
    * the static build process. The key contains the bad URL pathname.
    */
-  badLinks: Map<string, { page?: PageFileRoute; reason: string }>;
+  badLinks: Map<string, { page?: AppRoute; reason: string }>;
   /**
    * Page routes that are static meaning they contain no `serverLoader` in their branch (page
    * itself or any of its layouts).
    */
-  staticPages: Set<PageFileRoute>;
+  staticPages: Set<AppRoute>;
   /**
    * Redirects returned from `staticLoader` calls. The object keys are the URL pathname being
    * redirected from.
@@ -396,7 +394,7 @@ export type BuildData = {
       /** The HTML file name which can be used to output file relative to build directory. */
       filename: string;
       /** The matching page file route. */
-      page: PageFileRoute;
+      page: AppRoute;
       /** The loaded server route. */
       route: LoadedServerRoute;
       /** The SSR results containing head, css, and HTML renders. */
@@ -439,19 +437,19 @@ export type BuildData = {
   /**
    * File routes (pages/layouts) that contain a `staticLoader` export.
    */
-  staticLoaderRoutes: Set<SystemFileRoute>;
+  staticLoaderRoutes: Set<AppRoute>;
   /**
    * File routes (pages/layouts) that contain a `serverLoader` export. These routes should be
    * dynamically rendered on the server.
    */
-  serverLoaderRoutes: Set<SystemFileRoute>;
+  serverLoaderRoutes: Set<AppRoute>;
   /**
    * Page routes that are dynamic meaning they contain a `serverLoader` in their branch (page
    * itself or any of its layouts). These pages are dynamically rendered on the server.
    */
-  serverPages: Set<PageFileRoute>;
+  serverPages: Set<AppRoute>;
   /**
    * Server endpoints that are used server-side to respond to HTTP requests.
    */
-  serverEndpoints: Set<EndpointFileRoute>;
+  serverEndpoints: Set<AppRoute>;
 };

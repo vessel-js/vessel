@@ -1,6 +1,6 @@
 import kleur from 'kleur';
 import type { App } from 'node/app/App';
-import type { EndpointFile } from 'node/app/files';
+import type { RouteFile } from 'node/app/files';
 import type { ServerResponse } from 'node:http';
 import { STATIC_DATA_ASSET_BASE_PATH } from 'shared/data';
 import { coalesceToError } from 'shared/utils/error';
@@ -14,8 +14,8 @@ import { handleStaticDataRequest } from './handle-static-data';
 export function configureDevServer(app: App, server: ViteDevServer) {
   removeHtmlMiddlewares(server.middlewares);
 
-  const endpointLoader = (endpoint: EndpointFile) =>
-    app.vite.server!.ssrLoadModule(endpoint.path);
+  const httpLoader = (file: RouteFile) =>
+    app.vite.server!.ssrLoadModule(file.path);
 
   // Ensure devs can call local API endpoints using relative paths (e.g., `fetch('/api/foo')`).
   let origin: string;
@@ -25,7 +25,7 @@ export function configureDevServer(app: App, server: ViteDevServer) {
 
   globalThis.fetch = (input, init) => {
     return fetch(
-      typeof input === 'string' && app.routes.endpoints.test(input)
+      typeof input === 'string' && app.routes.test('http', input)
         ? `${(origin ??= noendslash(
             server.resolvedUrls?.local[0] ?? `${protocol}://localhost:5173`,
           ))}${input}`
@@ -51,18 +51,18 @@ export function configureDevServer(app: App, server: ViteDevServer) {
         return await handleStaticDataRequest(url, app, res);
       }
 
-      if (app.routes.pages.test(decodedUrl)) {
+      if (app.routes.test('page', decodedUrl)) {
         return await handlePageRequest(base, url, app, req, res);
       }
 
-      if (app.routes.endpoints.test(decodedUrl)) {
+      if (app.routes.test('http', decodedUrl)) {
         return await handleEndpointRequest(
           base,
           url,
           app,
           req,
           res,
-          endpointLoader,
+          httpLoader,
         );
       }
     } catch (error) {

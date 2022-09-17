@@ -11,6 +11,8 @@ import {
 import {
   filterRoutesByType,
   findRoute,
+  isErrorRoute,
+  isPageRoute,
   LoadedServerData,
   LoadedStaticData,
   matchRoute,
@@ -477,12 +479,12 @@ export class Router {
     if (token !== navigationToken) return;
 
     const match = this.match(url);
-    const isPageMatch = match && match.type === 'page';
+    const isPageMatch = match && isPageRoute(match);
 
     if (!isPageMatch) {
       cancel();
 
-      if (match?.type === 'error') {
+      if (match && isErrorRoute(match)) {
         // load it and pass in 404 http error??
       }
 

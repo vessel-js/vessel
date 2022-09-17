@@ -65,23 +65,20 @@ export class MarkdocFiles extends SystemFiles<MarkdocFile> {
     };
 
     this._files.push(node);
-    this._add(node);
+    this._addFile(node);
 
     return node;
   }
 
   isNode(filePath: string) {
-    filePath = this._normalizePath(filePath);
     return this.isAnyNode(filePath) && filePath.includes('@node');
   }
 
   isTag(filePath: string) {
-    filePath = this._normalizePath(filePath);
     return this.isAnyNode(filePath) && !filePath.includes('@node');
   }
 
   isAnyNode(filePath: string) {
-    filePath = this._normalizePath(filePath);
     return filePath.includes('@markdoc') && this._filter(filePath);
   }
 

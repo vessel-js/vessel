@@ -89,12 +89,12 @@ export function createVercelBuildAdapter(
         ];
 
         const bundlingFunctionsSpinner = $.createSpinner();
-        const fnCount = $.color.underline(app.routes.endpoints.size);
+        const fnCount = $.color.underline(build.serverEndpoints.size);
         bundlingFunctionsSpinner.start(
           $.color.bold(`Bundling ${fnCount} functions...`),
         );
 
-        for (const route of app.routes.endpoints) {
+        for (const route of build.serverEndpoints) {
           const routeDir = route.file.routeDir;
           routes.push({
             src: `^${$.slash(routeDir.replace(matchersRE, '([^/]+?)'))}/?$`, // ^/api/foo/?$
@@ -103,7 +103,7 @@ export function createVercelBuildAdapter(
         }
 
         await Promise.all(
-          Array.from(app.routes.endpoints).map(async (route) => {
+          Array.from(build.serverEndpoints).map(async (route) => {
             const chunk = build.routeChunks.get(route.id);
 
             const allowedMethods = chunk?.exports.filter((id) =>

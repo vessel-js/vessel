@@ -10,7 +10,7 @@ export function handleMarkdownHMR(app: App) {
   onFileEvent(isNode, 'add', async (filePath) => {
     nodes.add(filePath);
 
-    for (const pageFile of app.files.pages) {
+    for (const pageFile of app.files.routes.toArray('page')) {
       if (nodes.isSameBranch(filePath, pageFile.path)) {
         clearMarkdownCache(pageFile.path);
         invalidateFile(pageFile.path);

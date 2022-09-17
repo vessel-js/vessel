@@ -4,7 +4,7 @@ import Markdoc, { type RenderableTreeNode, type Tag } from '@markdoc/markdoc';
 import matter from 'gray-matter';
 import yaml from 'js-yaml';
 import LRUCache from 'lru-cache';
-import { type LeafModuleFile, resolveStaticRouteFromFilePath } from 'node';
+import { resolveStaticRouteFromFilePath, type RouteFile } from 'node';
 import type { App } from 'node/app/App';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -102,7 +102,7 @@ export function parseMarkdown(
     lastUpdated,
   };
 
-  const leafFile = app.files.findLeaf(filePath);
+  const leafFile = app.files.routes.findLeafFile(filePath);
   if (leafFile) mergeLayoutMeta(app, leafFile, meta, opts);
 
   for (const transformer of opts.transformMeta ?? []) {
@@ -139,44 +139,48 @@ export function getFrontmatter(source: string | Buffer): MarkdownFrontmatter {
 
 function mergeLayoutMeta(
   app: App,
-  leafFile: LeafModuleFile,
+  leafFile: RouteFile,
   meta: MarkdownMeta,
   opts: Partial<ParseMarkdownConfig> = {},
 ) {
-  const layoutFiles = leafFile.layouts.map((layout) => layout.path);
+  const layoutFiles = app.files.routes
+    .getGroupBranch(leafFile.path)
+    .map((group) => group.layout);
 
   for (const layoutFile of layoutFiles) {
-    if (!opts.filter?.(layoutFile) ?? !layoutFile.endsWith('.md')) continue;
+    if (layoutFile) {
+      if (!opts.filter?.(layoutFile.path) || layoutFile.ext !== '.md') continue;
 
-    const { ast: layoutAst, meta: layoutMeta } = parseMarkdown(
-      app,
-      layoutFile,
-      fs.readFileSync(layoutFile, { encoding: 'utf-8' }),
-      opts,
-    );
+      const { ast: layoutAst, meta: layoutMeta } = parseMarkdown(
+        app,
+        layoutFile.path,
+        fs.readFileSync(layoutFile.path, { encoding: 'utf-8' }),
+        opts,
+      );
 
-    let headingsPos = 0;
-    for (const node of layoutAst.walk()) {
-      if (node.type === 'heading') {
-        headingsPos += 1;
-      } else if (node.attributes.content === '<slot />') {
-        break;
+      let headingsPos = 0;
+      for (const node of layoutAst.walk()) {
+        if (node.type === 'heading') {
+          headingsPos += 1;
+        } else if (node.attributes.content === '<slot />') {
+          break;
+        }
       }
-    }
 
-    meta.title = meta.title ?? layoutMeta.title;
-    meta.frontmatter = { ...layoutMeta.frontmatter, ...meta.frontmatter };
+      meta.title = meta.title ?? layoutMeta.title;
+      meta.frontmatter = { ...layoutMeta.frontmatter, ...meta.frontmatter };
 
-    meta.headings = [
-      ...(headingsPos > 0
-        ? layoutMeta.headings.slice(0, headingsPos)
-        : layoutMeta.headings),
-      ...meta.headings,
-      ...(headingsPos > 0 ? layoutMeta.headings.slice(headingsPos) : []),
-    ];
+      meta.headings = [
+        ...(headingsPos > 0
+          ? layoutMeta.headings.slice(0, headingsPos)
+          : layoutMeta.headings),
+        ...meta.headings,
+        ...(headingsPos > 0 ? layoutMeta.headings.slice(headingsPos) : []),
+      ];
 
-    if (layoutMeta.lastUpdated < meta.lastUpdated) {
-      meta.lastUpdated = layoutMeta.lastUpdated;
+      if (layoutMeta.lastUpdated < meta.lastUpdated) {
+        meta.lastUpdated = layoutMeta.lastUpdated;
+      }
     }
   }
 }

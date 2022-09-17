@@ -1,11 +1,6 @@
 import fsp from 'fs/promises';
 import kleur from 'kleur';
-import type {
-  Directory,
-  PageFileRoute,
-  RoutesLogLevel,
-  RoutesLogStyle,
-} from 'node';
+import type { AppRoute, Directory, RoutesLogLevel, RoutesLogStyle } from 'node';
 import type { App } from 'node/app/App';
 import { createDirectory } from 'node/app/create/app-dirs';
 import {
@@ -280,7 +275,7 @@ export type BuildAdapterUtils = {
   pluralize(word: string, count: number): string;
   resolveHTMLFilename(url: string | URL): string;
   resolveDataFilename(name: string): string;
-  resolvePageResources(page: PageFileRoute): {
+  resolvePageResources(page: AppRoute): {
     assets: string[];
     imports: string[];
     dynamicImports: string[];

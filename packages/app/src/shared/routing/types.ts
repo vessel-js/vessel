@@ -13,7 +13,7 @@ export type Route = {
    */
   readonly type: 'page' | 'layout' | 'error' | 'http';
   /**
-   * Order number if declared (e.g., `[1]page.md` would be 1).
+   * Order number if declared (e.g., `[1]blog/[3]products/+page.md` would be 3).
    */
   readonly order?: number;
   /**

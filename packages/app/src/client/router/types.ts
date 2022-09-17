@@ -90,6 +90,6 @@ export type ClientManifest = {
   loaders: ClientModuleLoader[];
   /** Contains loader indicies ^ who can fetch data from the server. */
   fetch: number[];
-  /** Routes - their type is prepended with a `$` = `1$` = layout, `2$` = error  */
+  /** Routes - their type is prepended: `0~` = layout, `1~` = error, page has nothing. */
   routes: string[];
 };

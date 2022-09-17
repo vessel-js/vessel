@@ -1,5 +1,5 @@
 import type { App } from 'node/app/App';
-import type { EndpointFile } from 'node/app/files';
+import type { RouteFile } from 'node/app/files';
 import { handleHTTPRequest } from 'node/http';
 import { setResponse } from 'node/http/http-bridge';
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -20,9 +20,9 @@ export async function handleEndpointRequest(
   app: App,
   req: IncomingMessage,
   res: ServerResponse,
-  loader: (endpoint: EndpointFile) => Promise<HttpRequestModule>,
+  loader: (endpoint: RouteFile) => Promise<HttpRequestModule>,
 ) {
-  const route = findRoute(url, app.routes.endpoints.toArray());
+  const route = findRoute(url, app.routes.filterByType('http'));
 
   if (!route) {
     await setResponse(res, handleHttpError(httpError('not found', 400)));

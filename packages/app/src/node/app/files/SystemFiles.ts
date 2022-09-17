@@ -1,22 +1,25 @@
 import { createFilter } from '@rollup/pluginutils';
 import { globbySync } from 'globby';
-import { comparePathDepth, normalizePath } from 'node/utils';
+import { comparePathDepth, normalizePath, sortedInsert } from 'node/utils';
 import path from 'node:path';
 import { isString } from 'shared/utils/unit';
 
 import type { App } from '../App';
 
-export type SystemFileMeta = {
+export type SystemDirMeta = {
+  /** System directory path relative to `<root>`. */
+  readonly rootDir: string;
+  /** System directory path relative to `<app>`. */
+  readonly routeDir: string;
+};
+
+export type SystemFileMeta = SystemDirMeta & {
   /** Absolute system file path. */
   readonly path: string;
   /** System file path relative to `<root>`. */
   readonly rootPath: string;
-  /** System root directory path relative to `<root>`. */
-  readonly rootDir: string;
   /** System file path relative to `<app>`. */
   readonly routePath: string;
-  /** System directory path relative to `<app>`. */
-  readonly routeDir: string;
   /** System file route path as URL pathname `/blog/[product]/` */
   readonly pathname: string;
   /** Branch reset. */
@@ -49,11 +52,6 @@ export abstract class SystemFiles<T extends SystemFileMeta>
     this._options = options;
     this._filter = createFilter(options.include, options.exclude);
     await this._discover();
-    this.onAdd(() => {
-      this._files = this._files.sort((a, b) =>
-        comparePathDepth(a.rootPath, b.rootPath),
-      );
-    });
   }
 
   protected async _discover() {
@@ -81,7 +79,6 @@ export abstract class SystemFiles<T extends SystemFileMeta>
   abstract add(filePath: string): void;
 
   remove(filePath: string) {
-    filePath = this._normalizePath(filePath);
     if (!this.has(filePath)) return -1;
     const index = this.findIndex(filePath);
     const file = this._files[index];
@@ -95,7 +92,6 @@ export abstract class SystemFiles<T extends SystemFileMeta>
   }
 
   find(filePath: string) {
-    filePath = this._normalizePath(filePath);
     return this._files.find((file) => file.path === filePath);
   }
 
@@ -113,7 +109,6 @@ export abstract class SystemFiles<T extends SystemFileMeta>
   }
 
   is(filePath: string) {
-    filePath = this._normalizePath(filePath);
     return (
       this.has(filePath) ||
       (filePath.startsWith(this._app.dirs.app.path) && this._filter(filePath))
@@ -149,7 +144,7 @@ export abstract class SystemFiles<T extends SystemFileMeta>
   }
 
   toArray() {
-    return this._files;
+    return [...this._files];
   }
 
   protected _createFile(filePath: string): SystemFileMeta {
@@ -157,7 +152,7 @@ export abstract class SystemFiles<T extends SystemFileMeta>
     const rootDir = path.posix.dirname(rootPath);
     const routePath = this._getRoutePath(filePath);
     const routeDir = path.posix.dirname(routePath);
-    const pathname = `/${path.posix.dirname(routePath)}/`;
+    const pathname = routeDir === '.' ? '/' : `/${routeDir}/`;
     const ext = this._ext(rootPath);
     const reset = path.posix.basename(rootPath).includes('.reset.');
     return {
@@ -173,15 +168,17 @@ export abstract class SystemFiles<T extends SystemFileMeta>
   }
 
   protected _ext(filePath: string) {
-    return path.posix.extname(this._normalizePath(filePath));
+    return path.posix.extname(filePath);
   }
 
   protected _normalizePath(filePath: string) {
     return normalizePath(filePath);
   }
 
-  protected _add(file: T) {
-    this._files.push(file);
+  protected _addFile(file: T) {
+    sortedInsert(this._files, file, (a, b) =>
+      comparePathDepth(a.rootPath, b.rootPath),
+    );
     for (const callback of this._onAdd) callback(file);
   }
 
