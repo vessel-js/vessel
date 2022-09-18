@@ -1,36 +1,31 @@
 import { sortedInsert } from 'node/utils';
-import { compareRoutes, getRouteTypes, type Route } from 'shared/routing';
+import { type Route } from 'shared/routing';
 
 import type { App } from '../App';
 import type { RouteMatcherConfig } from '../config';
-import type { RouteFile, SystemDirMeta } from '../files';
 import {
-  resolveRouteFromFilePath,
-  resolveRouteInfoFromFilePath,
-} from './resolve-file-route';
+  getRouteFileTypes,
+  type RouteFile,
+  type RouteFileType,
+  type SystemDirPath,
+} from '../files';
+import { resolveRouteFromFilePath } from './resolve-file-route';
 
-export type AppRoute = Route & { file: RouteFile };
-
-export type AppRouteGroup = SystemDirMeta & {
-  dynamic: boolean;
-  score: number;
-} & {
-  [P in Route['type']]?: AppRoute;
+export type AppRoute = Route & { dir: SystemDirPath } & {
+  [P in RouteFileType]?: RouteFile;
 };
 
 export class AppRoutes implements Iterable<AppRoute> {
   protected _routesDir!: string;
   protected _matchers!: RouteMatcherConfig;
-
   protected _routes: AppRoute[] = [];
-  protected _groups: AppRouteGroup[] = [];
 
   get size() {
     return this._routes.length;
   }
 
-  get groups() {
-    return [...this._groups];
+  get all() {
+    return [...this._routes];
   }
 
   init(app: App) {
@@ -43,59 +38,40 @@ export class AppRoutes implements Iterable<AppRoute> {
   }
 
   add(file: RouteFile) {
-    const existingGroup = this._groups.find(
-      (group) => group.routeDir === file.routeDir,
+    const existingRoute = this._routes.find(
+      (route) => route.dir.route === file.dir.route,
     );
 
-    const group: AppRouteGroup = existingGroup ?? {
-      ...resolveRouteInfoFromFilePath('page', file.routeDir),
-      rootDir: file.rootDir,
-      routeDir: file.routeDir,
-    };
-
-    const route: AppRoute = {
-      file,
+    const route: AppRoute = existingRoute ?? {
       ...resolveRouteFromFilePath(
-        file.routePath,
-        file.type,
-        file.routeDir,
+        file.dir.route,
         this._matchers,
+        file.type !== 'http',
       ),
+      dir: file.dir,
     };
 
-    group[file.type] = route;
+    route[file.type] = file;
 
-    sortedInsert(this._routes, route, compareRoutes);
-
-    if (!existingGroup) {
-      delete group['pathname'];
-      sortedInsert(this._groups, group, (a, b) => b.score - a.score);
+    if (!existingRoute) {
+      sortedInsert(this._routes, route, (a, b) => b.score - a.score);
     }
   }
 
-  remove(route: RouteFile | AppRoute) {
-    const file = 'file' in route ? route.file : route;
-    const group = this.findGroup(file);
-
-    if (group) {
-      delete group[file.type];
-      if (!getRouteTypes().some((type) => group[type])) {
-        this._groups = this._groups.filter((g) => group !== g);
+  remove(file: RouteFile) {
+    const route = this.find(file);
+    if (route) {
+      delete route[file.type];
+      if (!getRouteFileTypes().some((type) => route[type])) {
+        this._routes = this._routes.filter((g) => route !== g);
       }
     }
-
-    const index = this._routes.findIndex(
-      (r) => r.file.moduleId === file.moduleId,
-    );
-
-    if (index > -1) this._routes.splice(index, 1);
-    return index;
   }
 
-  test(type: Route['type'], pathname: string) {
+  test(pathname: string, type?: RouteFileType) {
     for (let i = 0; i < this._routes.length; i++) {
       const route = this._routes[i];
-      if (route.type === type && route.pattern.test({ pathname })) {
+      if ((!type || route[type]) && route.pattern.test({ pathname })) {
         return true;
       }
     }
@@ -103,27 +79,25 @@ export class AppRoutes implements Iterable<AppRoute> {
     return false;
   }
 
-  find(route: RouteFile | AppRoute) {
-    const file = 'file' in route ? route.file : route;
-    return this._groups.find(
-      (group) => group.routeDir === file.routeDir && group[file.type],
+  find(file: RouteFile) {
+    return this._routes.find(
+      (route) => route.dir.route === file.dir.route && route[file.type],
     );
   }
 
-  findGroup(route: RouteFile | AppRoute) {
-    const file = 'file' in route ? route.file : route;
-    return this._groups.find((group) => group.routeDir === file.routeDir);
+  getBranch(route: RouteFile | AppRoute) {
+    const routeDir = route.dir.route;
+    return this._routes.filter((group) => routeDir.startsWith(group.dir.route));
   }
 
-  getGroupBranch(route: RouteFile | AppRoute) {
-    const file = 'file' in route ? route.file : route;
-    return this._groups.filter((group) =>
-      file.routeDir.startsWith(group.routeDir),
-    );
+  getLayoutBranch(route: RouteFile | AppRoute) {
+    return this.getBranch(route)
+      .filter((route) => route.layout)
+      .map((route) => route.layout!);
   }
 
-  filterByType(type: Route['type']) {
-    return this._routes.filter((route) => route.type === type);
+  filterByType(type: RouteFileType) {
+    return this._routes.filter((route) => route[type]);
   }
 
   toArray() {

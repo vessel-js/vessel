@@ -5,16 +5,8 @@
  */
 
 import {
-  resolveStaticDataAssetId,
-  STATIC_DATA_ASSET_BASE_PATH,
-} from 'shared/data';
-import {
-  filterRoutesByType,
   findRoute,
-  isErrorRoute,
-  isPageRoute,
-  LoadedServerData,
-  LoadedStaticData,
+  matchAllRoutes,
   matchRoute,
   normalizeURL,
 } from 'shared/routing';
@@ -28,6 +20,7 @@ import {
   type RoutesComparatorFactory,
 } from './comparators';
 import { listen } from './listen';
+import { loadRoutes } from './load-route';
 import type { Reactive } from './reactivity';
 import {
   createSimpleScrollDelegate,
@@ -37,10 +30,10 @@ import {
 import type {
   AfterNavigateHook,
   BeforeNavigateHook,
-  ClientRoute,
+  ClientLoadableRoute,
+  ClientLoadedRoute,
+  ClientMatchedRoute,
   ClientRouteDeclaration,
-  LoadedClientRoute,
-  MatchedClientRoute,
   Navigation,
   NavigationOptions,
   NavigationRedirector,
@@ -50,35 +43,33 @@ import type {
 export type RouterOptions = {
   baseUrl: string;
   trailingSlash?: boolean;
-  tick: () => void | Promise<void>;
-  $route: Reactive<LoadedClientRoute>;
-  $navigation: Reactive<Navigation>;
+  frameworkDelegate: RouterFrameworkDelegate;
 };
 
-let idCount = 0;
+export type RouterFrameworkDelegate = {
+  tick: () => void | Promise<void>;
+  route: Reactive<ClientLoadedRoute>;
+  matches: Reactive<ClientLoadedRoute[]>;
+  navigation: Reactive<Navigation>;
+};
+
 let navigationToken = {};
-const loading = new Map<string, Promise<LoadedClientRoute>>();
 
 export class Router {
   protected _url: URL;
   protected _listening = false;
-  protected _scrollDelegate: ScrollDelegate;
+  protected _scroll: ScrollDelegate;
   protected _comparator: RoutesComparator;
-  protected _routes: ClientRoute[] = [];
-  protected _route: LoadedClientRoute | null = null;
+  protected _fw: RouterFrameworkDelegate;
+  protected _routes: ClientLoadableRoute[] = [];
   protected _redirectsMap = new Map<string, string>();
-
-  protected _tick: RouterOptions['tick'];
-  protected _$route: RouterOptions['$route'];
-  protected _$navigation: RouterOptions['$navigation'];
-
   protected _beforeNavigate: BeforeNavigateHook[] = [];
   protected _afterNavigate: AfterNavigateHook[] = [];
 
   /** Key used to save navigation state in history state object. */
-  _historyKey = 'vbk::index';
+  historyKey = 'vbk::index';
   /** Keeps track of the history index in order to prevent popstate navigation events. */
-  _historyIndex!: number;
+  historyIndex!: number;
 
   /**
    * The current URL.
@@ -107,12 +98,6 @@ export class Router {
    */
   readonly trailingSlash: boolean;
   /**
-   * Reactive route navigation.
-   */
-  get navigation(): Omit<RouterOptions['$navigation'], 'set'> {
-    return this._$navigation;
-  }
-  /**
    * Whether the router has loaded the first route and started listening for link clicks to handle
    * SPA navigation.
    */
@@ -123,50 +108,40 @@ export class Router {
    * The currently loaded route.
    */
   get currentRoute() {
-    return this._route;
+    return this._fw.route.get();
   }
   /**
    * Delegate used to handle scroll-related tasks. The default delegate simply saves scroll
    * positions for pages during certain navigation events.
    */
   get scrollDelegate() {
-    return this._scrollDelegate;
-  }
-  /**
-   * Filters and returns registered routes with a route type of `page`.
-   */
-  get pageRoutes() {
-    return filterRoutesByType(this._routes, 'page');
+    return this._scroll;
   }
 
   constructor(options: RouterOptions) {
+    this._url = new URL(location.href);
     this.baseUrl = options.baseUrl;
     this.trailingSlash = !!options.trailingSlash;
     this._comparator = createSimpleComparator();
-    this._scrollDelegate = createSimpleScrollDelegate(this);
-
-    this._tick = options.tick;
-    this._$route = options.$route;
-    this._$navigation = options.$navigation;
-
-    this._url = new URL(location.href);
+    this._scroll = createSimpleScrollDelegate(this);
+    this._fw = options.frameworkDelegate;
 
     // make it possible to reset focus
     document.body.setAttribute('tabindex', '-1');
 
     // Keeping track of the this._history index in order to prevent popstate navigation events if needed.
-    this._historyIndex = history.state?.[this._historyKey];
+    this.historyIndex = history.state?.[this.historyKey];
 
-    if (!this._historyIndex) {
+    if (!this.historyIndex) {
       // We use Date.now() as an offset so that cross-document navigations within the app don't
       // result in data loss.
-      this._historyIndex = Date.now();
+      this.historyIndex = Date.now();
 
       // create initial this._history entry, so we can return here
       history.replaceState(
         {
           ...history.state,
-          [this._historyKey]: this._historyIndex,
+          [this.historyKey]: this.historyIndex,
         },
         '',
         location.href,
@@ -206,26 +181,33 @@ export class Router {
    */
   test(pathnameOrURL: string | URL): boolean {
     const url = this.createURL(pathnameOrURL);
-    return !!findRoute(url, this.pageRoutes);
+    return !!findRoute(url, this._routes);
   }
 
   /**
-   * Attempts to match a route to the given a pathname or URL and return a `MatchedRoute` object.
+   * Attempts to find a matching route for the given a pathname or URL.
    */
-  match(pathnameOrURL: string | URL): MatchedClientRoute | null {
+  match(pathnameOrURL: string | URL): ClientMatchedRoute | null {
     const url = this.createURL(pathnameOrURL);
     return this.owns(url) ? matchRoute(url, this._routes) : null;
   }
 
   /**
+   * Attempts to find all matching routes for the given pathname or URL.
+   */
+  matchAll(pathnameOrURL: string | URL): ClientMatchedRoute[] {
+    const url = this.createURL(pathnameOrURL);
+    return this.owns(url) ? matchAllRoutes(url, this._routes) : [];
+  }
+
+  /**
    * Registers a new route given a declaration.
    */
-  add(declaration: ClientRouteDeclaration): ClientRoute {
+  add(declaration: ClientRouteDeclaration): ClientLoadableRoute {
     const exists = declaration.id && this.findById(declaration.id);
     if (exists) return exists;
 
-    const route: ClientRoute = {
-      id: declaration.id ?? `${idCount++}`,
+    const route: ClientLoadableRoute = {
       ...declaration,
       pattern: new URLPattern({ pathname: declaration.pathname }),
       score: declaration.score ?? this._comparator.score(declaration),
@@ -240,7 +222,7 @@ export class Router {
   /**
    * Quickly adds a batch of predefined routes.
    */
-  addAll(routes: ClientRoute[]) {
+  addAll(routes: ClientLoadableRoute[]) {
     this._routes.push(...routes);
     this._routes = this._comparator.sort(this._routes);
   }
@@ -284,15 +266,15 @@ export class Router {
       const hash = path;
       this.hashChanged(hash);
       this._changeHistoryState(this._url, state, replace);
-      await this._scrollDelegate.scroll?.({ target: scroll, hash });
-      this._scrollDelegate.savePosition?.();
+      await this._scroll.scroll?.({ target: scroll, hash });
+      this._scroll.savePosition?.();
       return;
     }
 
     const url = this.createURL(path);
 
     if (!this.disabled) {
-      return this._navigate(url, {
+      return this.navigate(url, {
         scroll,
         keepfocus,
         replace,
@@ -331,9 +313,9 @@ export class Router {
     const redirecting = this._redirectCheck(url, (to) => this.prefetch(to));
     if (redirecting) return redirecting;
 
-    const match = this.match(url);
+    const matches = this.matchAll(url);
 
-    if (!match || match.type !== 'page') {
+    if (matches.length === 0) {
       if (import.meta.env.DEV) {
         console.warn(
           `[vessel] attempted to prefetch a URL that does not belong to this app: \`${url.href}\``,
@@ -342,7 +324,7 @@ export class Router {
       return;
     }
 
-    await this._loadRoute(url, match);
+    await loadRoutes(url, matches);
   }
 
   /**
@@ -394,9 +376,7 @@ export class Router {
   setScrollDelegate<T extends ScrollDelegate>(
     manager: T | ScrollDelegateFactory<T>,
   ): T {
-    return (this._scrollDelegate = isFunction(manager)
-      ? manager?.(this)
-      : manager);
+    return (this._scroll = isFunction(manager) ? manager?.(this) : manager);
   }
 
   /**
@@ -411,16 +391,17 @@ export class Router {
    */
   hashChanged(hash: string) {
     this._url.hash = hash;
-    if (this._route) {
-      this._$route?.set({
-        ...this._route!,
+    const route = this.currentRoute;
+    if (route) {
+      this._fw.route.set({
+        ...route,
         url: this._url,
       });
     }
   }
 
   /** @internal */
-  async _navigate(
+  async navigate(
     url: URL,
     {
       scroll,
@@ -436,8 +417,13 @@ export class Router {
 
     let cancelled = false;
     const cancel = () => {
-      this._$navigation.set(null);
-      if (!cancelled) blocked?.();
+      this._fw.navigation.set(null);
+      if (!cancelled) {
+        if (import.meta.env.DEV) {
+          console.log(`[vessel] cancelled navigation to \`${url.pathname}\``);
+        }
+        blocked?.();
+      }
       cancelled = true;
     };
 
@@ -451,7 +437,7 @@ export class Router {
       }
 
       redirects.push(to.pathname);
-      return this._navigate(to, {
+      return this.navigate(to, {
         keepfocus,
         replace,
         state,
@@ -474,19 +460,16 @@ export class Router {
       return;
     }
 
-    // Abort if user navigated during micotick.
+    // Abort if user navigated again during micotick.
     await Promise.resolve();
     if (token !== navigationToken) return;
 
     const match = this.match(url);
-    const isPageMatch = match && isPageRoute(match);
 
-    if (!isPageMatch) {
+    if (!match?.page) {
       cancel();
 
-      if (match && isErrorRoute(match)) {
-        // load it and pass in 404 http error??
-      }
+      // TODO: find closest error boundary (404) -> if none fallback to server
 
       // Happens in SPA fallback mode - don't go back to the server to prevent infinite reload.
       if (
@@ -505,52 +488,48 @@ export class Router {
       redirecting = handleRedirect(redirectURL);
     });
 
+    const from = this.currentRoute;
+
     for (const hook of this._beforeNavigate) {
-      await hook({ from: this._route, to: match, cancel, redirect });
+      await hook({ from, to: match, cancel, redirect });
     }
 
     if (cancelled) return;
     if (redirecting) return redirecting;
 
     this.scrollDelegate.savePosition?.();
-    this._$navigation.set({ from: url, to: url });
+    this._fw.navigation.set({ from: from?.url, to: url });
     accepted?.();
 
-    const from = this._route;
+    if (import.meta.env.DEV && from) {
+      console.log(
+        `[vessel] navigating from \`${from.url.pathname}\` to \`${url.pathname}\``,
+      );
+    }
+
+    const matches = this.matchAll(url);
+    const loadResults = await loadRoutes(url, matches);
 
     // TODO: this can return a possible redirect (prob need LoadRouteResult)
     // TODO: this can return a bad result 400? - should it return error?
-    const to = await this._loadRoute(url, match);
+    // process results -> look for static redirects first, then server redirects
+    // look for any unexpected errors (not HTTP) for both static/server
+    // if any error -> handle from specific route
+    // group everything
 
-    this._route = to;
-    this._$route?.set(to);
+    // TODO: FIX TYPES
+    const to = null as any;
+    const loadedMatches = null as any;
+
+    this._fw.matches.set(loadedMatches);
+    this._fw.route.set(to);
 
     // Wait a tick so page is rendered before updating history.
-    await this._tick();
+    await this._fw.tick();
 
     this._changeHistoryState(to.url, state, replace);
+    if (!keepfocus) resetFocus();
 
-    if (!keepfocus) {
-      // Reset page selection and focus.
-      // We try to mimic browsers' behaviur as closely as possible by targeting the
-      // first scrollable region, but unfortunately it's not a perfect match — e.g.
-      // shift-tabbing won't immediately cycle up from the end of the page on Chromium
-      // See https://html.spec.whatwg.org/multipage/interaction.html#get-the-focusable-area
-      const root = document.body;
-      const tabindex = root.getAttribute('tabindex');
-      getSelection()?.removeAllRanges();
-      root.tabIndex = -1;
-      root.focus({ preventScroll: true });
-      // restore `tabindex` as to prevent `root` from stealing input from elements
-      if (tabindex !== null) {
-        root.setAttribute('tabindex', tabindex);
-      } else {
-        root.removeAttribute('tabindex');
-      }
-    }
-
-    // Need to render the DOM before we can scroll to the rendered elements.
-    await this._tick();
     await this.scrollDelegate.scroll?.({
       from,
       to,
@@ -559,61 +538,11 @@ export class Router {
     });
 
     this._url = url;
-    this._$navigation.set(null);
+    this._fw.navigation.set(null);
 
     for (const hook of this._afterNavigate) {
       await hook({ from, to });
     }
-  }
-
-  protected async _loadRoute(
-    url: URL,
-    route: MatchedClientRoute,
-  ): Promise<LoadedClientRoute> {
-    const id = route.id + route.branch.length;
-    if (loading.has(id)) return loading.get(id)!;
-
-    let resolve!: (route: LoadedClientRoute) => void;
-    const promise = new Promise<LoadedClientRoute>((res) => (resolve = res));
-    loading.set(id, promise);
-
-    const loadedRoutes = await Promise.all(
-      [...route.branch, route].map(async (route) => {
-        const [mod, staticData, serverData] = await Promise.all([
-          route.loader(),
-          loadStaticData(url, route),
-          loadServerData(url, route),
-        ]);
-        return {
-          ...route,
-          staticData,
-          serverData,
-          module: mod,
-        };
-      }),
-    );
-
-    // we need to load static data (redirect?) + server data () + modules all at the same time.
-
-    // [LoadStaticDataResult, LoadServerDataResult, LoadedClientRoute]
-
-    // readonly staticData?: JSONData;
-    // readonly serverData?: JSONData;
-    // readonly error?: Error | ClientHttpError | null;
-
-    // process results -> look for static redirects first, then server redirects
-    // look for any unexpected errors (not HTTP) for both static/server
-    // if any error -> handle from specific route
-    // group everything
-
-    const result: LoadedClientRoute = {
-      ...loadedRoutes.pop()!,
-      branch: loadedRoutes,
-    };
-
-    resolve(result);
-    loading.delete(id);
-    return result;
   }
 
   protected _createRedirector(
@@ -644,7 +573,7 @@ export class Router {
 
   protected _changeHistoryState = (url: URL, state: any, replace: boolean) => {
     const change = replace ? 0 : 1;
-    state[this._historyKey] = this._historyIndex += change;
+    state[this.historyKey] = this.historyIndex += change;
     history[replace ? 'replaceState' : 'pushState'](state, '', url);
   };
 }
@@ -655,89 +584,22 @@ function getBaseUri(baseUrl = '/') {
   }`;
 }
 
-type LoadStaticDataResult = {
-  data?: LoadedStaticData;
-  redirect?: string;
-};
-
-let initStaticData = true;
-async function loadStaticData(
-  url: URL,
-  route: MatchedClientRoute,
-): Promise<void | LoadStaticDataResult> {
-  if (!isString(route.id)) return;
-
-  let pathname = url.pathname;
-  if (!pathname.endsWith('/')) pathname += '/';
-
-  const id = resolveStaticDataAssetId(route.id, pathname),
-    dataAssetId = import.meta.env.PROD
-      ? window['__VSL_STATIC_DATA_HASH_MAP__'][await hashStaticDataAssetId(id)]
-      : id;
-
-  if (!dataAssetId) return;
-
-  if (initStaticData) {
-    initStaticData = false;
-    return { data: getStaticDataFromScript(dataAssetId) };
+// Taken from SvelteKit
+function resetFocus() {
+  // Reset page selection and focus.
+  // We try to mimic browsers' behaviur as closely as possible by targeting the
+  // first scrollable region, but unfortunately it's not a perfect match — e.g.
+  // shift-tabbing won't immediately cycle up from the end of the page on Chromium
+  // See https://html.spec.whatwg.org/multipage/interaction.html#get-the-focusable-area
+  const root = document.body;
+  const tabindex = root.getAttribute('tabindex');
+  getSelection()?.removeAllRanges();
+  root.tabIndex = -1;
+  root.focus({ preventScroll: true });
+  // restore `tabindex` as to prevent `root` from stealing input from elements
+  if (tabindex !== null) {
+    root.setAttribute('tabindex', tabindex);
+  } else {
+    root.removeAttribute('tabindex');
   }
-
-  try {
-    if (import.meta.env.DEV) {
-      const queryParams = `?id=${encodeURIComponent(
-        route.id,
-      )}&pathname=${encodeURIComponent(pathname)}`;
-
-      const response = await fetch(
-        `${STATIC_DATA_ASSET_BASE_PATH}/${route.id}.json${queryParams}`,
-      );
-
-      const redirect = response.headers.get('X-Vessel-Redirect');
-      if (redirect) return { redirect };
-
-      return { data: await response.json() };
-    } else {
-      const response = await fetch(
-        `${STATIC_DATA_ASSET_BASE_PATH}/${dataAssetId}.json`,
-      );
-
-      return { data: await response.json() };
-    }
-  } catch (e) {
-    // TODO: handle this with error boundaries?
-    if (import.meta.env.DEV) console.error(e);
-  }
-}
-
-export type LoadServerDataResult = {
-  redirect?: string;
-  data?: LoadedServerData;
-  error?: LoadedClientRoute['loadError'];
-};
-
-async function loadServerData(
-  url: URL,
-  route: MatchedClientRoute,
-): Promise<void | LoadServerDataResult> {
-  if (import.meta.env.PROD && !route.canFetch) return;
-
-  // fetchable? + error? + redirect?
-  // qparam => ?__data
-
-  return {};
-}
-
-function getStaticDataFromScript(id: string) {
-  return window['__VSL_STATIC_DATA__']?.[id] ?? {};
-}
-
-// Used in production to hash data id.
-async function hashStaticDataAssetId(id: string) {
-  const encodedText = new TextEncoder().encode(id);
-  const hashBuffer = await crypto.subtle.digest('SHA-1', encodedText);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('')
-    .substring(0, 8);
 }

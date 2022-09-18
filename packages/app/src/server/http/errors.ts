@@ -1,4 +1,5 @@
 import { HttpError, isHttpError } from 'shared/routing';
+import { coalesceToError } from 'shared/utils/error';
 
 import { json } from './response';
 
@@ -12,38 +13,64 @@ export function invariant<T>(
 /**
  * Throws HTTP bad request (status code 400) if the value is `false`, `null`, or `undefined`.
  */
-export function invariant(value: unknown, message = 'invalid falsy value') {
+export function invariant(
+  value: unknown,
+  message = 'invalid falsy value',
+  data?: Record<string, unknown>,
+) {
   if (value === false || value === null || typeof value === 'undefined') {
-    throw new httpError(message, 400);
+    throw error(message, 400, data);
   }
 }
 
 /**
  * Throws HTTP validation error (status code 422) if the condition is false.
  */
-export function validate(condition: boolean, message = 'validation failed') {
-  if (!condition) throw new httpError(message, 422);
+export function validate(
+  condition: boolean,
+  message = 'validation failed',
+  data?: Record<string, unknown>,
+) {
+  if (!condition) throw error(message, 422, data);
 }
 
 /**
- * Throws a `HTTPError` to easily escape handling the request and respond with the given status
- * code and optional message.
+ * Functional helper to create a `HttpError` class.
  */
-export function httpError(
-  message: string,
-  init?: number | ResponseInit,
-  data?: Record<string, unknown>,
-) {
-  throw new HttpError(message, init, data);
+export function error(...params: ConstructorParameters<typeof HttpError>) {
+  return new HttpError(...params);
 }
 
-export function handleHttpError(error: unknown) {
+export function handleHttpError(error: unknown, dev = false) {
+  let response!: Response;
+
   if (isHttpError(error)) {
-    return json(
-      { error: { message: error.message, data: error.data } },
+    response = json(
+      {
+        error: {
+          message: error.message,
+          data: error.data,
+        },
+      },
       error.init,
     );
   } else {
-    return json({ error: { message: 'internal server error' } }, 500);
+    if (!dev) {
+      response = json({ error: { message: 'internal server error' } }, 500);
+    } else {
+      const err = coalesceToError(error);
+      response = json(
+        {
+          error: {
+            message: err.message ?? 'internal server error',
+            stack: err.stack,
+          },
+        },
+        500,
+      );
+    }
   }
+
+  response.headers.set('X-Vessel-Error', 'yes');
+  return response;
 }

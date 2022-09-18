@@ -4,9 +4,9 @@ import { handleHTTPRequest } from 'node/http';
 import { setResponse } from 'node/http/http-bridge';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import {
-  createEndpointHandler,
+  createHttpHandler,
+  error,
   handleHttpError,
-  httpError,
   type HttpRequestModule,
 } from 'server/http';
 import { findRoute } from 'shared/routing';
@@ -14,24 +14,36 @@ import { coalesceToError } from 'shared/utils/error';
 
 import { handleDevServerError, logDevError } from './dev-server';
 
-export async function handleEndpointRequest(
-  base: string,
-  url: URL,
-  app: App,
-  req: IncomingMessage,
-  res: ServerResponse,
-  loader: (endpoint: RouteFile) => Promise<HttpRequestModule>,
-) {
+type HandleHttpRequestInit = {
+  app: App;
+  base: string;
+  url: URL;
+  req: IncomingMessage;
+  res: ServerResponse;
+  loader: (file: RouteFile) => Promise<HttpRequestModule>;
+  dev?: boolean;
+};
+
+export async function handleHttpRequest({
+  app,
+  base,
+  url,
+  req,
+  res,
+  loader,
+  dev,
+}: HandleHttpRequestInit) {
   const route = findRoute(url, app.routes.filterByType('http'));
 
   if (!route) {
-    await setResponse(res, handleHttpError(httpError('not found', 400)));
+    await setResponse(res, handleHttpError(error('not found', 400)));
     return;
   }
 
-  const handler = createEndpointHandler({
+  const handler = createHttpHandler({
+    dev,
     pattern: route.pattern,
-    loader: () => loader(route.file),
+    loader: () => loader(route.http!),
     getClientAddress: () => req.socket.remoteAddress,
     onError: (error) => {
       logDevError(app, req, coalesceToError(error));

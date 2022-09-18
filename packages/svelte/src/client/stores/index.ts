@@ -1,5 +1,5 @@
 import type {
-  LoadedClientRoute,
+  ClientLoadedRoute,
   MarkdownFrontmatter,
   MarkdownMeta,
   Navigation,
@@ -10,6 +10,7 @@ import {
   getFrontmatterStore,
   getMarkdownStore,
   getNavigationStore,
+  getRouteMatchesStore,
   getRouteStore,
 } from '../context';
 
@@ -19,10 +20,16 @@ export const navigation: NavigationStore = {
   subscribe: (fn) => getNavigationStore().subscribe(fn),
 };
 
-export type RouteStore = Readable<LoadedClientRoute>;
+export type RouteStore = Readable<ClientLoadedRoute>;
 
 export const route: RouteStore = {
   subscribe: (fn) => getRouteStore().subscribe(fn),
+};
+
+export type RouteMatchesStore = Readable<ClientLoadedRoute[]>;
+
+export const matches: RouteMatchesStore = {
+  subscribe: (fn) => getRouteMatchesStore().subscribe(fn),
 };
 
 export type MarkdownStore = Readable<MarkdownMeta | undefined>;

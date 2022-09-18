@@ -87,7 +87,7 @@ export function listen(router: Router) {
       return;
     }
 
-    router._navigate(url, {
+    router.navigate(url, {
       scroll: !a.hasAttribute('data-noscroll') ? () => scrollPosition() : null,
       replace: url.href === location.href,
       keepfocus: false,
@@ -108,16 +108,16 @@ export function listen(router: Router) {
 
     // If a popstate-driven navigation is cancelled, we need to counteract it with `history.go`,
     // which means we end up back here.
-    if (event.state[router._historyKey] === router._historyIndex) return;
+    if (event.state[router.historyKey] === router.historyIndex) return;
 
-    router._navigate(new URL(location.href), {
+    router.navigate(new URL(location.href), {
       scroll: () => router.scrollDelegate.getSavedPosition?.(event.state),
       keepfocus: false,
       accepted: () => {
-        router._historyIndex = event.state[router._historyKey];
+        router.historyIndex = event.state[router.historyKey];
       },
       blocked: () => {
-        const delta = router._historyIndex - event.state[router._historyKey];
+        const delta = router.historyIndex - event.state[router.historyKey];
         history.go(delta);
       },
     });
@@ -131,7 +131,7 @@ export function listen(router: Router) {
       history.replaceState(
         {
           ...history.state,
-          [router._historyKey]: ++router._historyIndex,
+          [router.historyKey]: ++router.historyIndex,
         },
         '',
         location.href,

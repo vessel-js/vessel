@@ -14,10 +14,10 @@ export function logBadLinks(badLinks: BuildData['badLinks']) {
     '',
   ];
 
-  for (const [pathname, { page, reason }] of badLinks) {
+  for (const [pathname, { route, reason }] of badLinks) {
     logs.push(`- ${kleur.bold(pathname)}`);
     logs.push(`  - Reason: ${reason}`);
-    if (page) logs.push(`  - Location: ${page.file.rootPath}`);
+    if (route?.page) logs.push(`  - Location: ${route.page.path.root}`);
   }
 
   console.log(logs.join('\n'));
@@ -46,14 +46,14 @@ export function logRoutesList({ level, ...build }: RoutesLoggerInput) {
   if (level === 'info' && build.serverPages.size > 0) {
     logs.push('', `⚙️  ${kleur.bold(kleur.underline('SERVER PAGES'))}`, '');
     for (const route of Array.from(build.serverPages).reverse()) {
-      logs.push(`- ${kleur.cyan(route.file.routeDir)}`);
+      logs.push(`- ${kleur.cyan(route.dir.route)}`);
     }
   }
 
-  if (level === 'info' && build.serverEndpoints.size > 0) {
+  if (level === 'info' && build.serverHttpEndpoints.size > 0) {
     logs.push('', `⚙️  ${kleur.bold(kleur.underline('SERVER ENDPOINTS'))}`, '');
-    for (const route of Array.from(build.serverEndpoints).reverse()) {
-      logs.push(`- ${kleur.cyan(route.file.routeDir)}`);
+    for (const route of Array.from(build.serverHttpEndpoints).reverse()) {
+      logs.push(`- ${kleur.cyan(route.dir.route)}`);
     }
   }
 
@@ -109,13 +109,13 @@ export function logRoutesTree({ level, ...build }: RoutesLoggerInput) {
   const redirectLinks = new Set(build.staticRedirects.keys());
 
   const serverPages = new Map<string, AppRoute>();
-  for (const page of build.serverPages) {
-    serverPages.set(page.file.pathname, page);
+  for (const route of build.serverPages) {
+    serverPages.set(route.page!.path.pathname, route);
   }
 
-  const serverEndpoints = new Map<string, AppRoute>();
-  for (const endpoint of build.serverEndpoints) {
-    serverEndpoints.set(endpoint.file.pathname, endpoint);
+  const serverHttp = new Map<string, AppRoute>();
+  for (const route of build.serverHttpEndpoints) {
+    serverHttp.set(route.http!.path.pathname, route);
   }
 
   const filteredLinks = errorOnly
@@ -127,7 +127,7 @@ export function logRoutesTree({ level, ...build }: RoutesLoggerInput) {
         ...redirectLinks,
         ...build.links.keys(),
         ...serverPages.keys(),
-        ...serverEndpoints.keys(),
+        ...serverHttp.keys(),
       ]);
 
   for (const link of filteredLinks) {
@@ -158,7 +158,7 @@ export function logRoutesTree({ level, ...build }: RoutesLoggerInput) {
       if (build.links.has(link)) {
         current.icon = '📄';
         current.static = true;
-      } else if (serverEndpoints.has(link)) {
+      } else if (serverHttp.has(link)) {
         current.info = kleur.magenta('+http');
       }
     }

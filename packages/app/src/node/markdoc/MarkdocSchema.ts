@@ -61,7 +61,7 @@ export class MarkdocSchema {
     return this._files
       .getOwnedNodes(ownerFilePath, '*')
       .map((node) => {
-        const rootPath = this._app.dirs.root.relative(node.path);
+        const rootPath = this._app.dirs.root.relative(node.path.absolute);
         return `import ${node.cname} from "/${rootPath}";`;
       })
       .filter(Boolean);
@@ -82,7 +82,7 @@ export class MarkdocSchema {
         },
       };
 
-      this._markFileForHMR(node.path, ownerFilePath);
+      this._markFileForHMR(node.path.absolute, ownerFilePath);
     }
 
     return nodes;
@@ -104,7 +104,7 @@ export class MarkdocSchema {
         },
       };
 
-      this._markFileForHMR(tag.path, ownerFilePath);
+      this._markFileForHMR(tag.path.absolute, ownerFilePath);
     }
 
     return tags;

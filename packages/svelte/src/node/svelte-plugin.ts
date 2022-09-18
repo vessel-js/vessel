@@ -1,17 +1,17 @@
+import {
+  normalizePath,
+  type VesselPlugins,
+  VM_PREFIX,
+} from '@vessel-js/app/node';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
-import {
-  normalizePath,
-  type VesselPluginOptions,
-  VM_PREFIX,
-} from '@vessel-js/app/node';
 
 import { renderMarkdoc, svelteMarkdocTags, transformTreeNode } from './markdoc';
 
 const VIRTUAL_APP_ID = `${VM_PREFIX}/svelte/app` as const;
 
-export function sveltePlugin(): VesselPluginOptions {
+export function sveltePlugin(): VesselPlugins {
   let appDir: string;
 
   function resolveAppId() {

@@ -1,7 +1,7 @@
 import { isString, isUndefined } from 'shared/utils/unit';
 
-import type { LoadedClientRoute } from '../router';
 import type { Router } from './Router';
+import type { ClientLoadedRoute } from './types';
 
 const SCROLL_KEY = 'vessel:scroll';
 
@@ -20,7 +20,7 @@ export const createSimpleScrollDelegate: ScrollDelegateFactory = (router) => {
     }
 
     // Recover scroll position if we reload the page, or Cmd-Shift-T back to it.
-    const scroll = scrollPositions[router._historyIndex];
+    const scroll = scrollPositions[router.historyIndex];
     if (scroll) {
       history.scrollRestoration = 'manual';
       window.scrollTo(scroll.left, scroll.top);
@@ -30,7 +30,7 @@ export const createSimpleScrollDelegate: ScrollDelegateFactory = (router) => {
   return {
     savePosition() {
       if (import.meta.env.SSR) return;
-      scrollPositions[router._historyIndex] = scrollPosition();
+      scrollPositions[router.historyIndex] = scrollPosition();
     },
     getSavedPosition(state) {
       return scrollPositions[state[SCROLL_KEY]];
@@ -67,7 +67,7 @@ export const createComplexScrollDelegate: ScrollDelegateFactory<
     }
 
     // Recover scroll position if we reload the page, or Cmd-Shift-T back to it.
-    const scroll = scrollPositions[router._historyIndex];
+    const scroll = scrollPositions[router.historyIndex];
     if (scroll) {
       history.scrollRestoration = 'manual';
       window.scrollTo(scroll.left, scroll.top);
@@ -90,7 +90,7 @@ export const createComplexScrollDelegate: ScrollDelegateFactory<
         from,
         to,
         cancel,
-        savedPosition: scrollPositions[router._historyIndex],
+        savedPosition: scrollPositions[router.historyIndex],
       });
     }
 
@@ -149,7 +149,7 @@ export const createComplexScrollDelegate: ScrollDelegateFactory<
     },
     savePosition() {
       if (import.meta.env.SSR) return;
-      scrollPositions[router._historyIndex] = scrollPosition();
+      scrollPositions[router.historyIndex] = scrollPosition();
     },
     getSavedPosition(state) {
       return scrollPositions[state[SCROLL_KEY]];
@@ -208,14 +208,14 @@ export type ScrollBase = ScrollToOptions;
 
 export type ScrollOptions = {
   hash?: string;
-  from?: LoadedClientRoute | null;
-  to?: LoadedClientRoute;
+  from?: ClientLoadedRoute | null;
+  to?: ClientLoadedRoute;
   target?: ScrollToTarget | null;
 };
 
 export type ScrollBehaviorHook = (info: {
-  from: LoadedClientRoute | null;
-  to: LoadedClientRoute;
+  from: ClientLoadedRoute | null;
+  to: ClientLoadedRoute;
   cancel: ScrollCancel;
   savedPosition?: { top?: number; left?: number };
 }) => ScrollTarget | Promise<ScrollTarget>;

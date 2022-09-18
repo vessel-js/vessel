@@ -1,6 +1,6 @@
 import type { ServerRenderer } from '@vessel-js/app/server';
 
-export const render: ServerRenderer = async (url) => {
+export const render: ServerRenderer = async ({ routes }) => {
   // const serverContext: ServerEntryContext = {};
 
   // const { router, context } = await initClient();

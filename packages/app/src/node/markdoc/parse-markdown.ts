@@ -144,17 +144,22 @@ function mergeLayoutMeta(
   opts: Partial<ParseMarkdownConfig> = {},
 ) {
   const layoutFiles = app.files.routes
-    .getGroupBranch(leafFile.path)
+    .getDirBranch(leafFile.path.absolute)
     .map((group) => group.layout);
 
   for (const layoutFile of layoutFiles) {
     if (layoutFile) {
-      if (!opts.filter?.(layoutFile.path) || layoutFile.ext !== '.md') continue;
+      if (
+        !opts.filter?.(layoutFile.path.absolute) ||
+        layoutFile.ext !== '.md'
+      ) {
+        continue;
+      }
 
       const { ast: layoutAst, meta: layoutMeta } = parseMarkdown(
         app,
-        layoutFile.path,
-        fs.readFileSync(layoutFile.path, { encoding: 'utf-8' }),
+        layoutFile.path.absolute,
+        fs.readFileSync(layoutFile.path.absolute, { encoding: 'utf-8' }),
         opts,
       );
 

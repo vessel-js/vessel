@@ -8,7 +8,7 @@ export function createRequestEvent<T extends RequestParams>(
     get clientAddress() {
       const address = init.getClientAddress();
       if (typeof address !== 'string') {
-        throw new Error('Could not determine `clientAddress`');
+        throw new Error('[vessel] could not determine `clientAddress`');
       }
       return address;
     },

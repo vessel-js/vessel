@@ -1,32 +1,33 @@
+import { MarkdownMeta } from 'shared/markdown';
 import { installURLPattern } from 'shared/polyfills';
+import {
+  getRouteComponentTypes,
+  type LoadableRouteComponent,
+  type RouteComponentType,
+} from 'shared/routing';
 
 import app from ':virtual/vessel/app';
 import manifest from ':virtual/vessel/manifest';
 
-import { type Reactive, Router } from './router';
-import type {
-  ClientManifest,
-  ClientRoute,
-  LoadedClientRoute,
-  Navigation,
-} from './router/types';
+import {
+  type ClientLoadableRoute,
+  Router,
+  type RouterFrameworkDelegate,
+} from './router';
+import type { ClientManifest } from './router/types';
 import { isMarkdownModule } from './utils';
 
 export type ClientInitOptions = {
-  tick: () => void | Promise<void>;
-  $route: Reactive<LoadedClientRoute>;
-  $navigation: Reactive<Navigation>;
+  frameworkDelegate: RouterFrameworkDelegate;
 };
 
-export async function init({ tick, $route, $navigation }: ClientInitOptions) {
+export async function init({ frameworkDelegate }: ClientInitOptions) {
   await installURLPattern();
 
   const router = new Router({
     baseUrl: app.baseUrl,
     trailingSlash: window['__VSL_TRAILING_SLASH__'],
-    tick,
-    $route,
-    $navigation,
+    frameworkDelegate,
   });
 
   if (import.meta.env.PROD) {
@@ -40,26 +41,41 @@ export async function init({ tick, $route, $navigation }: ClientInitOptions) {
   readManifest(router, manifest);
 
   if (import.meta.hot) {
-    import.meta.hot.on('vessel::md_meta', ({ filePath, meta }) => {
-      const route = $route.get();
-      if (isMarkdownModule(route.module) && filePath.endsWith(route.id)) {
-        $route.set({
-          ...route,
-          module: {
-            ...route.module,
-            module: {
-              ...route.module.module,
-              __markdownMeta: meta,
+    import.meta.hot.on(
+      'vessel::md_meta',
+      ({
+        filePath,
+        type,
+        meta,
+      }: {
+        filePath: string;
+        type: RouteComponentType;
+        meta: MarkdownMeta;
+      }) => {
+        const route = frameworkDelegate.route.get();
+        if (
+          route[type] &&
+          isMarkdownModule(route[type]!.module) &&
+          filePath.endsWith(route.id)
+        ) {
+          frameworkDelegate.route.set({
+            ...route,
+            [type]: {
+              ...route[type],
+              module: {
+                ...route[type]!.module,
+                __markdownMeta: meta,
+              },
             },
-          },
-        });
-      }
-    });
+          });
+        }
+      },
+    );
 
-    $route.subscribe((route) => {
-      import.meta.hot!.send('vessel::route_change', {
-        id: route?.id ?? '',
-      });
+    frameworkDelegate.route.subscribe((route) => {
+      if (route) {
+        import.meta.hot!.send('vessel::route_change', { id: route.id });
+      }
     });
 
     import.meta.hot.accept('/:virtual/vessel/manifest', (mod) => {
@@ -71,41 +87,35 @@ export async function init({ tick, $route, $navigation }: ClientInitOptions) {
 }
 
 const routeIds = new Set<string | symbol>();
-const routeIdRE = /^\d+~/;
 
 function readManifest(
   router: Router,
-  { paths, loaders, fetch, routes }: ClientManifest,
+  { loaders, fetch, routes }: ClientManifest,
 ) {
-  const clientRoutes: ClientRoute[] = [];
-
-  /** path index. */
-  let p = 0;
+  let loaderIndex = 0;
+  const clientRoutes: ClientLoadableRoute[] = [];
 
   for (let i = 0; i < routes.length; i++) {
-    let id = routes[i],
-      type: ClientRoute['type'] = 'page';
+    const route = routes[i];
+    const [id, pathname, score] = route.path;
 
-    if (routeIdRE.test(id)) {
-      const parts = id.split('~');
-      id = parts[1];
-      if (parts[0] == '1') type = 'error';
-      else type = 'layout';
+    const newRoute = {
+      id,
+      pathname,
+      score,
+      pattern: new URLPattern({ pathname }),
+    };
+
+    for (const type of getRouteComponentTypes()) {
+      if (route[type]) {
+        newRoute[type] = {
+          loader: loaders[loaderIndex++],
+          canFetch: fetch.includes(loaderIndex),
+        } as LoadableRouteComponent;
+      }
     }
 
-    if (i > 0 && type === 'page') p++;
-    const pathname = paths[p][0];
-
-    clientRoutes.push({
-      id,
-      type,
-      pathname,
-      pattern: new URLPattern({ pathname }),
-      score: paths[p][1],
-      loader: loaders[i],
-      canFetch: fetch.includes(i),
-    });
-
+    clientRoutes.push(newRoute);
     if (import.meta.hot) routeIds.add(id!);
   }
 

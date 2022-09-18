@@ -4,16 +4,18 @@ import { normalizePath } from 'node/utils';
 
 export function handleMarkdownHMR(app: App) {
   const schema = app.markdoc;
-  const nodes = app.files.markdoc;
-  const isNode = (filePath) => nodes.isAnyNode(filePath);
+  const files = app.files.markdoc;
+  const isNode = (filePath) => files.isAnyNode(filePath);
 
   onFileEvent(isNode, 'add', async (filePath) => {
-    nodes.add(filePath);
+    files.add(filePath);
 
-    for (const pageFile of app.files.routes.toArray('page')) {
-      if (nodes.isSameBranch(filePath, pageFile.path)) {
-        clearMarkdownCache(pageFile.path);
-        invalidateFile(pageFile.path);
+    if (app.files.routes.isLayoutFile(filePath)) {
+      for (const pageFile of app.files.routes.toArray('page')) {
+        if (files.isSameBranch(filePath, pageFile.path.absolute)) {
+          clearMarkdownCache(pageFile.path.absolute);
+          invalidateFile(pageFile.path.absolute);
+        }
       }
     }
 
@@ -21,12 +23,12 @@ export function handleMarkdownHMR(app: App) {
   });
 
   onFileEvent(isNode, 'unlink', async (filePath) => {
-    nodes.remove(filePath);
+    files.remove(filePath);
 
-    const files = schema.hmrFiles.get(filePath);
+    const hmrFiles = schema.hmrFiles.get(filePath);
 
-    if (files) {
-      for (const file of files) {
+    if (hmrFiles) {
+      for (const file of hmrFiles) {
         clearMarkdownCache(file);
         invalidateFile(file);
       }

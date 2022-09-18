@@ -1,6 +1,6 @@
 import type { ServerResponse } from 'http';
 import type { App } from 'node/app/App';
-import type { LeafModuleFile } from 'node/app/files';
+import { AppRoute } from 'node/app/routes';
 import { handleHTTPRequest } from 'node/http';
 import { createPageHandler } from 'server/http';
 import type { ServerEntryModule } from 'server/types';
@@ -12,20 +12,25 @@ import { virtualModuleId } from '../alias';
 import { handleDevServerError } from './dev-server';
 import { readIndexHtmlFile } from './index-html';
 
-export async function handlePageRequest(
-  base: string,
-  url: URL,
-  app: App,
-  req: Connect.IncomingMessage,
-  res: ServerResponse,
-) {
+type HandlePageRequestInit = {
+  base: string;
+  app: App;
+  url: URL;
+  req: Connect.IncomingMessage;
+  res: ServerResponse;
+};
+export async function handlePageRequest({
+  base,
+  app,
+  url,
+  req,
+  res,
+}: HandlePageRequestInit) {
   url.pathname = url.pathname.replace('/index.html', '/');
 
   const pathname = decodeURI(url.pathname);
   const index = readIndexHtmlFile(app);
-  const route = matchRoute(url, app.routes.pages.toArray());
-
-  // todo: check leaf is page
+  const route = matchRoute(url, app.routes.filterByType('page'));
 
   // TODO: let request handle this.
   if (!route) {
@@ -80,7 +85,7 @@ export async function handlePageRequest(
   }
 }
 
-async function loadStyleTag(app: App, leafFile: LeafModuleFile) {
+async function loadStyleTag(app: App, route: AppRoute) {
   const appFilePath = app.vite
     .server!.moduleGraph.getModuleById(`/${virtualModuleId.app}`)!
     .importedModules.values()
@@ -89,8 +94,10 @@ async function loadStyleTag(app: App, leafFile: LeafModuleFile) {
   const stylesMap = await Promise.all(
     [
       appFilePath,
-      ...leafFile.layouts.map((layout) => layout.path),
-      leafFile.path,
+      ...app.routes
+        .getLayoutBranch(route)
+        .map((layout) => layout.path.absolute),
+      route.page!.path.absolute,
     ].map((file) => getStylesByFile(app.vite.server!, file)),
   );
 
@@ -108,7 +115,7 @@ export async function getStylesByFile(server: ViteDevServer, file: string) {
   const files = await server.moduleGraph.getModulesByFile(file);
   const node = Array.from(files ?? [])[0];
 
-  if (!node) throw new Error(`Could not find node for ${file}`);
+  if (!node) throw new Error(`[vessel] could not find node for \`${file}\``);
 
   const deps = new Set<ModuleNode>();
   await findModuleDeps(server, node, deps);

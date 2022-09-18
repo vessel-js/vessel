@@ -10,10 +10,10 @@ export function handleFilesHMR(app: App) {
   const server = app.vite.server!;
 
   function clearLayoutChildrenMarkdownCache(layoutFilePath: string) {
-    const branch = app.files.routes.getGroupBranch(layoutFilePath);
+    const branch = app.files.routes.getDirBranch(layoutFilePath);
     for (const { page } of branch) {
       if (page) {
-        clearMarkdownCache(page.path);
+        clearMarkdownCache(page.path.absolute);
         invalidateRouteModule(server, page);
       }
     }
@@ -72,7 +72,7 @@ export function handleFilesHMR(app: App) {
 
 export function invalidateRouteModule(server: ViteDevServer, file: RouteFile) {
   const module = server.moduleGraph
-    .getModulesByFile(file.path)
+    .getModulesByFile(file.path.absolute)
     ?.values()
     .next();
 

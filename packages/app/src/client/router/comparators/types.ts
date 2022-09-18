@@ -1,4 +1,4 @@
-import type { ClientRoute, ClientRouteDeclaration } from '../types';
+import type { ClientLoadableRoute, ClientRouteDeclaration } from '../types';
 
 export type RoutesComparator = {
   /**
@@ -10,7 +10,7 @@ export type RoutesComparator = {
    * Sorts the routes list into the order in which they should be matched. Routes at earlier
    * positions should match first.
    */
-  sort(routes: ClientRoute[]): ClientRoute[];
+  sort(routes: ClientLoadableRoute[]): ClientLoadableRoute[];
 };
 
 export type RoutesComparatorFactory = () => RoutesComparator;

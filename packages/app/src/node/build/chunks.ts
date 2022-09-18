@@ -1,6 +1,7 @@
 import type { App } from 'node/app/App';
 import type { AppRoute } from 'node/app/routes';
 import type { GetManualChunk } from 'rollup';
+import { getRouteComponentTypes } from 'shared/routing';
 import type { ManifestChunk as ViteManifestChunk } from 'vite';
 
 import type { BuildBundles, BuildData } from './build';
@@ -40,24 +41,23 @@ export function resolveLoaderChunks(
   const staticLoaderRoutes: BuildData['staticLoaderRoutes'] = new Set();
   const serverLoaderRoutes: BuildData['serverLoaderRoutes'] = new Set();
 
-  const routes = [
-    ...app.routes.filterByType('layout'),
-    ...app.routes.filterByType('page'),
-  ];
+  const routes = app.routes.toArray();
 
   for (let i = 0; i < routes.length; i++) {
     const route = routes[i];
+    for (const type of getRouteComponentTypes()) {
+      if (route[type]) {
+        const filePath = route[type]!.path.absolute;
+        const chunk = chunks.find((chunk) => chunk.facadeModuleId === filePath);
 
-    const chunk = chunks.find(
-      (chunk) => chunk.facadeModuleId === route.file.path,
-    );
+        if (chunk?.exports.includes('staticLoader')) {
+          staticLoaderRoutes.add(route);
+        }
 
-    if (chunk?.exports.includes('staticLoader')) {
-      staticLoaderRoutes.add(route);
-    }
-
-    if (chunk?.exports.includes('serverLoader')) {
-      serverLoaderRoutes.add(route);
+        if (chunk?.exports.includes('serverLoader')) {
+          serverLoaderRoutes.add(route);
+        }
+      }
     }
   }
 
@@ -66,7 +66,7 @@ export function resolveLoaderChunks(
 
 export function resolvePageResources(
   app: App,
-  page: AppRoute,
+  route: AppRoute,
   { entryChunk, appChunk, viteManifest }: BuildBundles['client'],
 ) {
   const imports = new Set<string>();
@@ -74,11 +74,11 @@ export function resolvePageResources(
   const assets = new Set<string>();
 
   const pageSrc = new Set(
-    app.files.routes.toArray('page').map((file) => file.rootPath),
+    app.files.routes.toArray('page').map((file) => file.path.root),
   );
 
   const layoutSrc = new Set(
-    app.files.routes.toArray('layout').map((file) => file.rootPath),
+    app.files.routes.toArray('layout').map((file) => file.path.root),
   );
 
   const seen = new WeakSet<ViteManifestChunk>();
@@ -135,10 +135,10 @@ export function resolvePageResources(
 
   // Layouts
 
-  const branch = app.routes.getGroupBranch(page);
+  const branch = app.routes.getBranch(route);
   for (const { layout } of branch) {
     if (layout) {
-      const chunk = viteManifest[layout.file.rootPath];
+      const chunk = viteManifest[layout.path.root];
       if (chunk) {
         collectChunks(chunk);
         imports.add(chunk.file);
@@ -148,7 +148,7 @@ export function resolvePageResources(
 
   // Page
 
-  const pageChunk = viteManifest[page.file.rootPath];
+  const pageChunk = viteManifest[route.page!.path.root];
 
   if (pageChunk) {
     collectChunks(pageChunk, true);

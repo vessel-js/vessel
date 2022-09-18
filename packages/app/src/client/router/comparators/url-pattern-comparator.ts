@@ -13,7 +13,6 @@ export function createURLPatternComparator(): RoutesComparator {
       return calcRoutePathScore(route.pathname);
     },
     sort(routes) {
-      // TODO: need to fix this so it sorts in order: layout -> error -> page
       return routes.sort(compareRoutes);
     },
   };

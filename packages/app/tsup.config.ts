@@ -12,6 +12,7 @@ export function base(extend?: { external?: (string | RegExp)[] }): Options {
     dts: true,
     outDir: 'dist',
     esbuildOptions(opts) {
+      if (opts.platform === 'browser') opts.mangleProps = /^_/;
       opts.chunkNames = 'chunks/[name]-[hash].js';
     },
   };

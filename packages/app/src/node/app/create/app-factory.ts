@@ -122,8 +122,8 @@ export function createAppEntries(app: App, { isSSR = false } = {}) {
       : app.files.routes.toArray().filter((file) => file.type !== 'http');
 
   for (const file of files) {
-    const name = trimExt(file.rootPath);
-    entries[`nodes/${name}`] = file.path;
+    const name = trimExt(file.path.route);
+    entries[`routes/${name}`] = file.path.absolute;
   }
 
   return entries;

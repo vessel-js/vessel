@@ -3,6 +3,7 @@ import type {
   LoadedRoute,
   MatchedRoute,
   Route,
+  RouteMatch,
 } from 'shared/routing';
 
 import type {
@@ -28,7 +29,7 @@ export type ServerModule = {
 // ---------------------------------------------------------------------------------------
 
 export type ServerEntryContext = {
-  route: LoadedServerRoute;
+  routes: ServerLoadedRoute[];
 };
 
 export type ServerEntryModule = {
@@ -54,8 +55,10 @@ export type ServerRenderResult = {
 
 export type ServerManifest = {
   entry: ServerEntryLoader;
-  routes: ServerRoute[];
-  endpoints: ServerEndpointRoute[];
+  routes: {
+    app: ServerLoadableRoute[];
+    http: ServerLoadableHttpRoute[];
+  };
   html: {
     entry: string;
     template: string;
@@ -70,11 +73,32 @@ export type ServerManifest = {
   trailingSlash: boolean;
 };
 
-export type ServerRoute = LoadableRoute<ServerModule>;
-export type MatchedServerRoute = MatchedRoute<ServerRoute>;
-export type LoadedServerRoute = LoadedRoute<MatchedServerRoute, ServerModule>;
+// ---------------------------------------------------------------------------------------
+// Server Route
+// ---------------------------------------------------------------------------------------
 
-export type ServerEndpointRoute = LoadableRoute<HttpRequestModule>;
+export type ServerLoadableRoute = LoadableRoute<ServerModule>;
+
+export type ServerMatchedRoute<Params extends RequestParams = RequestParams> =
+  MatchedRoute<ServerModule, Params>;
+
+export type ServerLoadedRoute<Params extends RequestParams = RequestParams> =
+  LoadedRoute<ServerModule, Params>;
+
+// ---------------------------------------------------------------------------------------
+// Server HTTP Route
+// ---------------------------------------------------------------------------------------
+
+export type ServerLoadableHttpRoute = Route & {
+  readonly loader: () => Promise<HttpRequestModule>;
+};
+
+export type ServerMatchedHttpRoute = ServerLoadableHttpRoute & RouteMatch;
+
+export type ServerLoadedHttpRoute = ServerMatchedHttpRoute & {
+  readonly module: HttpRequestModule;
+};
+
 export type ServerRequestHandler = (request: Request) => Promise<Response>;
 
 export type ServerRedirect = {
@@ -95,7 +119,7 @@ export type StaticLoaderInput<Params extends RequestParams = RequestParams> =
     params: Params;
   }>;
 
-/** Map of data asset id to server loaded data object. */
+/** Map of data asset id to server loaded data objects. */
 export type StaticLoaderDataMap = Map<string, JSONData>;
 
 /** Key can be anything but only truthy values are cached. */

@@ -1,10 +1,11 @@
 import kleur from 'kleur';
 import type { App } from 'node/app/App';
+import type { RouteFileType } from 'node/app/files';
 import type { AppRoute } from 'node/app/routes';
 import { logger } from 'node/utils';
 import { createStaticLoaderInput } from 'server';
 import type {
-  LoadedServerRoute,
+  ServerLoadedRoute,
   ServerModule,
   ServerRedirect,
   StaticLoader,
@@ -12,25 +13,23 @@ import type {
   StaticLoaderCacheMap,
   StaticLoaderOutput,
 } from 'server/types';
-import { MatchedRoute } from 'shared/routing';
+import { type Route } from 'shared/routing';
 import { isFunction } from 'shared/utils/unit';
 
 export type LoadStaticRouteResult = {
-  route: LoadedServerRoute;
+  matches: ServerLoadedRoute[];
   redirect?: ServerRedirect;
 };
 
 export async function loadStaticRoute(
   app: App,
   url: URL,
-  page: AppRoute,
-  load: (route: AppRoute) => Promise<ServerModule>,
-  canLoad: (route: AppRoute) => boolean = () => true,
+  route: AppRoute,
+  load: (route: AppRoute, type: RouteFileType) => Promise<ServerModule>,
 ): Promise<LoadStaticRouteResult> {
-  const input = createStaticLoaderInput(url, page);
+  const input = createStaticLoaderInput(url, route);
 
-  // @ts-expect-error - .
-  return { route: { ...page, branch: [], url } };
+  return { matches: [] };
 
   // const segments = createLoadablePageSegments(app, page, load);
   // const loaded = await Promise.all(
@@ -62,7 +61,7 @@ export function clearStaticLoaderCache(id: string) {
 
 export async function callStaticLoader(
   url: URL,
-  route: MatchedRoute,
+  route: Route,
   staticLoader?: StaticLoader,
 ): Promise<StaticLoaderOutput> {
   const id = route.id;

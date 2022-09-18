@@ -1,8 +1,12 @@
 import { resolveStaticDataAssetId } from 'shared/data';
-import { execRouteMatch, type Route } from 'shared/routing';
+import {
+  execRouteMatch,
+  getRouteComponentTypes,
+  type Route,
+} from 'shared/routing';
 
 import type {
-  LoadedServerRoute,
+  ServerLoadedRoute,
   StaticLoaderDataMap,
   StaticLoaderInput,
 } from './types';
@@ -19,16 +23,24 @@ export function createStaticLoaderInput(
   };
 }
 
-export function createStaticDataMap(
-  route: LoadedServerRoute,
+export function createStaticLoaderDataMap(
+  routes: ServerLoadedRoute[],
 ): StaticLoaderDataMap {
   const map: StaticLoaderDataMap = new Map();
 
-  for (const segment of [...route.branch, route]) {
-    map.set(
-      resolveStaticDataAssetId(segment.id, route.url.pathname),
-      segment.staticData ?? {},
-    );
+  for (const route of routes) {
+    for (const type of getRouteComponentTypes()) {
+      const component = route[type];
+      if (
+        component?.staticData &&
+        Object.keys(component.staticData).length > 0
+      ) {
+        map.set(
+          resolveStaticDataAssetId(route.id, type, route.url.pathname),
+          component.staticData,
+        );
+      }
+    }
   }
 
   return map;

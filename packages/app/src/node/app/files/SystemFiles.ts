@@ -6,22 +6,31 @@ import { isString } from 'shared/utils/unit';
 
 import type { App } from '../App';
 
-export type SystemDirMeta = {
-  /** System directory path relative to `<root>`. */
-  readonly rootDir: string;
-  /** System directory path relative to `<app>`. */
-  readonly routeDir: string;
-};
-
-export type SystemFileMeta = SystemDirMeta & {
+export type SystemFilePath = {
   /** Absolute system file path. */
-  readonly path: string;
+  readonly absolute: string;
   /** System file path relative to `<root>`. */
-  readonly rootPath: string;
+  readonly root: string;
   /** System file path relative to `<app>`. */
-  readonly routePath: string;
+  readonly route: string;
   /** System file route path as URL pathname `/blog/[product]/` */
   readonly pathname: string;
+};
+
+export type SystemDirPath = {
+  /** Absolute system directory path. */
+  readonly absolute: string;
+  /** System directory path relative to `<root>`. */
+  readonly root: string;
+  /** System directory path relative to `<app>`. */
+  readonly route: string;
+};
+
+export type SystemFileMeta = {
+  /** File path meta. */
+  readonly path: SystemFilePath;
+  /** File dir meta. */
+  readonly dir: SystemDirPath;
   /** Branch reset. */
   readonly reset?: boolean;
   /** System file extension name (e.g., `.tsx`). */
@@ -92,7 +101,7 @@ export abstract class SystemFiles<T extends SystemFileMeta>
   }
 
   find(filePath: string) {
-    return this._files.find((file) => file.path === filePath);
+    return this._files.find((file) => file.path.absolute === filePath);
   }
 
   findIndex(filePath: string) {
@@ -126,7 +135,7 @@ export abstract class SystemFiles<T extends SystemFileMeta>
   isSameBranch(file: string | T, childFilePath: string) {
     const ownerRootPath = this._getRootPath(childFilePath);
     const _file = isString(file) ? this.find(file) : file;
-    return _file && ownerRootPath.startsWith(_file.rootDir);
+    return _file && ownerRootPath.startsWith(_file.dir.root);
   }
 
   getBranchFiles(childFilePath: string) {
@@ -134,7 +143,7 @@ export abstract class SystemFiles<T extends SystemFileMeta>
 
     for (let i = 0; i < this._files.length; i++) {
       const file = this._files[i];
-      if (this.isSameBranch(file.path, childFilePath)) {
+      if (this.isSameBranch(file.path.absolute, childFilePath)) {
         if (file.reset) files = [];
         files.push(file);
       }
@@ -156,12 +165,17 @@ export abstract class SystemFiles<T extends SystemFileMeta>
     const ext = this._ext(rootPath);
     const reset = path.posix.basename(rootPath).includes('.reset.');
     return {
-      path: filePath,
-      rootPath,
-      rootDir,
-      routePath,
-      routeDir,
-      pathname,
+      path: {
+        absolute: filePath,
+        root: rootPath,
+        route: routePath,
+        pathname,
+      },
+      dir: {
+        absolute: path.posix.dirname(filePath),
+        root: rootDir,
+        route: routeDir,
+      },
       ext,
       reset,
     };
@@ -177,7 +191,7 @@ export abstract class SystemFiles<T extends SystemFileMeta>
 
   protected _addFile(file: T) {
     sortedInsert(this._files, file, (a, b) =>
-      comparePathDepth(a.rootPath, b.rootPath),
+      comparePathDepth(a.path.root, b.path.root),
     );
     for (const callback of this._onAdd) callback(file);
   }

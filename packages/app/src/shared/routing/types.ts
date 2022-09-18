@@ -6,13 +6,6 @@ export type Route = {
    */
   readonly id: string;
   /**
-   * - `page`: Leaf UI component.
-   * - `layout`: Parent UI components. More than one layout route can be active at a time.
-   * - `error`: Error boundary components. More than one can be active a time.
-   * - `http`: HTTP endpoint - only exists server-side.
-   */
-  readonly type: 'page' | 'layout' | 'error' | 'http';
-  /**
    * Order number if declared (e.g., `[1]blog/[3]products/+page.md` would be 3).
    */
   readonly order?: number;
@@ -44,7 +37,7 @@ export type RouteModule = {
   [id: string]: unknown;
 };
 
-export type LoadableRoute<Module extends RouteModule = RouteModule> = Route & {
+export type LoadableRouteComponent<Module extends RouteModule = RouteModule> = {
   /**
    * Called when the current route is being navigated to. Generally this should return a JS
    * module.
@@ -57,30 +50,46 @@ export type LoadableRoute<Module extends RouteModule = RouteModule> = Route & {
   readonly canFetch?: boolean;
 };
 
-export type MatchedRoute<
-  Route extends LoadableRoute = LoadableRoute,
-  Params extends RouteParameters = RouteParameters,
-> = Route & {
+export type RouteComponentType = 'page' | 'layout' | 'error';
+
+export type LoadableRoute<Module extends RouteModule = RouteModule> = Route & {
+  readonly __moduleType?: Module;
+} & {
+  readonly [P in RouteComponentType]?: LoadableRouteComponent<Module>;
+};
+
+export type RouteMatch<Params extends RouteParams = RouteParams> = {
   readonly url: URL;
   readonly pathId: string;
   readonly params: Params;
-  readonly branch: MatchedRoute<Route, Params>[];
 };
+
+export type MatchedRoute<
+  Module extends RouteModule = RouteModule,
+  Params extends RouteParams = RouteParams,
+> = LoadableRoute<Module> & RouteMatch<Params>;
 
 export type LoadedStaticData = Record<string, unknown>;
 export type LoadedServerData = unknown;
-
-export type LoadedRoute<
-  Route extends MatchedRoute = MatchedRoute,
-  Module extends RouteModule = RouteModule,
-> = Omit<Route, 'segments'> & {
-  readonly module: Module;
-  readonly staticData: LoadedStaticData;
-  readonly serverData: LoadedServerData;
-  readonly loadError?: Error | HttpError | null;
-  readonly branch: LoadedRoute<Route, Module>[];
+export type LoadedRouteData = {
+  readonly staticData?: LoadedStaticData;
+  readonly serverData?: LoadedServerData;
+  readonly error?: Error | HttpError | null;
 };
 
-export type RouteParameters = {
+export type LoadedRouteComponent<Module extends RouteModule = RouteModule> =
+  LoadableRouteComponent<Module> & {
+    readonly module: Module;
+  } & LoadedRouteData;
+
+export type LoadedRoute<
+  Module extends RouteModule = RouteModule,
+  Params extends RouteParams = RouteParams,
+> = Route &
+  RouteMatch<Params> & {
+    readonly [P in RouteComponentType]?: LoadedRouteComponent<Module>;
+  };
+
+export type RouteParams = {
   [param: string]: string | undefined;
 };

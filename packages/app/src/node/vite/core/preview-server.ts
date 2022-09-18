@@ -4,7 +4,7 @@ import { installPolyfills } from 'server/polyfills';
 import type { PreviewServerHook } from 'vite';
 
 import { handleDevServerError } from './dev-server';
-import { handleEndpointRequest } from './handle-endpoint';
+import { handleHttpRequest } from './handle-http';
 
 export async function configurePreviewServer(
   app: App,
@@ -19,14 +19,14 @@ export async function configurePreviewServer(
 
   const loader = (file: RouteFile) => {
     return import(
-      app.dirs.server.resolve(file.routePath).replace(/\.ts$/, '.js')
+      app.dirs.server.resolve(file.path.route).replace(/\.ts$/, '.js')
     );
   };
 
   server.middlewares.use(async (req, res, next) => {
     try {
       if (!req.url || !req.method) {
-        throw new Error('Incomplete request');
+        throw new Error('[vessel] incomplete request');
       }
 
       const base = `${protocol}://${
@@ -36,15 +36,22 @@ export async function configurePreviewServer(
       const url = new URL(base + req.url);
       const decodedUrl = decodeURI(new URL(base + req.url).pathname);
 
-      if (
-        !app.routes.test('page', decodedUrl) &&
-        app.routes.test('http', decodedUrl)
-      ) {
-        await handleEndpointRequest(base, url, app, req, res, loader);
-        return;
+      // TODO: handle dynamic pages here (SSR) -- load from manifest. -> __data param? or __http
+      if (app.routes.test(decodedUrl, 'page')) {
+        //
       }
 
-      // TODO: handle dynamic pages here (SSR) -- load from manifest.
+      if (app.routes.test(decodedUrl, 'http')) {
+        await handleHttpRequest({
+          base,
+          url,
+          app,
+          req,
+          res,
+          loader,
+        });
+        return;
+      }
     } catch (error) {
       handleDevServerError(app, req, res, error);
       return;

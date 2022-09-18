@@ -89,13 +89,13 @@ export function createVercelBuildAdapter(
         ];
 
         const bundlingFunctionsSpinner = $.createSpinner();
-        const fnCount = $.color.underline(build.serverEndpoints.size);
+        const fnCount = $.color.underline(build.serverHttpEndpoints.size);
         bundlingFunctionsSpinner.start(
           $.color.bold(`Bundling ${fnCount} functions...`),
         );
 
-        for (const route of build.serverEndpoints) {
-          const routeDir = route.file.routeDir;
+        for (const route of build.serverHttpEndpoints) {
+          const routeDir = route.http!.dir.route;
           routes.push({
             src: `^${$.slash(routeDir.replace(matchersRE, '([^/]+?)'))}/?$`, // ^/api/foo/?$
             dest: $.slash(routeDir), // /api/foo
@@ -103,8 +103,8 @@ export function createVercelBuildAdapter(
         }
 
         await Promise.all(
-          Array.from(build.serverEndpoints).map(async (route) => {
-            const chunk = build.routeChunks.get(route.id);
+          Array.from(build.serverHttpEndpoints).map(async (route) => {
+            const chunk = build.routeChunks.get(route.id)!.http;
 
             const allowedMethods = chunk?.exports.filter((id) =>
               HTTP_METHODS.has(id),
@@ -133,10 +133,10 @@ export function createVercelBuildAdapter(
                   ...config?.functions,
                 };
 
-            const fndir = `${route.file.routeDir}.func`;
+            const fndir = `${route.dir.route}.func`;
             const outdir = vercelDirs.fns.resolve(fndir);
             const chunkDir = path.posix.dirname(
-              build.routeChunkFile.get(route.id)!,
+              build.routeChunkFile.get(route.id)!.http!,
             );
             const entryPath = path.posix.resolve(chunkDir, 'fn.js');
 

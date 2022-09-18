@@ -1,7 +1,5 @@
 import { noslash, slash } from 'shared/utils/url';
 
-import type { Route } from './types';
-
 const PATH_SCORE = {
   Segment: 6,
   Static: 5,
@@ -79,26 +77,6 @@ export function calcRoutePathScore(pathname: string): number {
 
   scoreCache.set(pathname, score);
   return score;
-}
-
-export function isPageRoute(route: Pick<Route, 'type'>): boolean {
-  return route.type === 'page';
-}
-
-export function isLayoutRoute(route: Pick<Route, 'type'>): boolean {
-  return route.type === 'layout';
-}
-
-export function isErrorRoute(route: Pick<Route, 'type'>): boolean {
-  return route.type === 'error';
-}
-
-export function isHttpRoute(route: Pick<Route, 'type'>): boolean {
-  return route.type === 'http';
-}
-
-export function getRouteTypes(): Route['type'][] {
-  return ['page', 'layout', 'error', 'http'];
 }
 
 export function compareRoutes(

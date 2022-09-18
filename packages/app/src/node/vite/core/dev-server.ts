@@ -7,7 +7,7 @@ import { coalesceToError } from 'shared/utils/error';
 import { noendslash } from 'shared/utils/url';
 import type { Connect, ViteDevServer } from 'vite';
 
-import { handleEndpointRequest } from './handle-endpoint';
+import { handleHttpRequest } from './handle-http';
 import { handlePageRequest } from './handle-page';
 import { handleStaticDataRequest } from './handle-static-data';
 
@@ -15,7 +15,7 @@ export function configureDevServer(app: App, server: ViteDevServer) {
   removeHtmlMiddlewares(server.middlewares);
 
   const httpLoader = (file: RouteFile) =>
-    app.vite.server!.ssrLoadModule(file.path);
+    app.vite.server!.ssrLoadModule(file.path.absolute);
 
   // Ensure devs can call local API endpoints using relative paths (e.g., `fetch('/api/foo')`).
   let origin: string;
@@ -25,7 +25,7 @@ export function configureDevServer(app: App, server: ViteDevServer) {
 
   globalThis.fetch = (input, init) => {
     return fetch(
-      typeof input === 'string' && app.routes.test('http', input)
+      typeof input === 'string' && app.routes.test(input, 'http')
         ? `${(origin ??= noendslash(
             server.resolvedUrls?.local[0] ?? `${protocol}://localhost:5173`,
           ))}${input}`
@@ -37,7 +37,7 @@ export function configureDevServer(app: App, server: ViteDevServer) {
   server.middlewares.use(async (req, res, next) => {
     try {
       if (!req.url || !req.method) {
-        throw new Error('Incomplete request');
+        throw new Error('[vessel] incomplete request');
       }
 
       const base = `${protocol}://${
@@ -48,22 +48,29 @@ export function configureDevServer(app: App, server: ViteDevServer) {
       const decodedUrl = decodeURI(new URL(base + req.url).pathname);
 
       if (decodedUrl.startsWith(STATIC_DATA_ASSET_BASE_PATH)) {
-        return await handleStaticDataRequest(url, app, res);
+        return await handleStaticDataRequest({ url, app, res });
       }
 
-      if (app.routes.test('page', decodedUrl)) {
-        return await handlePageRequest(base, url, app, req, res);
-      }
-
-      if (app.routes.test('http', decodedUrl)) {
-        return await handleEndpointRequest(
+      if (app.routes.test(decodedUrl, 'page')) {
+        return await handlePageRequest({
           base,
           url,
           app,
           req,
           res,
-          httpLoader,
-        );
+        });
+      }
+
+      if (app.routes.test(decodedUrl, 'http')) {
+        return await handleHttpRequest({
+          dev: true,
+          base,
+          url,
+          app,
+          req,
+          res,
+          loader: httpLoader,
+        });
       }
     } catch (error) {
       handleDevServerError(app, req, res, error);

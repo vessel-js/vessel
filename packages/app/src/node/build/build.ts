@@ -1,16 +1,21 @@
 import kleur from 'kleur';
 import type { App } from 'node/app/App';
 import { createAppEntries } from 'node/app/create/app-factory';
+import { getRouteFileTypes, RouteFileType } from 'node/app/files';
 import type { AppRoute } from 'node/app/routes';
 import { loadStaticRoute } from 'node/vite/core';
 import fs from 'node:fs';
 import type { OutputAsset, OutputBundle, OutputChunk } from 'rollup';
-import { createStaticDataMap } from 'server';
-import { createEndpointHandler, handleHttpError, httpError } from 'server/http';
+import { createStaticLoaderDataMap } from 'server';
+import {
+  createHttpHandler,
+  error as httpError,
+  handleHttpError,
+} from 'server/http';
 import { installPolyfills } from 'server/polyfills';
 import type {
-  LoadedServerRoute,
   ServerEntryModule,
+  ServerLoadedRoute,
   ServerRenderResult,
 } from 'server/types';
 import { cleanRoutePath, findRoute } from 'shared/routing';
@@ -81,37 +86,40 @@ export async function build(
     staticRedirects: new Map(),
     staticRenders: new Map(),
     serverPages: new Set(),
-    serverEndpoints: new Set(httpRoutes),
+    serverHttpEndpoints: new Set(httpRoutes),
     routeChunks: new Map(),
     routeChunkFile: new Map(),
     ...resolveLoaderChunks(app, bundles.server),
   };
 
   // staticPages + serverPages
-  for (const page of pageRoutes) {
-    const branch = [
-      ...app.routes.getGroupBranch(page).map((group) => group.layout),
-      page,
-    ];
-
-    if (branch.some((route) => route && build.serverLoaderRoutes.has(route))) {
-      build.serverPages.add(page);
+  for (const pageRoute of pageRoutes) {
+    const branch = app.routes.getBranch(pageRoute);
+    if (branch.some((route) => build.serverLoaderRoutes.has(route))) {
+      build.serverPages.add(pageRoute);
     } else {
-      build.staticPages.add(page);
+      build.staticPages.add(pageRoute);
     }
   }
 
   for (const route of app.routes) {
-    const chunk = bundles.server.chunks.find(
-      (chunk) => chunk.facadeModuleId === route.file.path,
-    );
-    if (chunk) {
-      build.routeChunks.set(route.id, chunk);
-      build.routeChunkFile.set(
-        route.id,
-        app.dirs.server.resolve(chunk.fileName),
-      );
+    const chunks = {};
+    const files = {};
+
+    for (const type of getRouteFileTypes()) {
+      if (route[type]) {
+        const chunk = bundles.server.chunks.find(
+          (chunk) => chunk.facadeModuleId === route[type]!.path.absolute,
+        );
+        if (chunk) {
+          chunks[type] = chunk;
+          files[type] = app.dirs.server.resolve(chunk.fileName);
+        }
+      }
     }
+
+    build.routeChunks.set(route.id, chunks);
+    build.routeChunkFile.set(route.id, files);
   }
 
   const $ = getBuildAdapterUtils(app, bundles, build);
@@ -136,15 +144,19 @@ export async function build(
       const route = findRoute(url, httpRoutes);
 
       if (!route) {
-        return Promise.resolve(handleHttpError(httpError('not found', 404)));
+        return Promise.resolve(
+          handleHttpError(httpError('not found', 404), true),
+        );
       }
 
-      const handler = createEndpointHandler({
+      const handler = createHttpHandler({
         pattern: route.pattern,
         getClientAddress: () => {
-          throw new Error('Can not resolve `clientAddress` during SSR');
+          throw new Error(
+            '[vessel] can not resolve `clientAddress` during SSR',
+          );
         },
-        loader: () => import(build.routeChunkFile.get(route.id)!),
+        loader: () => import(build.routeChunkFile.get(route.id)!.http!),
       });
 
       return handler(new Request(url, init));
@@ -153,19 +165,15 @@ export async function build(
     return fetch(input, init);
   };
 
-  const routeLoader = (route: AppRoute) =>
-    import(build.routeChunkFile.get(route.id)!);
-
-  const canLoadStaticData = (route: AppRoute) =>
-    build.staticLoaderRoutes.has(route);
+  const routeChunkLoader = (route: AppRoute, type: RouteFileType) =>
+    import(build.routeChunkFile.get(route.id)![type]!);
 
   async function loadRoute(url: URL, page: AppRoute) {
-    const { route, redirect } = await loadStaticRoute(
+    const { matches, redirect } = await loadStaticRoute(
       app,
       url,
       page,
-      routeLoader,
-      canLoadStaticData,
+      routeChunkLoader,
     );
 
     if (redirect) {
@@ -179,7 +187,7 @@ export async function build(
       });
     }
 
-    const dataMap = createStaticDataMap(route);
+    const dataMap = createStaticLoaderDataMap(matches);
     for (const id of dataMap.keys()) {
       const content = dataMap.get(id)!;
       if (Object.keys(content).length > 0) {
@@ -195,7 +203,7 @@ export async function build(
       }
     }
 
-    return { redirect, route, dataMap };
+    return { redirect, matches, dataMap };
   }
 
   // -------------------------------------------------------------------------------------------
@@ -207,7 +215,7 @@ export async function build(
 
   const { render } = (await import(serverEntryPath)) as ServerEntryModule;
 
-  async function buildPage(url: URL, page: AppRoute) {
+  async function buildPage(url: URL, pageRoute: AppRoute) {
     const normalizedURL = $.normalizeURL(url);
     const pathname = normalizedURL.pathname;
 
@@ -217,42 +225,45 @@ export async function build(
 
     if (!validPathname.test(pathname)) {
       build.badLinks.set(pathname, {
-        page,
+        route: pageRoute,
         reason: 'malformed URL pathname',
       });
       return;
     }
 
-    const { redirect, route, dataMap } = await loadRoute(normalizedURL, page);
+    const { redirect, matches, dataMap } = await loadRoute(
+      normalizedURL,
+      pageRoute,
+    );
 
     // Redirect.
     if (redirect) {
       const location = redirect.path;
-      await onFoundLink(page, location);
+      await onFoundLink(pageRoute, location);
       return;
     }
 
     // Pages that are dynamically rendered on the server (i.e., has `serverLoader` in branch).
-    if (!build.staticPages.has(page)) return;
+    if (!build.staticPages.has(pageRoute)) return;
 
     const result = {
       filename: $.resolveHTMLFilename(url),
-      page,
-      route,
-      ssr: await render({ route }),
+      route: pageRoute,
+      matches,
+      ssr: await render({ routes: matches }),
       dataAssetIds: new Set(dataMap.keys()),
     };
 
-    build.links.set(pathname, page);
+    build.links.set(pathname, pageRoute);
     build.staticRenders.set(pathname, result);
 
     const hrefs = $.crawl(result.ssr.html);
     for (let i = 0; i < hrefs.length; i++) {
-      await onFoundLink(page, hrefs[i]);
+      await onFoundLink(pageRoute, hrefs[i]);
     }
   }
 
-  async function onFoundLink(page: AppRoute, href: string) {
+  async function onFoundLink(pageRoute: AppRoute, href: string) {
     if (href.startsWith('#') || $.isLinkExternal(href)) return;
 
     const url = new URL(`${ssrOrigin}${$.slash(href)}`);
@@ -261,14 +272,13 @@ export async function build(
     if (build.links.has(pathname) || build.badLinks.has(pathname)) return;
 
     const route = findRoute(url, pageRoutes);
-
     if (route) {
       await buildPage(url, route);
       return;
     }
 
     build.badLinks.set(pathname, {
-      page,
+      route: pageRoute,
       reason: 'no matching route (404)',
     });
   }
@@ -285,10 +295,9 @@ export async function build(
 
   for (const entry of app.config.routes.entries) {
     const url = new URL(`${ssrOrigin}${$.slash(entry)}`);
-    const page = findRoute(url, pageRoutes);
-
-    if (page) {
-      await buildPage(url, page);
+    const route = findRoute(url, pageRoutes);
+    if (route) {
+      await buildPage(url, route);
     } else {
       build.badLinks.set(entry, {
         reason: 'no matching route (404)',
@@ -364,7 +373,7 @@ export type BuildData = {
    * Map of invalid links that were either malformed or matched no route pattern during
    * the static build process. The key contains the bad URL pathname.
    */
-  badLinks: Map<string, { page?: AppRoute; reason: string }>;
+  badLinks: Map<string, { route?: AppRoute; reason: string }>;
   /**
    * Page routes that are static meaning they contain no `serverLoader` in their branch (page
    * itself or any of its layouts).
@@ -398,10 +407,10 @@ export type BuildData = {
     {
       /** The HTML file name which can be used to output file relative to build directory. */
       filename: string;
-      /** The matching page file route. */
-      page: AppRoute;
-      /** The loaded server route. */
-      route: LoadedServerRoute;
+      /** The matching page route. */
+      route: AppRoute;
+      /** The loaded server routes. */
+      matches: ServerLoadedRoute[];
       /** The SSR results containing head, css, and HTML renders. */
       ssr: ServerRenderResult;
       /**
@@ -434,11 +443,11 @@ export type BuildData = {
   /**
    * Route ids and their respective chunks.
    */
-  routeChunks: Map<string, OutputChunk>;
+  routeChunks: Map<string, { [P in RouteFileType]?: OutputChunk }>;
   /**
-   * Route ids and their respective chunk file path (absolute).
+   * Route ids and their respective chunk file paths (absolute).
    */
-  routeChunkFile: Map<string, string>;
+  routeChunkFile: Map<string, { [P in RouteFileType]?: string }>;
   /**
    * File routes (pages/layouts) that contain a `staticLoader` export.
    */
@@ -456,5 +465,5 @@ export type BuildData = {
   /**
    * Server endpoints that are used server-side to respond to HTTP requests.
    */
-  serverEndpoints: Set<AppRoute>;
+  serverHttpEndpoints: Set<AppRoute>;
 };

@@ -1,5 +1,10 @@
 import type { MarkdownMeta } from 'shared/markdown';
-import type { LoadableRoute, LoadedRoute, MatchedRoute } from 'shared/routing';
+import type {
+  LoadableRoute,
+  LoadedRoute,
+  MatchedRoute,
+  RouteParams,
+} from 'shared/routing';
 
 import type { ScrollToTarget } from './scroll-delegate';
 
@@ -18,23 +23,18 @@ export type ClientModuleLoader = () => Promise<ClientModule>;
 // Client Route
 // ---------------------------------------------------------------------------------------
 
-export type ClientRoute = LoadableRoute<ClientModule>;
+export type ClientLoadableRoute = LoadableRoute<ClientModule>;
 
-export type ClientRoutePrefetch = (info: {
-  url: URL;
-  route: MatchedClientRoute;
-}) => void | Promise<void>;
+export type ClientMatchedRoute<Params extends RouteParams = RouteParams> =
+  MatchedRoute<ClientModule, Params>;
+
+export type ClientLoadedRoute<Params extends RouteParams = RouteParams> =
+  LoadedRoute<ClientModule, Params>;
 
 export type ClientRouteDeclaration = Omit<
-  ClientRoute,
-  'id' | 'score' | 'pattern'
-> & {
-  id?: string;
-  score?: number;
-};
-
-export type MatchedClientRoute = MatchedRoute<ClientRoute>;
-export type LoadedClientRoute = LoadedRoute<MatchedClientRoute, ClientModule>;
+  ClientLoadableRoute,
+  'score' | 'pattern'
+> & { score?: number };
 
 // ---------------------------------------------------------------------------------------
 // Client Navigation
@@ -63,15 +63,15 @@ export type CancelNavigation = () => void;
 export type NavigationRedirector = (pathnameOrURL: string | URL) => void;
 
 export type BeforeNavigateHook = (navigation: {
-  from: LoadedClientRoute | null;
-  to: MatchedClientRoute;
+  from: ClientLoadedRoute | null;
+  to: ClientMatchedRoute;
   cancel: CancelNavigation;
   redirect: NavigationRedirector;
 }) => void | Promise<void>;
 
 export type AfterNavigateHook = (navigation: {
-  from: LoadedClientRoute | null;
-  to: LoadedClientRoute;
+  from: ClientLoadedRoute | null;
+  to: ClientLoadedRoute;
 }) => void | Promise<void>;
 
 // ---------------------------------------------------------------------------------------
@@ -84,12 +84,18 @@ export type AfterNavigateHook = (navigation: {
  * ```
  */
 export type ClientManifest = {
-  /** URL pathname and scores - stored like this to save bytes. */
-  paths: [pathname: string, score: number][];
-  /** Page, layout, and error module loaders - stored like this to save bytes. */
+  /** Page, layout, and error component module loaders - stored like this to save bytes. */
   loaders: ClientModuleLoader[];
   /** Contains loader indicies ^ who can fetch data from the server. */
   fetch: number[];
-  /** Routes - their type is prepended: `0~` = layout, `1~` = error, page has nothing. */
-  routes: string[];
+  routes: {
+    /** URL pathname used to construct `URLPattern` and it's route score. */
+    path: [id: string, pathname: string, score: number];
+    /** Whether this route contains a layout loader. */
+    layout?: 1;
+    /** Whether this route contains an error loader. */
+    error?: 1;
+    /** Whether this route contains a page loader. */
+    page?: 1;
+  }[];
 };

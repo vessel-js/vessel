@@ -32,11 +32,11 @@ export class MarkdocFiles extends SystemFiles<MarkdocFile> {
     const file = this._createFile(filePath);
 
     const owningDir = path.posix.dirname(
-      file.rootPath.replace(STRIP_MARKDOC_DIR_RE, '/root.md'),
+      file.path.root.replace(STRIP_MARKDOC_DIR_RE, '/root.md'),
     );
 
     const name = path.posix
-      .basename(file.routePath, path.posix.extname(file.routePath))
+      .basename(file.path.route, path.posix.extname(file.path.route))
       .replace('@node', '')
       .replace('@inline', '');
 
@@ -53,7 +53,7 @@ export class MarkdocFiles extends SystemFiles<MarkdocFile> {
     }
 
     const cname = toPascalCase(name);
-    const inline = /@inline/.test(file.routePath);
+    const inline = /@inline/.test(file.path.route);
 
     const node: MarkdocFile = {
       ...file,

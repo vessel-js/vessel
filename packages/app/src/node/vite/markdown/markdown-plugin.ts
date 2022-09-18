@@ -3,7 +3,7 @@ import { readFile } from 'fs/promises';
 import { toHtml } from 'hast-util-to-html';
 import kleur from 'kleur';
 import type { App } from 'node/app/App';
-import type { RouteFile, RouteFileGroup } from 'node/app/files';
+import type { RouteDir, RouteFile, RouteFileType } from 'node/app/files';
 import {
   clearMarkdownCache,
   type HighlightCodeBlock,
@@ -22,7 +22,7 @@ export function markdownPlugin(): VesselPlugin {
   let app: App;
   let filter: (id: string) => boolean;
   let currentFile: RouteFile | undefined = undefined;
-  let currentBranch: RouteFileGroup[] = [];
+  let currentBranch: RouteDir[] = [];
   let parse: (filePath: string, content: string) => ParseMarkdownResult;
   let highlight: HighlightCodeBlock | null = null;
 
@@ -103,7 +103,7 @@ export function markdownPlugin(): VesselPlugin {
       server.ws.on('vessel::route_change', ({ id }) => {
         const filePath = app.dirs.app.resolve(id);
         currentFile = app.files.routes.findLeafFile(filePath);
-        currentBranch = app.files.routes.getGroupBranch(filePath);
+        currentBranch = app.files.routes.getDirBranch(filePath);
       });
     },
     transform(content, id) {
@@ -126,25 +126,33 @@ export function markdownPlugin(): VesselPlugin {
           if (
             layout &&
             currentBranch.find(
-              (group) => group.layout?.rootPath === layout.rootPath,
+              (group) => group.layout?.path.root === layout.path.root,
             )
           ) {
-            clearMarkdownCache(currentFile.path);
+            clearMarkdownCache(currentFile.path.absolute);
             invalidateRouteModule(server, currentFile);
 
             const { meta } = parse(
-              currentFile.path,
-              await readFile(currentFile.path, { encoding: 'utf-8' }),
+              currentFile.path.absolute,
+              await readFile(currentFile.path.absolute, { encoding: 'utf-8' }),
             );
 
-            handleMarkdownMetaHMR(server, currentFile.path, meta);
+            handleMarkdownMetaHMR(
+              server,
+              currentFile.path.absolute,
+              currentFile.type,
+              meta,
+            );
           }
         }
 
         const { output, meta } = parse(file, content);
         ctx.read = () => output;
 
-        if (!layout) handleMarkdownMetaHMR(server, file, meta);
+        if (!layout) {
+          const type = app.files.routes.resolveFileRouteType(file);
+          if (type) handleMarkdownMetaHMR(server, file, type, meta);
+        }
       }
     },
   };
@@ -153,11 +161,12 @@ export function markdownPlugin(): VesselPlugin {
 function handleMarkdownMetaHMR(
   server: ViteDevServer,
   filePath: string,
+  type: RouteFileType,
   meta: MarkdownMeta,
 ) {
   server.ws.send({
     type: 'custom',
     event: 'vessel::md_meta',
-    data: { filePath, meta },
+    data: { filePath, type, meta },
   });
 }

@@ -31,7 +31,7 @@ export type VesselPlugin = VitePlugin & {
 
 export type VesselPluginOption = VesselPlugin | false | null | undefined;
 
-export type VesselPluginOptions =
+export type VesselPlugins =
   | VesselPluginOption
   | Promise<VesselPluginOption>
   | (VesselPluginOption | Promise<VesselPluginOption>)[];

@@ -121,9 +121,10 @@ export type ComplexRouteMatcher = (
 export type RouteMatcherConfig = (SimpleRouteMatcher | ComplexRouteMatcher)[];
 
 export type RoutesConfig = Partial<
-  Omit<ResolvedRoutesConfig, 'pages' | 'errors' | 'http'>
+  Omit<ResolvedRoutesConfig, 'pages' | 'layouts' | 'errors' | 'http'>
 > & {
   pages?: Partial<ResolvedRoutesConfig['pages']>;
+  layouts?: Partial<ResolvedRoutesConfig['layouts']>;
   errors?: Partial<ResolvedRoutesConfig['errors']>;
   http?: Partial<ResolvedRoutesConfig['http']>;
 };

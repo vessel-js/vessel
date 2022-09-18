@@ -1,5 +1,6 @@
+import type { ClientManifest } from 'client/router/types';
 import type { App } from 'node/app/App';
-import { isErrorRoute, isHttpRoute, isLayoutRoute } from 'shared/routing';
+import { getRouteComponentTypes } from 'shared/routing';
 import { prettyJsonStr, stripImportQuotesFromJson } from 'shared/utils/json';
 
 import { virtualModuleRequestPath } from '../alias';
@@ -34,43 +35,35 @@ export function filesPlugin(): VesselPlugin {
 }
 
 export function loadClientManifestModule(app: App) {
-  const routes = app.routes.toArray().filter((route) => !isHttpRoute(route));
+  const clientRoutes = app.routes
+    .toArray()
+    .filter((route) => getRouteComponentTypes().some((type) => route[type]));
 
-  const loaders = routes.map(
-    (node) => `() => import('/${node.file.rootPath}')`,
+  const loaders = clientRoutes.flatMap((route) =>
+    getRouteComponentTypes()
+      .map((type) =>
+        route[type] ? `() => import('/${route[type]!.path.root}')` : '',
+      )
+      .filter((str) => str.length > 0),
   );
 
   // We'll replace production version after chunks are built so we can be sure `serverLoader`
   // exists for a given chunk. This is not used during dev.
   const fetch = app.config.isBuild ? '__VSL_SERVER_FETCH__' : [];
 
-  const paths: [pathname: string, score: number][] = [];
-  const _routes: string[] = [];
+  const routes: ClientManifest['routes'] = [];
 
-  for (let i = 0; i < routes.length; i++) {
-    const route = routes[i];
-
-    let pathIndex = paths.findIndex(
-      (p) => p[0] === route.pathname && p[1] === route.score,
-    );
-
-    if (pathIndex === -1) {
-      paths.push([route.pathname, route.score]);
-      pathIndex = paths.length - 1;
-    }
-
-    const type = isLayoutRoute(route) ? 0 : isErrorRoute(route) ? 1 : 2;
-    _routes.push(
-      type < 2 ? `${type}~${route.file.routePath}` : route.file.routePath,
-    );
+  for (let i = 0; i < clientRoutes.length; i++) {
+    const route = clientRoutes[i];
+    routes.push({
+      path: [route.id, route.pathname, route.score],
+      layout: route.layout ? 1 : undefined,
+      error: route.error ? 1 : undefined,
+      page: route.page ? 1 : undefined,
+    });
   }
 
   return `export default ${stripImportQuotesFromJson(
-    prettyJsonStr({
-      paths,
-      loaders,
-      fetch,
-      routes: _routes,
-    }),
+    prettyJsonStr({ loaders, fetch, routes }),
   )};`;
 }
