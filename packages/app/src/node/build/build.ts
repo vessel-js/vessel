@@ -70,6 +70,8 @@ export async function build(
 
   console.log();
 
+  const httpRoutes = app.routes.filterByType('http');
+
   const build: BuildData = {
     entries,
     links: new Map(),
@@ -79,14 +81,14 @@ export async function build(
     staticRedirects: new Map(),
     staticRenders: new Map(),
     serverPages: new Set(),
-    serverEndpoints: new Set(app.routes.filterByType('http')),
+    serverEndpoints: new Set(httpRoutes),
     routeChunks: new Map(),
     routeChunkFile: new Map(),
     ...resolveLoaderChunks(app, bundles.server),
   };
 
   // staticPages + serverPages
-  for (const page of app.routes.filterByType('page')) {
+  for (const page of pageRoutes) {
     const branch = [
       ...app.routes.getGroupBranch(page).map((group) => group.layout),
       page,
@@ -126,9 +128,12 @@ export async function build(
 
   const fetch = globalThis.fetch;
   globalThis.fetch = (input, init) => {
-    if (typeof input === 'string' && app.routes.test('http', input)) {
+    if (
+      typeof input === 'string' &&
+      httpRoutes.some((route) => route.pattern.test({ pathname: input }))
+    ) {
       const url = new URL(`${ssrOrigin}${input}`);
-      const route = findRoute(url, app.routes.filterByType('http'));
+      const route = findRoute(url, httpRoutes);
 
       if (!route) {
         return Promise.resolve(handleHttpError(httpError('not found', 404)));
