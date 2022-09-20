@@ -423,7 +423,8 @@ export class Router {
 
     let cancelled = false;
     const cancel = () => {
-      this._fw.navigation.set(null);
+      const nav = this._fw.navigation.get();
+      if (nav?.to.href === url.href) this._fw.navigation.set(null);
 
       if (!cancelled) {
         if (import.meta.env.DEV) {
