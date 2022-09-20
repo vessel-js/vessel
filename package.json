@@ -27,6 +27,7 @@
     "@types/node": "^16.0.0",
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
+    "chokidar": "^3.5.3",
     "conventional-changelog-cli": "^2.1.1",
     "enquirer": "^2.3.6",
     "eslint": "^7.32.0",

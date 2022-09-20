@@ -34,7 +34,7 @@ export class RouteFiles extends SystemFiles<RouteFile> {
 
   protected _pageFilter!: (id: string) => boolean;
   protected _layoutFilter!: (id: string) => boolean;
-  protected _errorFilter!: (id: string) => boolean;
+  protected _errorBoundaryFilter!: (id: string) => boolean;
   protected _httpFilter!: (id: string) => boolean;
 
   get dirs() {
@@ -48,7 +48,7 @@ export class RouteFiles extends SystemFiles<RouteFile> {
       config.layouts.include,
       config.layouts.exclude,
     );
-    this._errorFilter = createFilter(
+    this._errorBoundaryFilter = createFilter(
       config.errors.include,
       config.errors.exclude,
     );
@@ -98,8 +98,8 @@ export class RouteFiles extends SystemFiles<RouteFile> {
     return this._layoutFilter(filePath);
   }
 
-  isErrorFile(filePath: string) {
-    return this._errorFilter(filePath);
+  isErrorBoundaryFile(filePath: string) {
+    return this._errorBoundaryFilter(filePath);
   }
 
   isHttpFile(filePath: string) {
@@ -107,7 +107,7 @@ export class RouteFiles extends SystemFiles<RouteFile> {
   }
 
   isLeafFile(filePath: string) {
-    return this.isPageFile(filePath) || this.isErrorFile(filePath);
+    return this.isPageFile(filePath) || this.isErrorBoundaryFile(filePath);
   }
 
   findWithType(filePath: string, type: RouteFileType) {
@@ -120,7 +120,7 @@ export class RouteFiles extends SystemFiles<RouteFile> {
     return this._files.find(
       (file) =>
         file.path.absolute === filePath &&
-        (file.type === 'page' || file.type === 'error'),
+        (file.type === 'page' || file.type === 'errorBoundary'),
     );
   }
 
@@ -129,8 +129,8 @@ export class RouteFiles extends SystemFiles<RouteFile> {
       return 'page';
     } else if (this.isLayoutFile(filePath)) {
       return 'layout';
-    } else if (this.isErrorFile(filePath)) {
-      return 'error';
+    } else if (this.isErrorBoundaryFile(filePath)) {
+      return 'errorBoundary';
     } else if (this.isHttpFile(filePath)) {
       return 'http';
     } else {

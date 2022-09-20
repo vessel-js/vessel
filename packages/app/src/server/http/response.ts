@@ -21,6 +21,7 @@ export const json: JsonFunction = (data, init = {}) => {
   const responseInit = typeof init === 'number' ? { status: init } : init;
 
   const headers = new Headers(responseInit.headers);
+
   if (!headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json; charset=utf-8');
   }
@@ -35,6 +36,15 @@ export type RedirectFunction = (
   url: string,
   init?: number | ResponseInit,
 ) => TypedResponse<never>;
+
+export function isResponse(value: unknown): value is Response {
+  return value instanceof Response;
+}
+
+const redirectCodes = new Set([301, 302, 303, 307, 308]);
+export function isRedirectResponse(response: Response): boolean {
+  return redirectCodes.has(response.status);
+}
 
 /**
  * A redirect response. Sets the status code and the `Location` header. Defaults to "302 Found".
@@ -56,12 +66,3 @@ export const redirect: RedirectFunction = (url, init = 302) => {
     headers,
   }) as TypedResponse<never>;
 };
-
-export function isResponse(value: unknown): value is Response {
-  return value instanceof Response;
-}
-
-const redirectStatusCodes = new Set([301, 302, 303, 307, 308]);
-export function isRedirectResponse(response: Response): boolean {
-  return redirectStatusCodes.has(response.status);
-}

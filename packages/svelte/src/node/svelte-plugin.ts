@@ -15,9 +15,9 @@ export function sveltePlugin(): VesselPlugins {
   let appDir: string;
 
   function resolveAppId() {
-    const userAppFile = normalizePath(path.posix.resolve(appDir, 'app.svelte'));
-    return fs.existsSync(userAppFile)
-      ? { id: userAppFile }
+    const appFile = normalizePath(path.resolve(appDir, '+app.svelte'));
+    return fs.existsSync(appFile)
+      ? { id: appFile }
       : { id: '@vessel-js/svelte/app.svelte' };
   }
 

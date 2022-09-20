@@ -1,8 +1,5 @@
 <script>
-  import PageLayouts from './PageLayouts.svelte';
-  import PageView from './PageView.svelte';
+  import RouterView from './RouterView.svelte';
 </script>
 
-<PageLayouts>
-  <PageView />
-</PageLayouts>
+<RouterView />

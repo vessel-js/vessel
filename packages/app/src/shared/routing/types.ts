@@ -1,4 +1,4 @@
-import type { HttpError } from './errors';
+import type { HttpError } from '../http/errors';
 
 export type Route = {
   /**
@@ -50,7 +50,7 @@ export type LoadableRouteComponent<Module extends RouteModule = RouteModule> = {
   readonly canFetch?: boolean;
 };
 
-export type RouteComponentType = 'page' | 'layout' | 'error';
+export type RouteComponentType = 'page' | 'layout' | 'errorBoundary';
 
 export type LoadableRoute<Module extends RouteModule = RouteModule> = Route & {
   readonly __moduleType?: Module;
@@ -69,12 +69,13 @@ export type MatchedRoute<
   Params extends RouteParams = RouteParams,
 > = LoadableRoute<Module> & RouteMatch<Params>;
 
-export type LoadedStaticData = Record<string, unknown>;
-export type LoadedServerData = unknown;
+export type LoadedStaticData = Record<string, any>;
+export type LoadedServerData = any;
+
 export type LoadedRouteData = {
   readonly staticData?: LoadedStaticData;
   readonly serverData?: LoadedServerData;
-  readonly error?: Error | HttpError | null;
+  readonly serverLoadError?: HttpError;
 };
 
 export type LoadedRouteComponent<Module extends RouteModule = RouteModule> =
@@ -88,6 +89,11 @@ export type LoadedRoute<
 > = Route &
   RouteMatch<Params> & {
     readonly [P in RouteComponentType]?: LoadedRouteComponent<Module>;
+  } & {
+    /**
+     * Any unexpected error that was thrown during rendering or data loading.
+     */
+    error?: Error;
   };
 
 export type RouteParams = {

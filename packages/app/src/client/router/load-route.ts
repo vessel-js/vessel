@@ -3,28 +3,39 @@ import {
   STATIC_DATA_ASSET_BASE_PATH,
 } from 'shared/data';
 import {
+  HttpError,
+  isErrorResponse,
+  isExpectedErrorResponse,
+  resolveServerResponseData,
+} from 'shared/http';
+import {
+  getRouteComponentTypes,
   LoadedRouteData,
+  LoadRouteResult,
   loadRoutes as __loadRoutes,
+  resolveSettledPromiseValue,
   RouteComponentType,
-  RouteLoadResult,
 } from 'shared/routing';
 
-import type { ClientMatchedRoute } from './types';
+import type { ClientLoadedRoute, ClientMatchedRoute } from './types';
 
-export type LoadRouteResult = RouteLoadResult<
+export type ClientLoadRouteResult = LoadRouteResult<
   ClientMatchedRoute,
-  StaticDataLoadResult | void,
-  ServerDataLoadResult | void
+  LoadStaticDataResult,
+  LoadServerDataResult
 >;
 
-const loading = new Map<string, Promise<LoadRouteResult[]>>();
+const loading = new Map<string, Promise<ClientLoadRouteResult[]>>();
 
 export async function loadRoutes(url: URL, routes: ClientMatchedRoute[]) {
   const id = routes[0].id + routes.length;
   if (loading.has(id)) return loading.get(id)!;
 
-  let resolve!: (route: LoadRouteResult[]) => void;
-  const promise = new Promise<LoadRouteResult[]>((res) => (resolve = res));
+  let resolve!: (route: ClientLoadRouteResult[]) => void;
+  const promise = new Promise<ClientLoadRouteResult[]>(
+    (res) => (resolve = res),
+  );
+
   loading.set(id, promise);
 
   const loadResults = await __loadRoutes(
@@ -39,18 +50,22 @@ export async function loadRoutes(url: URL, routes: ClientMatchedRoute[]) {
   return loadResults;
 }
 
-type StaticDataLoadResult = {
-  redirect?: string;
-  data?: LoadedRouteData['staticData'];
-};
+type LoadStaticDataResult =
+  | { redirect?: string; data?: LoadedRouteData['staticData'] }
+  | undefined;
 
 export async function loadStaticData(
   url: URL,
   route: ClientMatchedRoute,
   type: RouteComponentType,
-): Promise<StaticDataLoadResult | void> {
+): Promise<LoadStaticDataResult> {
   const component = route[type];
-  if (!component || type === 'error') return;
+  if (!component) return;
+
+  if (route.loaded) {
+    const loadedRoute = route as ClientLoadedRoute;
+    return { data: loadedRoute[type]!.staticData };
+  }
 
   let pathname = url.pathname;
   if (!pathname.endsWith('/')) pathname += '/';
@@ -74,6 +89,7 @@ export async function loadStaticData(
 
     const response = await fetch(
       `${STATIC_DATA_ASSET_BASE_PATH}/${route.id}.json${queryParams}`,
+      { credentials: 'same-origin' },
     );
 
     const redirect = response.headers.get('X-Vessel-Redirect');
@@ -93,33 +109,70 @@ export async function loadStaticData(
   } else {
     const response = await fetch(
       `${STATIC_DATA_ASSET_BASE_PATH}/${dataAssetId}.json`,
+      { credentials: 'same-origin' },
     );
+
+    if (response.status >= 400) {
+      throw new HttpError('failed loading static data', response.status);
+    }
 
     return { data: await response.json() };
   }
+
+  return; // TS being silly
 }
 
-type ServerDataLoadResult = {
-  redirect?: string;
-  data?: LoadedRouteData['serverData'];
-  error?: LoadedRouteData['error'];
-};
+type LoadServerDataResult =
+  | {
+      redirect?: string;
+      data?: LoadedRouteData['serverData'];
+      error?: LoadedRouteData['serverLoadError'];
+    }
+  | undefined;
 
 export async function loadServerData(
   url: URL,
   route: ClientMatchedRoute,
   type: RouteComponentType,
-): Promise<ServerDataLoadResult | void> {
+): Promise<LoadServerDataResult> {
   const component = route[type];
 
   if (!component || (import.meta.env.PROD && !component.canFetch)) {
     return;
   }
 
-  // error? + redirect?
-  // qparam => ?__data
+  if (route.loaded) {
+    const loadedRoute = route as ClientLoadedRoute;
+    return { data: loadedRoute[type]?.serverData };
+  }
 
-  return {};
+  url.searchParams.set('route_id', route.id);
+  url.searchParams.set('route_type', type);
+
+  const response = await fetch(url.href, { credentials: 'same-origin' });
+
+  const redirect = response.headers.get('X-Vessel-Redirect');
+  if (redirect) return { redirect };
+
+  if (isErrorResponse(response)) {
+    const data = await response.json();
+
+    if (isExpectedErrorResponse(response)) {
+      return {
+        error: new HttpError(
+          data.error.message,
+          response.status,
+          data.error.data,
+        ),
+      };
+    }
+
+    const error = Error(data.error.message);
+    error.stack = data.error.stack;
+    throw error;
+  }
+
+  return { data: await resolveServerResponseData(response) };
 }
 
 function getInjectedStaticData(id: string) {
@@ -135,4 +188,37 @@ async function hashStaticDataAssetId(id: string) {
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('')
     .substring(0, 8);
+}
+
+export function checkForLoadedRedirect(route: ClientLoadRouteResult) {
+  // In production, we don't have to check build-time redirects (`staticData`) because the
+  // redirect table is injected into the HTML document for a static site, or injected into the
+  // network route table for a provider.
+  if (import.meta.env.DEV) {
+    const dataTypes = ['staticData', 'serverData'] as const;
+    for (const type of getRouteComponentTypes()) {
+      for (const dataType of dataTypes) {
+        const value = resolveSettledPromiseValue(route[type]?.[dataType]);
+        if (value?.redirect) {
+          console.log(
+            [
+              `[vessel] data requested a redirect`,
+              `\nRoute ID: \`${route.id}\``,
+              `Route Type: \`${type}\``,
+              `Data Type: \`${dataType}\``,
+            ].join('\n'),
+          );
+
+          return value.redirect;
+        }
+      }
+    }
+  } else {
+    for (const type of getRouteComponentTypes()) {
+      const value = resolveSettledPromiseValue(route[type]?.serverData);
+      if (value?.redirect) return value.redirect;
+    }
+  }
+
+  return null;
 }

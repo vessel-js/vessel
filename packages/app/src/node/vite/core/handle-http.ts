@@ -10,7 +10,7 @@ import {
   type HttpRequestModule,
 } from 'server/http';
 import { findRoute } from 'shared/routing';
-import { coalesceToError } from 'shared/utils/error';
+import { coerceToError } from 'shared/utils/error';
 
 import { handleDevServerError, logDevError } from './dev-server';
 
@@ -46,13 +46,13 @@ export async function handleHttpRequest({
     loader: () => loader(route.http!),
     getClientAddress: () => req.socket.remoteAddress,
     onError: (error) => {
-      logDevError(app, req, coalesceToError(error));
+      logDevError(app, req, coerceToError(error));
     },
   });
 
   try {
     await handleHTTPRequest(base, req, res, handler, (error) => {
-      logDevError(app, req, coalesceToError(error));
+      logDevError(app, req, coerceToError(error));
     });
   } catch (error) {
     handleDevServerError(app, req, res, error);

@@ -1,6 +1,11 @@
+import { watch } from 'chokidar';
 import { defineConfig } from 'tsup';
 
 import { base, copyFiles } from '../app/tsup.config';
+
+watch('src/client/**/*.svelte').on('all', async () => {
+  await copyFiles('**/*.svelte');
+});
 
 export default defineConfig([
   {

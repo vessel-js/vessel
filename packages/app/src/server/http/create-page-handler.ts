@@ -1,5 +1,7 @@
 import type { ServerManifest, ServerRequestHandler } from 'server/types';
 
+import { json } from './response';
+
 export function createPageHandler(
   manifest: ServerManifest,
 ): ServerRequestHandler {
@@ -8,7 +10,7 @@ export function createPageHandler(
 
     let response: Response;
 
-    if (url.searchParams.has('__data')) {
+    if (url.searchParams.has('route_id')) {
       response = handleDataRequest(url, request, manifest);
     } else {
       response = handlePageRequest(url, request, manifest);
@@ -31,8 +33,7 @@ export function handleDataRequest(
   request: Request,
   manifest: ServerManifest,
 ): Response {
-  // __data
-  return {} as any;
+  return json({});
 }
 
 export function handlePageRequest(

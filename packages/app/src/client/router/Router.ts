@@ -4,12 +4,20 @@
  * - Vue Router: https://github.com/vuejs/router
  */
 
+import { HttpError } from 'shared/http';
 import {
   findRoute,
+  getRouteComponentDataKeys,
+  getRouteComponentTypes,
+  LoadedRouteComponent,
   matchAllRoutes,
   matchRoute,
   normalizeURL,
+  resolveSettledPromiseRejection,
+  resolveSettledPromiseValue,
+  stripRouteComponentTypes,
 } from 'shared/routing';
+import { coerceToError } from 'shared/utils/error';
 import { isFunction, isString } from 'shared/utils/unit';
 import { isLinkExternal } from 'shared/utils/url';
 
@@ -20,7 +28,7 @@ import {
   type RoutesComparatorFactory,
 } from './comparators';
 import { listen } from './listen';
-import { loadRoutes } from './load-route';
+import { checkForLoadedRedirect, loadRoutes } from './load-route';
 import type { Reactive } from './reactivity';
 import {
   createSimpleScrollDelegate,
@@ -35,7 +43,7 @@ import type {
   ClientMatchedRoute,
   ClientRouteDeclaration,
   Navigation,
-  NavigationOptions,
+  NavigationFlight,
   NavigationRedirector,
   RouterGoOptions,
 } from './types';
@@ -58,7 +66,7 @@ let navigationToken = {};
 export class Router {
   protected _url: URL;
   protected _listening = false;
-  protected _scroll: ScrollDelegate;
+  protected _scrollDelegate: ScrollDelegate;
   protected _comparator: RoutesComparator;
   protected _fw: RouterFrameworkDelegate;
   protected _routes: ClientLoadableRoute[] = [];
@@ -115,16 +123,16 @@ export class Router {
    * positions for pages during certain navigation events.
    */
   get scrollDelegate() {
-    return this._scroll;
+    return this._scrollDelegate;
   }
 
   constructor(options: RouterOptions) {
     this._url = new URL(location.href);
     this.baseUrl = options.baseUrl;
     this.trailingSlash = !!options.trailingSlash;
-    this._comparator = createSimpleComparator();
-    this._scroll = createSimpleScrollDelegate(this);
     this._fw = options.frameworkDelegate;
+    this._comparator = createSimpleComparator();
+    this._scrollDelegate = createSimpleScrollDelegate(this);
 
     // make it possible to reset focus
     document.body.setAttribute('tabindex', '-1');
@@ -266,15 +274,15 @@ export class Router {
       const hash = path;
       this.hashChanged(hash);
       this._changeHistoryState(this._url, state, replace);
-      await this._scroll.scroll?.({ target: scroll, hash });
-      this._scroll.savePosition?.();
+      await this._scrollDelegate.scroll?.({ target: scroll, hash });
+      this._scrollDelegate.savePosition?.();
       return;
     }
 
     const url = this.createURL(path);
 
     if (!this.disabled) {
-      return this.navigate(url, {
+      return this.preflight(url, {
         scroll,
         keepfocus,
         replace,
@@ -376,7 +384,9 @@ export class Router {
   setScrollDelegate<T extends ScrollDelegate>(
     manager: T | ScrollDelegateFactory<T>,
   ): T {
-    return (this._scroll = isFunction(manager) ? manager?.(this) : manager);
+    return (this._scrollDelegate = isFunction(manager)
+      ? manager?.(this)
+      : manager);
   }
 
   /**
@@ -401,53 +411,70 @@ export class Router {
   }
 
   /** @internal */
-  async navigate(
-    url: URL,
-    {
-      scroll,
-      accepted,
-      blocked,
-      state = {},
-      keepfocus = false,
-      replace = false,
-      redirects = [],
-    }: NavigationOptions,
-  ) {
+  async preflight(url: URL, flight: NavigationFlight) {
     const token = (navigationToken = {});
+    flight.state = flight.state ?? {};
+    flight.redirects = flight.redirects ?? [];
+
+    let redirecting;
+    const redirect = this._createRedirector(url, (redirectURL) => {
+      return (redirecting = handleRedirect(redirectURL));
+    });
 
     let cancelled = false;
     const cancel = () => {
       this._fw.navigation.set(null);
+
       if (!cancelled) {
         if (import.meta.env.DEV) {
-          console.log(`[vessel] cancelled navigation to \`${url.pathname}\``);
+          console.log(`[vessel] cancelled navigation to: \`${fURL(url)}\``);
         }
-        blocked?.();
+        flight.blocked?.();
       }
+
       cancelled = true;
     };
 
-    // TODO: check for redirect loop here?? -> load first matching error page?
+    const navigate = (matches: ClientMatchedRoute[], rootError?: Error) =>
+      this._navigate({
+        ...flight,
+        token,
+        rootError,
+        matches,
+        redirect,
+        blocked: cancel,
+      });
 
-    const handleRedirect = (to: URL) => {
+    if (flight.redirects.includes(url.href) || flight.redirects.length > 10) {
       if (import.meta.env.DEV) {
-        console.info(
-          `[vessel] redirecting from \`${url.href}\` to \`${to.href}\``,
+        console.error(
+          [
+            `[vessel] detected a redirect loop or long chain`,
+            `\nRedirect Chain: ${flight.redirects.join(' -> ')}`,
+          ].join('\n'),
         );
       }
 
-      redirects.push(to.pathname);
-      return this.navigate(to, {
-        keepfocus,
-        replace,
-        state,
-        accepted,
+      return navigate(
+        this.matchAll('/'),
+        new HttpError('too many redirects', 500),
+      );
+    }
+
+    const handleRedirect = (to: URL) => {
+      if (import.meta.env.DEV) {
+        console.log(
+          `[vessel] redirecting from \`${fURL(url)}\` to \`${fURL(to)}\``,
+        );
+      }
+      flight.redirects!.push(to.pathname);
+      return this.preflight(to, {
+        ...flight,
         blocked: cancel,
-        redirects,
       });
     };
 
-    let redirecting = this._redirectCheck(url, handleRedirect);
+    redirecting = this._redirectCheck(url, handleRedirect);
     if (redirecting) return redirecting;
 
     if (!this.owns(url)) {
@@ -460,36 +487,30 @@ export class Router {
       return;
     }
 
-    // Abort if user navigated again during micotick.
-    await Promise.resolve();
-    if (token !== navigationToken) return;
-
-    const match = this.match(url);
+    const matches = this.matchAll(url);
+    const match = matches[0];
 
     if (!match?.page) {
       cancel();
 
-      // TODO: find closest error boundary (404) -> if none fallback to server
+      const error = new HttpError('no page match', 404);
+      if (matches.length > 0) return navigate(matches, error);
 
       // Happens in SPA fallback mode - don't go back to the server to prevent infinite reload.
       if (
         url.origin === location.origin &&
         url.pathname === location.pathname
       ) {
-        // TODO: this should be 404 -> root error page?
+        return navigate(this.matchAll('/'), error);
       }
 
       // Let the server decide what to do.
-      // await this.goLocation(url);
-      return;
+      await this.goLocation(url);
     }
 
-    const redirect = this._createRedirector(url, (redirectURL) => {
-      redirecting = handleRedirect(redirectURL);
-    });
+    flight.canHandle?.();
 
-    const from = this.currentRoute;
-
+    const from = this.currentRoute ?? null;
     for (const hook of this._beforeNavigate) {
       await hook({ from, to: match, cancel, redirect });
     }
@@ -497,51 +518,142 @@ export class Router {
     if (cancelled) return;
     if (redirecting) return redirecting;
 
-    this.scrollDelegate.savePosition?.();
-    this._fw.navigation.set({ from: from?.url, to: url });
-    accepted?.();
+    // Abort if user navigated away during `beforeNavigate`.
+    if (token !== navigationToken) return cancel();
+
+    return navigate(matches);
+  }
+
+  protected async _navigate({
+    matches,
+    rootError,
+    ...flight
+  }: {
+    token: any;
+    rootError?: Error;
+    redirect: NavigationRedirector;
+    matches: ClientMatchedRoute[];
+  } & NavigationFlight): Promise<void> {
+    const from = this.currentRoute ?? null;
+    const to = matches[0];
+
+    this._fw.navigation.set({ from: from?.url, to: to.url });
 
     if (import.meta.env.DEV && from) {
       console.log(
-        `[vessel] navigating from \`${from.url.pathname}\` to \`${url.pathname}\``,
+        `[vessel] navigating from \`${fURL(from.url)}\` to \`${fURL(to.url)}\``,
       );
     }
 
-    const matches = this.matchAll(url);
-    const loadResults = await loadRoutes(url, matches);
+    const prevMatches = this._fw.matches.get();
+    const loadResults = await loadRoutes(
+      to.url,
+      matches.map(
+        (match) =>
+          // TODO: figure out when to invalidate data and reload - server actions?
+          prevMatches.find(
+            (route) => !route.error && route.loaded && route.id === match.id,
+          ) ?? match,
+      ),
+    );
 
-    // TODO: this can return a possible redirect (prob need LoadRouteResult)
-    // TODO: this can return a bad result 400? - should it return error?
-    // process results -> look for static redirects first, then server redirects
-    // look for any unexpected errors (not HTTP) for both static/server
-    // if any error -> handle from specific route
-    // group everything
+    // Abort if user navigated away during load.
+    if (flight.token !== navigationToken) return flight.blocked?.();
 
-    // TODO: FIX TYPES
-    const to = null as any;
-    const loadedMatches = null as any;
+    // Look for a redirect backwards because anything earlier in the tree should "win".
+    for (let i = loadResults.length - 1; i >= 0; i--) {
+      const redirect = checkForLoadedRedirect(loadResults[i]);
+      if (redirect) return flight.redirect(redirect);
+    }
 
-    this._fw.matches.set(loadedMatches);
-    this._fw.route.set(to);
+    const loadedRoutes: ClientLoadedRoute[] = [];
+
+    for (const result of loadResults) {
+      const route = stripRouteComponentTypes(result);
+
+      for (const type of getRouteComponentTypes()) {
+        const compResult = result[type];
+        if (!compResult) continue;
+
+        const component = {} as Writeable<LoadedRouteComponent>;
+
+        // Find any unexpected errors that were thrown during data loading.
+        for (const dataKey of getRouteComponentDataKeys()) {
+          const reason = resolveSettledPromiseRejection(compResult[dataKey]);
+          const error = reason ? coerceToError(reason) : null;
+          if (error && !route.error) route.error = error;
+
+          if (import.meta.env.DEV && error) {
+            console.error(
+              [
+                '[vessel] failed loading data',
+                `\nURL: ${fURL(route.url)}`,
+                `Route ID: ${route.id === '' ? '.' : ''}`,
+                `Component Type: ${type}`,
+                `Data Type: ${dataKey}`,
+                `\nError: ${error.message}${
+                  error.stack ? `\n\n${error.stack}` : ''
+                }`,
+              ].join('\n'),
+            );
+          }
+
+          if (dataKey === 'module') {
+            const value = resolveSettledPromiseValue(compResult[dataKey])!;
+            component.module = value;
+          } else if (dataKey === 'staticData') {
+            const value = resolveSettledPromiseValue(compResult[dataKey])!;
+            component.staticData = value?.data;
+          } else if (dataKey === 'serverData') {
+            const value = resolveSettledPromiseValue(compResult[dataKey])!;
+            component.serverData = value?.data;
+            component.serverLoadError = value?.error;
+          }
+        }
+
+        route[type] = component;
+      }
+
+      loadedRoutes.push({ ...route, loaded: true });
+    }
+
+    if (rootError) {
+      if (loadedRoutes[0]) {
+        loadedRoutes[0].error = rootError;
+      } else {
+        loadedRoutes[0] = {
+          id: 'root_error_boundary',
+          url: to.url,
+          error: rootError,
+        } as any;
+      }
+    }
+
+    this._scrollDelegate.savePosition?.();
+    flight.accepted?.();
+
+    const currentRoute = loadedRoutes[0];
+    this._fw.matches.set(loadedRoutes.reverse());
+    this._fw.route.set(currentRoute);
 
     // Wait a tick so page is rendered before updating history.
     await this._fw.tick();
 
-    this._changeHistoryState(to.url, state, replace);
-    if (!keepfocus) resetFocus();
+    this._changeHistoryState(currentRoute.url, flight.state, flight.replace);
+    if (!flight.keepfocus) resetFocus();
 
-    await this.scrollDelegate.scroll?.({
-      from,
-      to,
-      target: scroll,
-      hash: to.url.hash,
-    });
-
-    this._url = url;
+    this._url = to.url;
     this._fw.navigation.set(null);
 
+    await this._scrollDelegate.scroll?.({
+      from,
+      to: currentRoute,
+      target: flight.scroll,
+      hash: currentRoute.url.hash,
+    });
+
     for (const hook of this._afterNavigate) {
-      await hook({ from, to });
+      await hook({ from, to: currentRoute });
     }
   }
 
@@ -559,8 +671,8 @@ export class Router {
 
   protected _redirectCheck(
     url: URL,
-    handle: (to: URL) => void | null | Promise<void>,
-  ): void | null | Promise<void> {
+    handle: (to: URL) => void | Promise<void>,
+  ): void | Promise<void> {
     const href = this.normalizeURL(url).href;
 
     if (!this._redirectsMap.has(href)) return;
@@ -571,7 +683,7 @@ export class Router {
     return this.owns(url) ? handle(redirectURL) : this.goLocation(url);
   }
 
-  protected _changeHistoryState = (url: URL, state: any, replace: boolean) => {
+  protected _changeHistoryState = (url: URL, state: any, replace = false) => {
     const change = replace ? 0 : 1;
     state[this.historyKey] = this.historyIndex += change;
     history[replace ? 'replaceState' : 'pushState'](state, '', url);
@@ -603,3 +715,13 @@ function resetFocus() {
     root.removeAttribute('tabindex');
   }
 }
+
+function fURL(url: URL) {
+  if (import.meta.env.DEV) {
+    return url.origin === location.origin ? url.pathname : url.href;
+  }
+
+  return '';
+}
+
+type Writeable<T> = { -readonly [P in keyof T]: T[P] };

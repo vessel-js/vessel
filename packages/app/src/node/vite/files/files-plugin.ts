@@ -56,10 +56,10 @@ export function loadClientManifestModule(app: App) {
   for (let i = 0; i < clientRoutes.length; i++) {
     const route = clientRoutes[i];
     routes.push({
-      path: [route.id, route.pathname, route.score],
-      layout: route.layout ? 1 : undefined,
-      error: route.error ? 1 : undefined,
-      page: route.page ? 1 : undefined,
+      u: [route.id, route.pathname, route.score],
+      l: route.layout ? 1 : undefined,
+      e: route.errorBoundary ? 1 : undefined,
+      p: route.page ? 1 : undefined,
     });
   }
 

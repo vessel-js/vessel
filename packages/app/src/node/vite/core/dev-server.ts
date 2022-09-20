@@ -3,7 +3,7 @@ import type { App } from 'node/app/App';
 import type { RouteFile } from 'node/app/files';
 import type { ServerResponse } from 'node:http';
 import { STATIC_DATA_ASSET_BASE_PATH } from 'shared/data';
-import { coalesceToError } from 'shared/utils/error';
+import { coerceToError } from 'shared/utils/error';
 import { noendslash } from 'shared/utils/url';
 import type { Connect, ViteDevServer } from 'vite';
 
@@ -114,7 +114,7 @@ export function handleDevServerError(
   res: ServerResponse,
   e: unknown,
 ) {
-  const error = coalesceToError(e);
+  const error = coerceToError(e);
   logDevError(app, req, error);
   res.statusCode = 500;
   res.end(error.stack);

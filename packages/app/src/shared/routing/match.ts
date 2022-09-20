@@ -1,11 +1,6 @@
 import { slash } from 'shared/utils/url';
 
-import type {
-  MatchedRoute,
-  Route,
-  RouteComponentType,
-  RouteMatch,
-} from './types';
+import type { Route, RouteComponentType, RouteMatch } from './types';
 
 export function matchRoute<T extends Route>(url: URL, routes: T[]) {
   const route = routes.find((route) => testRoute(url, route));
@@ -34,9 +29,14 @@ export function createMatchedRoute<T extends Route>(
 }
 
 // don't mess with this order -> reverse is top-down render order
-const routeTypes = ['page', 'error', 'layout'] as const;
+const routeTypes = ['page', 'errorBoundary', 'layout'] as const;
 export function getRouteComponentTypes(): readonly RouteComponentType[] {
   return routeTypes;
+}
+
+const componentDataKeys = ['module', 'staticData', 'serverData'] as const;
+export function getRouteComponentDataKeys() {
+  return componentDataKeys;
 }
 
 export function findRoute<T extends Route>(url: URL, routes: T[]) {
@@ -63,7 +63,7 @@ export function createPathId(url: URL, baseUrl = '/') {
   return `${pathname}?${query}`;
 }
 
-export function stripRouteComponentTypes<T extends MatchedRoute>(
+export function stripRouteComponentTypes<T extends Route>(
   route: T,
 ): Omit<T, RouteComponentType> {
   return getRouteComponentTypes().reduce(
@@ -86,9 +86,13 @@ export function filterMatchingRouteSegments<T extends Route>(
     const segment = pathSegments.slice(0, i).join('/');
     const segmentURL = new URL(segment === '' ? '/' : `/${segment}/`, url);
 
-    const match = routes
-      .slice(start)
-      .findIndex((route) => testRoute(segmentURL, route));
+    const match = routes.slice(start).findIndex(
+      (route) =>
+        testRoute(segmentURL, route) &&
+        // TODO: hacky fix right now to ensure FS hierarchy holds. Dynamic routes are matching
+        // which we probably don't want.
+        (!segments[0] || segments[0][1].id.startsWith(route.id)),
+    );
 
     if (match >= 0) {
       segments.push([segmentURL, routes[start + match]]);

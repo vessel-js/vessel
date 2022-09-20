@@ -1,5 +1,5 @@
-import { HttpError, isHttpError } from 'shared/routing';
-import { coalesceToError } from 'shared/utils/error';
+import { HttpError, isHttpError } from 'shared/http';
+import { coerceToError } from 'shared/utils/error';
 
 import { json } from './response';
 
@@ -54,11 +54,13 @@ export function handleHttpError(error: unknown, dev = false) {
       },
       error.init,
     );
+
+    response.headers.set('X-Vessel-Expected', 'yes');
   } else {
     if (!dev) {
       response = json({ error: { message: 'internal server error' } }, 500);
     } else {
-      const err = coalesceToError(error);
+      const err = coerceToError(error);
       response = json(
         {
           error: {

@@ -5,7 +5,7 @@ import { handleHTTPRequest } from 'node/http';
 import { createPageHandler } from 'server/http';
 import type { ServerEntryModule } from 'server/types';
 import { matchRoute } from 'shared/routing';
-import { coalesceToError } from 'shared/utils/error';
+import { coerceToError } from 'shared/utils/error';
 import type { Connect, ModuleNode, ViteDevServer } from 'vite';
 
 import { virtualModuleId } from '../alias';
@@ -37,6 +37,12 @@ export async function handlePageRequest({
     res.statusCode = 404;
     res.end('Not found');
     return;
+  }
+
+  if (url.searchParams.has('route_id')) {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.end(JSON.stringify({}));
   }
 
   try {

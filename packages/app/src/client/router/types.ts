@@ -14,6 +14,7 @@ import type { ScrollToTarget } from './scroll-delegate';
 
 export type ClientModule = {
   [id: string]: unknown;
+  default: any;
   __markdownMeta?: MarkdownMeta;
 };
 
@@ -26,10 +27,15 @@ export type ClientModuleLoader = () => Promise<ClientModule>;
 export type ClientLoadableRoute = LoadableRoute<ClientModule>;
 
 export type ClientMatchedRoute<Params extends RouteParams = RouteParams> =
-  MatchedRoute<ClientModule, Params>;
+  MatchedRoute<ClientModule, Params> & {
+    error?: LoadedRoute['error'];
+    loaded?: boolean;
+  };
 
 export type ClientLoadedRoute<Params extends RouteParams = RouteParams> =
-  LoadedRoute<ClientModule, Params>;
+  LoadedRoute<ClientModule, Params> & {
+    loaded?: boolean;
+  };
 
 export type ClientRouteDeclaration = Omit<
   ClientLoadableRoute,
@@ -52,15 +58,18 @@ export type RouterGoOptions = {
   state?: any;
 };
 
-export type NavigationOptions = RouterGoOptions & {
-  accepted?: () => void;
+export type NavigationFlight = RouterGoOptions & {
   blocked?: () => void;
+  accepted?: () => void;
+  canHandle?: () => void;
   redirects?: string[];
 };
 
 export type CancelNavigation = () => void;
 
-export type NavigationRedirector = (pathnameOrURL: string | URL) => void;
+export type NavigationRedirector = (
+  pathnameOrURL: string | URL,
+) => Promise<void>;
 
 export type BeforeNavigateHook = (navigation: {
   from: ClientLoadedRoute | null;
@@ -90,12 +99,12 @@ export type ClientManifest = {
   fetch: number[];
   routes: {
     /** URL pathname used to construct `URLPattern` and it's route score. */
-    path: [id: string, pathname: string, score: number];
+    u: [id: string, pathname: string, score: number];
     /** Whether this route contains a layout loader. */
-    layout?: 1;
-    /** Whether this route contains an error loader. */
-    error?: 1;
+    l?: 1;
+    /** Whether this route contains an error boundary loader. */
+    e?: 1;
     /** Whether this route contains a page loader. */
-    page?: 1;
+    p?: 1;
   }[];
 };

@@ -87,11 +87,11 @@ export function listen(router: Router) {
       return;
     }
 
-    router.navigate(url, {
+    router.preflight(url, {
       scroll: !a.hasAttribute('data-noscroll') ? () => scrollPosition() : null,
       replace: url.href === location.href,
       keepfocus: false,
-      accepted: () => event.preventDefault(),
+      canHandle: () => event.preventDefault(),
       blocked: () => event.preventDefault(),
     });
   });
@@ -110,7 +110,7 @@ export function listen(router: Router) {
     // which means we end up back here.
     if (event.state[router.historyKey] === router.historyIndex) return;
 
-    router.navigate(new URL(location.href), {
+    router.preflight(new URL(location.href), {
       scroll: () => router.scrollDelegate.getSavedPosition?.(event.state),
       keepfocus: false,
       accepted: () => {

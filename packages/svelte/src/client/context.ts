@@ -55,7 +55,7 @@ export function getFrontmatterStore(): FrontmatterStore {
 export async function createContext() {
   const stores = {
     [ROUTE_KEY]: writable<ClientLoadedRoute>(),
-    [ROUTE_MATCHES_KEY]: writable<ClientLoadedRoute[]>(),
+    [ROUTE_MATCHES_KEY]: writable<ClientLoadedRoute[]>([]),
     [NAVIGATION_KEY]: writable<Navigation>(),
   };
 
@@ -63,7 +63,7 @@ export async function createContext() {
   stores[FRONTMATTER_KEY] = createFrontmatterStore(stores[MARKDOWN_KEY]);
 
   const context = new Map<string | symbol, unknown>();
-  for (const key of Object.keys(stores)) {
+  for (const key of Object.getOwnPropertySymbols(stores)) {
     context.set(key, { subscribe: stores[key].subscribe });
   }
 

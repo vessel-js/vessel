@@ -17,3 +17,11 @@ export class HttpError extends Error {
 export function isHttpError(error: unknown): error is HttpError {
   return error instanceof HttpError;
 }
+
+export function isErrorResponse(response: Response) {
+  return response.headers.has('X-Vessel-Error');
+}
+
+export function isExpectedErrorResponse(response: Response) {
+  return response.headers.has('X-Vessel-Expected');
+}

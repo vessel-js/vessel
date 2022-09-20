@@ -53,17 +53,18 @@ export async function init({ frameworkDelegate }: ClientInitOptions) {
         meta: MarkdownMeta;
       }) => {
         const route = frameworkDelegate.route.get();
+        if (!route[type]) return;
         if (
-          route[type] &&
           isMarkdownModule(route[type]!.module) &&
           filePath.endsWith(route.id)
         ) {
+          const component = route[type]!;
           frameworkDelegate.route.set({
             ...route,
             [type]: {
-              ...route[type],
+              ...component,
               module: {
-                ...route[type]!.module,
+                ...component.module,
                 __markdownMeta: meta,
               },
             },
@@ -95,9 +96,15 @@ function readManifest(
   let loaderIndex = 0;
   const clientRoutes: ClientLoadableRoute[] = [];
 
+  const typeKeyMap: Record<RouteComponentType, string> = {
+    page: 'p',
+    layout: 'l',
+    errorBoundary: 'e',
+  };
+
   for (let i = 0; i < routes.length; i++) {
     const route = routes[i];
-    const [id, pathname, score] = route.path;
+    const [id, pathname, score] = route.u;
 
     const newRoute = {
       id,
@@ -107,7 +114,7 @@ function readManifest(
     };
 
     for (const type of getRouteComponentTypes()) {
-      if (route[type]) {
+      if (route[typeKeyMap[type]]) {
         newRoute[type] = {
           loader: loaders[loaderIndex++],
           canFetch: fetch.includes(loaderIndex),

@@ -173,8 +173,8 @@ export abstract class SystemFiles<T extends SystemFileMeta>
       },
       dir: {
         absolute: path.posix.dirname(filePath),
-        root: rootDir,
-        route: routeDir,
+        root: rootDir === '.' ? '' : rootDir,
+        route: routeDir === '.' ? '' : routeDir,
       },
       ext,
       reset,

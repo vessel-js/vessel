@@ -1,42 +1,45 @@
 import { getRouteComponentTypes, stripRouteComponentTypes } from './match';
 import type { MatchedRoute, RouteComponentType } from './types';
 
-export type RouteLoadResult<
+export type LoadRouteResult<
   Route extends MatchedRoute,
-  StaticDataLoadResult,
-  ServerDataLoadResult,
+  LoadStaticDataResult,
+  LoadServerDataResult,
 > = Omit<Route, RouteComponentType> & {
   [P in RouteComponentType]?: {
     module: PromiseSettledResult<Required<Route>['__moduleType']>;
-    staticData: PromiseSettledResult<StaticDataLoadResult>;
-    serverData: PromiseSettledResult<ServerDataLoadResult>;
+    staticData: PromiseSettledResult<LoadStaticDataResult>;
+    serverData: PromiseSettledResult<LoadServerDataResult>;
   };
 };
 
 export async function loadRoute<
   Route extends MatchedRoute,
-  StaticDataLoadResult,
-  ServerDataLoadResult,
+  LoadStaticDataResult,
+  LoadServerDataResult,
 >(
   url: URL,
   route: Route,
-  staticDataLoader: RouteDataLoader<Route, StaticDataLoadResult>,
-  serverDataLoader: RouteDataLoader<Route, ServerDataLoadResult>,
+  staticDataLoader: RouteDataLoader<Route, LoadStaticDataResult>,
+  serverDataLoader: RouteDataLoader<Route, LoadServerDataResult>,
 ) {
-  const result: RouteLoadResult<
+  const result: LoadRouteResult<
     Route,
-    StaticDataLoadResult,
-    ServerDataLoadResult
+    LoadStaticDataResult,
+    LoadServerDataResult
   > = stripRouteComponentTypes(route);
 
   await Promise.all(
     getRouteComponentTypes()
       .filter((type) => route[type])
       .map(async (type) => {
+        // @ts-expect-error - .
+        const loadedMod = route[type]?.module;
+
         const [mod, staticData, serverData] = await Promise.allSettled([
-          route[type]!.loader(),
-          staticDataLoader(url, route, type),
-          serverDataLoader(url, route, type),
+          loadedMod ? Promise.resolve(loadedMod) : route[type]!.loader(),
+          staticDataLoader(new URL(url), route, type),
+          serverDataLoader(new URL(url), route, type),
         ]);
 
         result[type] = {
@@ -52,15 +55,15 @@ export async function loadRoute<
 
 export async function loadRoutes<
   Route extends MatchedRoute,
-  StaticDataLoadResult,
-  ServerDataLoadResult,
+  LoadStaticDataResult,
+  LoadServerDataResult,
 >(
   url: URL,
   routes: Route[],
-  staticDataLoader: RouteDataLoader<Route, StaticDataLoadResult>,
-  serverDataLoader: RouteDataLoader<Route, ServerDataLoadResult>,
+  staticDataLoader: RouteDataLoader<Route, LoadStaticDataResult>,
+  serverDataLoader: RouteDataLoader<Route, LoadServerDataResult>,
 ): Promise<
-  RouteLoadResult<Route, StaticDataLoadResult, ServerDataLoadResult>[]
+  LoadRouteResult<Route, LoadStaticDataResult, LoadServerDataResult>[]
 > {
   return Promise.all(
     routes.map((route) =>
@@ -74,3 +77,15 @@ export type RouteDataLoader<Route extends MatchedRoute, LoadResult> = (
   route: Route,
   type: RouteComponentType,
 ) => Promise<LoadResult>;
+
+export function resolveSettledPromiseValue<T>(
+  result?: PromiseSettledResult<T>,
+) {
+  return result?.status === 'fulfilled' ? result.value : null;
+}
+
+export function resolveSettledPromiseRejection(
+  result?: PromiseSettledResult<unknown>,
+) {
+  return result?.status === 'rejected' ? result.reason : null;
+}

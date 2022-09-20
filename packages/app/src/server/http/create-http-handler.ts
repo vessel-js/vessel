@@ -7,6 +7,7 @@ import {
   HttpMethod,
   type HttpRequestModule,
 } from './request';
+import { isResponse } from './response';
 
 export type HttpHandlerInit = {
   dev?: boolean;
@@ -70,7 +71,7 @@ export function createHttpHandler(init: HttpHandlerInit): ServerRequestHandler {
         }),
       );
 
-      if (!(response instanceof Response)) {
+      if (!isResponse(response)) {
         throw new Error(
           `[vessel] invalid return value from route handler at ${url.pathname}, should return a \`Response\`.`,
         );
@@ -78,7 +79,7 @@ export function createHttpHandler(init: HttpHandlerInit): ServerRequestHandler {
 
       return response;
     } catch (error) {
-      if (error instanceof Response) {
+      if (isResponse(error)) {
         return error;
       } else {
         return onError?.(error) ?? handleHttpError(error, dev);
