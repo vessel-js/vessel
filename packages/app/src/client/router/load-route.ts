@@ -27,7 +27,11 @@ export type ClientLoadRouteResult = LoadRouteResult<
 
 const loading = new Map<string, Promise<ClientLoadRouteResult[]>>();
 
-export async function loadRoutes(url: URL, routes: ClientMatchedRoute[]) {
+export async function loadRoutes(
+  url: URL,
+  routes: ClientMatchedRoute[],
+  signal?: AbortSignal,
+) {
   const id = routes[0].id + routes.length;
   if (loading.has(id)) return loading.get(id)!;
 
@@ -43,6 +47,7 @@ export async function loadRoutes(url: URL, routes: ClientMatchedRoute[]) {
     routes,
     loadStaticData,
     loadServerData,
+    signal,
   );
 
   resolve(loadResults);
@@ -58,6 +63,7 @@ export async function loadStaticData(
   url: URL,
   route: ClientMatchedRoute,
   type: RouteComponentType,
+  signal?: AbortSignal,
 ): Promise<LoadStaticDataResult> {
   const component = route[type];
   if (!component) return;
@@ -89,7 +95,7 @@ export async function loadStaticData(
 
     const response = await fetch(
       `${STATIC_DATA_ASSET_BASE_PATH}/${route.id}.json${queryParams}`,
-      { credentials: 'same-origin' },
+      { credentials: 'same-origin', signal },
     );
 
     const redirect = response.headers.get('X-Vessel-Redirect');
@@ -99,17 +105,15 @@ export async function loadStaticData(
       try {
         return { data: await response.json() };
       } catch (e) {
-        if (import.meta.env.DEV) {
-          console.log(
-            `[vessel] received malformed static JSON data from server.\n\nRoute ID:${route.id}\nURL:${url.href}`,
-          );
-        }
+        console.log(
+          `[vessel] received malformed static JSON data from server.\n\nRoute ID:${route.id}\nURL:${url.href}`,
+        );
       }
     }
   } else {
     const response = await fetch(
       `${STATIC_DATA_ASSET_BASE_PATH}/${dataAssetId}.json`,
-      { credentials: 'same-origin' },
+      { credentials: 'same-origin', signal },
     );
 
     if (response.status >= 400) {
@@ -134,6 +138,7 @@ export async function loadServerData(
   url: URL,
   route: ClientMatchedRoute,
   type: RouteComponentType,
+  signal?: AbortSignal,
 ): Promise<LoadServerDataResult> {
   const component = route[type];
 
@@ -149,7 +154,10 @@ export async function loadServerData(
   url.searchParams.set('route_id', route.id);
   url.searchParams.set('route_type', type);
 
-  const response = await fetch(url.href, { credentials: 'same-origin' });
+  const response = await fetch(url.href, {
+    credentials: 'same-origin',
+    signal,
+  });
 
   const redirect = response.headers.get('X-Vessel-Redirect');
   if (redirect) return { redirect };

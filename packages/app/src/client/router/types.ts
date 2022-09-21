@@ -51,14 +51,14 @@ export type Navigation = {
   to: URL;
 } | null;
 
-export type RouterGoOptions = {
+export type GoHrefOptions = {
   scroll?: ScrollToTarget | null;
   keepfocus?: boolean;
   replace?: boolean;
   state?: any;
 };
 
-export type NavigationFlight = RouterGoOptions & {
+export type NavigationOptions = GoHrefOptions & {
   blocked?: () => void;
   accepted?: () => void;
   canHandle?: () => void;

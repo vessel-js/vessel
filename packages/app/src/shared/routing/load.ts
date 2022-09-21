@@ -22,6 +22,7 @@ export async function loadRoute<
   route: Route,
   staticDataLoader: RouteDataLoader<Route, LoadStaticDataResult>,
   serverDataLoader: RouteDataLoader<Route, LoadServerDataResult>,
+  signal?: AbortSignal,
 ) {
   const result: LoadRouteResult<
     Route,
@@ -38,8 +39,8 @@ export async function loadRoute<
 
         const [mod, staticData, serverData] = await Promise.allSettled([
           loadedMod ? Promise.resolve(loadedMod) : route[type]!.loader(),
-          staticDataLoader(new URL(url), route, type),
-          serverDataLoader(new URL(url), route, type),
+          staticDataLoader(new URL(url), route, type, signal),
+          serverDataLoader(new URL(url), route, type, signal),
         ]);
 
         result[type] = {
@@ -62,12 +63,13 @@ export async function loadRoutes<
   routes: Route[],
   staticDataLoader: RouteDataLoader<Route, LoadStaticDataResult>,
   serverDataLoader: RouteDataLoader<Route, LoadServerDataResult>,
+  signal?: AbortSignal,
 ): Promise<
   LoadRouteResult<Route, LoadStaticDataResult, LoadServerDataResult>[]
 > {
   return Promise.all(
     routes.map((route) =>
-      loadRoute(url, route, staticDataLoader, serverDataLoader),
+      loadRoute(url, route, staticDataLoader, serverDataLoader, signal),
     ),
   );
 }
@@ -76,6 +78,7 @@ export type RouteDataLoader<Route extends MatchedRoute, LoadResult> = (
   url: URL,
   route: Route,
   type: RouteComponentType,
+  signal?: AbortSignal,
 ) => Promise<LoadResult>;
 
 export function resolveSettledPromiseValue<T>(

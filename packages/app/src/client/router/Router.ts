@@ -1,7 +1,11 @@
 /**
  * Initially inspired by:
+ *
  * - SvelteKit Router: https://github.com/sveltejs/kit
  * - Vue Router: https://github.com/vuejs/router
+ *
+ * The router has been redesigned and refactored _a lot_, but those libs still serve as great
+ * background reading material for where some ideas and API decisions originated.
  */
 
 import { HttpError } from 'shared/http';
@@ -42,10 +46,10 @@ import type {
   ClientLoadedRoute,
   ClientMatchedRoute,
   ClientRouteDeclaration,
+  GoHrefOptions,
   Navigation,
-  NavigationFlight,
+  NavigationOptions,
   NavigationRedirector,
-  RouterGoOptions,
 } from './types';
 
 export type RouterOptions = {
@@ -73,6 +77,7 @@ export class Router {
   protected _redirectsMap = new Map<string, string>();
   protected _beforeNavigate: BeforeNavigateHook[] = [];
   protected _afterNavigate: AfterNavigateHook[] = [];
+  protected _navAbortController: AbortController | null = null;
 
   /** Key used to save navigation state in history state object. */
   historyKey = 'vbk::index';
@@ -124,6 +129,41 @@ export class Router {
    */
   get scrollDelegate() {
     return this._scrollDelegate;
+  }
+  /**
+   * Normalize trailing slashes.
+   */
+  normalizeURL(url: URL) {
+    return normalizeURL(url, this.trailingSlash);
+  }
+  /**
+   * Called when navigating to a new route and right before a new page is loaded. Returning a
+   * redirect path will navigate to the matching route declaration.
+   */
+  beforeNavigate(hook: BeforeNavigateHook): void {
+    this._beforeNavigate.push(hook);
+  }
+  /**
+   * Called after navigating to a new route and it's respective page has loaded.
+   */
+  afterNavigate(hook: AfterNavigateHook): void {
+    this._afterNavigate.push(hook);
+  }
+  /**
+   * Set a new delegate for handling scroll-related tasks.
+   */
+  setScrollDelegate<T extends ScrollDelegate>(
+    manager: T | ScrollDelegateFactory<T>,
+  ): T {
+    return (this._scrollDelegate = isFunction(manager)
+      ? manager?.(this)
+      : manager);
+  }
+  /**
+   * Adds a new route comparator to handle matching, scoring, and sorting routes.
+   */
+  setRouteComparator(factory: RoutesComparatorFactory): void {
+    this._comparator = factory() ?? createSimpleComparator();
   }
 
   constructor(options: RouterOptions) {
@@ -236,6 +276,13 @@ export class Router {
   }
 
   /**
+   * Add a redirect from a given pathname to another.
+   */
+  addRedirect(from: string | URL, to: string | URL): void {
+    this._redirectsMap.set(this.createURL(from).href, this.createURL(to).href);
+  }
+
+  /**
    * Deregisters a route given it's id.
    */
   remove(id: string | symbol): void {
@@ -258,8 +305,8 @@ export class Router {
 
   /**
    * Attempts to match the given path to a declared route and navigate to it. The path can be a
-   * URL pathname (e.g., `/a/path.html`), hash (e.g., `#some-id`), or URL instance
-   * (e.g., `new URL(...)`).
+   * URL href (`https://foo.com/bar`), pathname (`/a/path.html`), hash (`#some-id`), or URL
+   * instance (`new URL(...)`).
    */
   async go(
     path: string | URL,
@@ -268,7 +315,7 @@ export class Router {
       replace = false,
       keepfocus = false,
       state = {},
-    }: RouterGoOptions = {},
+    }: GoHrefOptions = {},
   ): Promise<void> {
     if (isString(path) && path.startsWith('#')) {
       const hash = path;
@@ -282,7 +329,7 @@ export class Router {
     const url = this.createURL(path);
 
     if (!this.disabled) {
-      return this.preflight(url, {
+      return this.navigate(url, {
         scroll,
         keepfocus,
         replace,
@@ -305,10 +352,34 @@ export class Router {
   }
 
   /**
-   * Add a redirect from a given pathname to another.
+   * Notifies the router of a hash change.
    */
-  addRedirect(from: string | URL, to: string | URL): void {
-    this._redirectsMap.set(this.createURL(from).href, this.createURL(to).href);
+  hashChanged(hash: string) {
+    this._url.hash = hash;
+    const route = this.currentRoute;
+    if (route) {
+      this._fw.route.set({
+        ...route,
+        url: this._url,
+      });
+    }
+  }
+
+  /**
+   * Start the router and begin listening for link clicks we can intercept them and handle SPA
+   * navigation. This has no effect after initial call.
+   */
+  async start(
+    mount: (target: HTMLElement) => void | Promise<void>,
+  ): Promise<void> {
+    if (!this._listening) {
+      await this.go(location.href, { replace: true });
+      const target = document.getElementById('app')!;
+      await mount(target);
+      removeSSRStyles();
+      listen(this);
+      this._listening = true;
+    }
   }
 
   /**
@@ -335,86 +406,10 @@ export class Router {
     await loadRoutes(url, matches);
   }
 
-  /**
-   * Normalize trailing slashes.
-   */
-  normalizeURL(url: URL) {
-    return normalizeURL(url, this.trailingSlash);
-  }
-
-  /**
-   * Start the router and begin listening for link clicks we can intercept them and handle SPA
-   * navigation. This has no effect after initial call.
-   */
-  async start(
-    mount: (target: HTMLElement) => void | Promise<void>,
-  ): Promise<void> {
-    if (!this._listening) {
-      await this.go(location.href, { replace: true });
-      const target = document.getElementById('app')!;
-      await mount(target);
-      removeSSRStyles();
-      listen(this);
-      this._listening = true;
-    }
-  }
-
-  /**
-   * Called when navigating to a new route and right before a new page is loaded. Returning a
-   * redirect path will navigate to the matching route declaration.
-   *
-   * @defaultValue undefined
-   */
-  beforeNavigate(hook: BeforeNavigateHook): void {
-    this._beforeNavigate.push(hook);
-  }
-
-  /**
-   * Called after navigating to a new route and it's respective page has loaded.
-   *
-   * @defaultValue undefined
-   */
-  afterNavigate(hook: AfterNavigateHook): void {
-    this._afterNavigate.push(hook);
-  }
-
-  /**
-   * Set a new delegate for handling scroll-related tasks.
-   */
-  setScrollDelegate<T extends ScrollDelegate>(
-    manager: T | ScrollDelegateFactory<T>,
-  ): T {
-    return (this._scrollDelegate = isFunction(manager)
-      ? manager?.(this)
-      : manager);
-  }
-
-  /**
-   * Adds a new route comparator to handle matching, scoring, and sorting routes.
-   */
-  setRouteComparator(factory: RoutesComparatorFactory): void {
-    this._comparator = factory() ?? createSimpleComparator();
-  }
-
-  /**
-   * Notifies the router of a hash change.
-   */
-  hashChanged(hash: string) {
-    this._url.hash = hash;
-    const route = this.currentRoute;
-    if (route) {
-      this._fw.route.set({
-        ...route,
-        url: this._url,
-      });
-    }
-  }
-
-  /** @internal */
-  async preflight(url: URL, flight: NavigationFlight) {
+  async navigate(url: URL, nav: NavigationOptions) {
     const token = (navigationToken = {});
-    flight.state = flight.state ?? {};
-    flight.redirects = flight.redirects ?? [];
+    nav.state = nav.state ?? {};
+    nav.redirects = nav.redirects ?? [];
 
     let redirecting;
     const redirect = this._createRedirector(url, (redirectURL) => {
@@ -423,22 +418,25 @@ export class Router {
 
     let cancelled = false;
     const cancel = () => {
-      const nav = this._fw.navigation.get();
-      if (nav?.to.href === url.href) this._fw.navigation.set(null);
+      const navigation = this._fw.navigation.get();
+      if (navigation?.to.href === url.href) this._fw.navigation.set(null);
 
       if (!cancelled) {
         if (import.meta.env.DEV) {
           console.log(`[vessel] cancelled navigation to: \`${fURL(url)}\``);
         }
-        flight.blocked?.();
+        nav.blocked?.();
       }
 
       cancelled = true;
     };
 
-    const navigate = (matches: ClientMatchedRoute[], rootError?: Error) =>
-      this._navigate({
-        ...flight,
+    const startNavigation = (
+      matches: ClientMatchedRoute[],
+      rootError?: Error,
+    ) =>
+      this._startNavigation({
+        ...nav,
         token,
         rootError,
         matches,
@@ -446,17 +444,17 @@ export class Router {
         blocked: cancel,
       });
 
-    if (flight.redirects.includes(url.href) || flight.redirects.length > 10) {
+    if (nav.redirects.includes(url.href) || nav.redirects.length > 10) {
       if (import.meta.env.DEV) {
         console.error(
           [
             `[vessel] detected a redirect loop or long chain`,
-            `\nRedirect Chain: ${flight.redirects.join(' -> ')}`,
+            `\nRedirect Chain: ${nav.redirects.join(' -> ')}`,
           ].join('\n'),
         );
       }
 
-      return navigate(
+      return startNavigation(
         this.matchAll('/'),
         new HttpError('too many redirects', 500),
       );
@@ -468,9 +466,9 @@ export class Router {
           `[vessel] redirecting from \`${fURL(url)}\` to \`${fURL(to)}\``,
         );
       }
-      flight.redirects!.push(to.pathname);
-      return this.preflight(to, {
-        ...flight,
+      nav.redirects!.push(to.pathname);
+      return this.navigate(to, {
+        ...nav,
         blocked: cancel,
       });
     };
@@ -495,21 +493,21 @@ export class Router {
       cancel();
 
       const error = new HttpError('no page match', 404);
-      if (matches.length > 0) return navigate(matches, error);
+      if (matches.length > 0) return startNavigation(matches, error);
 
       // Happens in SPA fallback mode - don't go back to the server to prevent infinite reload.
       if (
         url.origin === location.origin &&
         url.pathname === location.pathname
       ) {
-        return navigate(this.matchAll('/'), error);
+        return startNavigation(this.matchAll('/'), error);
       }
 
       // Let the server decide what to do.
       await this.goLocation(url);
     }
 
-    flight.canHandle?.();
+    nav.canHandle?.();
 
     const from = this.currentRoute ?? null;
     for (const hook of this._beforeNavigate) {
@@ -522,19 +520,23 @@ export class Router {
     // Abort if user navigated away during `beforeNavigate`.
     if (token !== navigationToken) return cancel();
 
-    return navigate(matches);
+    return startNavigation(matches);
   }
 
-  protected async _navigate({
+  protected async _startNavigation({
     matches,
     rootError,
-    ...flight
+    ...nav
   }: {
     token: any;
     rootError?: Error;
     redirect: NavigationRedirector;
     matches: ClientMatchedRoute[];
-  } & NavigationFlight): Promise<void> {
+  } & NavigationOptions): Promise<void> {
+    this._navAbortController?.abort();
+    this._navAbortController = new AbortController();
+    const signal = this._navAbortController.signal;
+
     const from = this.currentRoute ?? null;
     const to = matches[0];
 
@@ -556,15 +558,16 @@ export class Router {
             (route) => !route.error && route.loaded && route.id === match.id,
           ) ?? match,
       ),
+      signal,
     );
 
     // Abort if user navigated away during load.
-    if (flight.token !== navigationToken) return flight.blocked?.();
+    if (nav.token !== navigationToken) return nav.blocked?.();
 
     // Look for a redirect backwards because anything earlier in the tree should "win".
     for (let i = loadResults.length - 1; i >= 0; i--) {
       const redirect = checkForLoadedRedirect(loadResults[i]);
-      if (redirect) return flight.redirect(redirect);
+      if (redirect) return nav.redirect(redirect);
     }
 
     const loadedRoutes: ClientLoadedRoute[] = [];
@@ -580,6 +583,7 @@ export class Router {
 
         // Find any unexpected errors that were thrown during data loading.
         for (const dataKey of getRouteComponentDataKeys()) {
+          // Attach first load error to route.
           const reason = resolveSettledPromiseRejection(compResult[dataKey]);
           const error = reason ? coerceToError(reason) : null;
           if (error && !route.error) route.error = error;
@@ -631,17 +635,19 @@ export class Router {
     }
 
     this._scrollDelegate.savePosition?.();
-    flight.accepted?.();
+    nav.accepted?.();
 
     const currentRoute = loadedRoutes[0];
-    this._fw.matches.set(loadedRoutes.reverse());
     this._fw.route.set(currentRoute);
+
+    // Reverse so it's in the correct render order (shallow paths first).
+    this._fw.matches.set(loadedRoutes.reverse());
 
     // Wait a tick so page is rendered before updating history.
     await this._fw.tick();
 
-    this._changeHistoryState(currentRoute.url, flight.state, flight.replace);
-    if (!flight.keepfocus) resetFocus();
+    this._changeHistoryState(currentRoute.url, nav.state, nav.replace);
+    if (!nav.keepfocus) resetFocus();
 
     this._url = to.url;
     this._fw.navigation.set(null);
@@ -649,13 +655,15 @@ export class Router {
     await this._scrollDelegate.scroll?.({
       from,
       to: currentRoute,
-      target: flight.scroll,
+      target: nav.scroll,
       hash: currentRoute.url.hash,
     });
 
     for (const hook of this._afterNavigate) {
       await hook({ from, to: currentRoute });
     }
+
+    this._navAbortController = null;
   }
 
   protected _createRedirector(

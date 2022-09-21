@@ -87,7 +87,7 @@ export function listen(router: Router) {
       return;
     }
 
-    router.preflight(url, {
+    router.navigate(url, {
       scroll: !a.hasAttribute('data-noscroll') ? () => scrollPosition() : null,
       replace: url.href === location.href,
       keepfocus: false,
@@ -110,7 +110,7 @@ export function listen(router: Router) {
     // which means we end up back here.
     if (event.state[router.historyKey] === router.historyIndex) return;
 
-    router.preflight(new URL(location.href), {
+    router.navigate(new URL(location.href), {
       scroll: () => router.scrollDelegate.getSavedPosition?.(event.state),
       keepfocus: false,
       accepted: () => {
