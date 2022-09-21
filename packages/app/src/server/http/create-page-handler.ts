@@ -50,3 +50,17 @@ export function handlePageRequest(
   //   .replace('<!--@vessel/body-->', staticDataScript);
   return {} as any;
 }
+
+export function createServerRouter() {
+  return new Proxy(
+    {},
+    {
+      get() {
+        throw Error('Tried to use router in a stateless environment.');
+      },
+      set() {
+        throw Error('Tried to use router in a stateless environment.');
+      },
+    },
+  );
+}

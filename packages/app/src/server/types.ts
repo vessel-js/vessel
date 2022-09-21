@@ -29,7 +29,9 @@ export type ServerModule = {
 // ---------------------------------------------------------------------------------------
 
 export type ServerEntryContext = {
-  routes: ServerLoadedRoute[];
+  route: ServerLoadedRoute;
+  router: any;
+  matches: ServerLoadedRoute[];
 };
 
 export type ServerEntryModule = {

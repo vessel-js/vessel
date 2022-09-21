@@ -7,7 +7,7 @@ import { type SvelteModule } from '../shared';
 import { createContext, ROUTER_KEY } from './context';
 
 async function main() {
-  const { context, ...delegate } = await createContext();
+  const { context, ...delegate } = createContext();
 
   const router = await init({
     frameworkDelegate: { tick, ...delegate },

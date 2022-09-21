@@ -9,6 +9,7 @@ import type { OutputAsset, OutputBundle, OutputChunk } from 'rollup';
 import { createStaticLoaderDataMap } from 'server';
 import {
   createHttpHandler,
+  createServerRouter,
   error as httpError,
   handleHttpError,
 } from 'server/http';
@@ -246,11 +247,18 @@ export async function build(
     // Pages that are dynamically rendered on the server (i.e., has `serverLoader` in branch).
     if (!build.staticPages.has(pageRoute)) return;
 
+    const currentRoute = matches[0];
+    matches.reverse(); // render order.
+
     const result = {
       filename: $.resolveHTMLFilename(url),
       route: pageRoute,
       matches,
-      ssr: await render({ routes: matches }),
+      ssr: await render({
+        route: currentRoute,
+        matches,
+        router: createServerRouter(),
+      }),
       dataAssetIds: new Set(dataMap.keys()),
     };
 

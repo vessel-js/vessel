@@ -1,5 +1,4 @@
 import {
-  type ClientLoadedRoute,
   type HttpErrorData,
   isMarkdownModule,
   type LoadedServerData,
@@ -79,10 +78,10 @@ export function getServerError<
   return getContext(SERVER_ERROR_KEY);
 }
 
-export async function createContext() {
+export function createContext() {
   const stores = {
-    [ROUTE_KEY]: writable<ClientLoadedRoute>(),
-    [ROUTE_MATCHES_KEY]: writable<ClientLoadedRoute[]>([]),
+    [ROUTE_KEY]: writable<any>(),
+    [ROUTE_MATCHES_KEY]: writable<any[]>([]),
     [NAVIGATION_KEY]: writable<Navigation>(),
   };
 
