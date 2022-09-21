@@ -1,6 +1,9 @@
 import {
   type ClientLoadedRoute,
+  type HttpErrorData,
   isMarkdownModule,
+  type LoadedServerData,
+  type LoadedStaticData,
   type Navigation,
   type Reactive,
   type Router,
@@ -20,6 +23,9 @@ import type {
   NavigationStore,
   RouteMatchesStore,
   RouteStore,
+  ServerDataStore,
+  ServerErrorStore,
+  StaticDataStore,
 } from './stores';
 
 export const ROUTER_KEY = Symbol();
@@ -28,28 +34,49 @@ export function getRouter(): Router {
 }
 
 const ROUTE_KEY = Symbol();
-export function getRouteStore(): RouteStore {
+export function getRoute(): RouteStore {
   return getContext(ROUTE_KEY);
 }
 
 const ROUTE_MATCHES_KEY = Symbol();
-export function getRouteMatchesStore(): RouteMatchesStore {
+export function getRouteMatches(): RouteMatchesStore {
   return getContext(ROUTE_MATCHES_KEY);
 }
 
 const NAVIGATION_KEY = Symbol();
-export function getNavigationStore(): NavigationStore {
+export function getNavigation(): NavigationStore {
   return getContext(NAVIGATION_KEY);
 }
 
 const MARKDOWN_KEY = Symbol();
-export function getMarkdownStore(): MarkdownStore {
+export function getMarkdown(): MarkdownStore {
   return getContext(MARKDOWN_KEY);
 }
 
 const FRONTMATTER_KEY = Symbol();
-export function getFrontmatterStore(): FrontmatterStore {
+export function getFrontmatter(): FrontmatterStore {
   return getContext(FRONTMATTER_KEY);
+}
+
+export const STATIC_DATA_KEY = Symbol();
+export function getStaticData<
+  T extends LoadedStaticData = LoadedStaticData,
+>(): StaticDataStore<T> {
+  return getContext(STATIC_DATA_KEY);
+}
+
+export const SERVER_DATA_KEY = Symbol();
+export function getServerData<
+  T extends LoadedServerData = LoadedServerData,
+>(): ServerDataStore<T> {
+  return getContext(SERVER_DATA_KEY);
+}
+
+export const SERVER_ERROR_KEY = Symbol();
+export function getServerError<
+  T extends HttpErrorData = HttpErrorData,
+>(): ServerErrorStore<T> {
+  return getContext(SERVER_ERROR_KEY);
 }
 
 export async function createContext() {

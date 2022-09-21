@@ -15,6 +15,7 @@ export default defineConfig([
       context: 'src/client/context.ts',
       'entry-client': 'src/client/entry-client.ts',
       'entry-server': 'src/client/entry-server.ts',
+      ErrorBoundary: 'src/client/ErrorBoundary.ts',
     },
     target: 'esnext',
     platform: 'browser',

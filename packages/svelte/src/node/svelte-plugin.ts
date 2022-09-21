@@ -18,7 +18,7 @@ export function sveltePlugin(): VesselPlugins {
     const appFile = normalizePath(path.resolve(appDir, '+app.svelte'));
     return fs.existsSync(appFile)
       ? { id: appFile }
-      : { id: '@vessel-js/svelte/app.svelte' };
+      : { id: '@vessel-js/svelte/+app.svelte' };
   }
 
   const require = createRequire(import.meta.url);

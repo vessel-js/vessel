@@ -1,8 +1,5 @@
 <script>
-  import './global.css';
-
   import RouterOutlet from './RouterOutlet.svelte';
 </script>
 
 <RouterOutlet />
-

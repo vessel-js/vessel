@@ -80,7 +80,7 @@ export class Router {
   protected _navAbortController: AbortController | null = null;
 
   /** Key used to save navigation state in history state object. */
-  historyKey = 'vbk::index';
+  historyKey = 'vsl::index';
   /** Keeps track of the history index in order to prevent popstate navigation events. */
   historyIndex!: number;
 
@@ -177,7 +177,7 @@ export class Router {
     // make it possible to reset focus
     document.body.setAttribute('tabindex', '-1');
 
-    // Keeping track of the this._history index in order to prevent popstate navigation events if needed.
+    // Keeping track of the history index in order to prevent popstate navigation events if needed.
     this.historyIndex = history.state?.[this.historyKey];
 
     if (!this.historyIndex) {
@@ -185,7 +185,7 @@ export class Router {
       // result in data loss.
       this.historyIndex = Date.now();
 
-      // create initial this._history entry, so we can return here
+      // create initial history entry, so we can return here
       history.replaceState(
         {
           ...history.state,
@@ -342,7 +342,7 @@ export class Router {
 
   /**
    * Loads `href` the old-fashioned way, with a full page reload. Returns a `Promise` that never
-   * resolves to prevent any subsequent work (e.g., this._history manipulation).
+   * resolves to prevent any subsequent work (e.g., history manipulation).
    */
   goLocation(url: URL): Promise<void> {
     location.href = url.href;

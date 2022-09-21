@@ -1,5 +1,9 @@
 import type {
   ClientLoadedRoute,
+  HttpError,
+  HttpErrorData,
+  LoadedServerData,
+  LoadedStaticData,
   MarkdownFrontmatter,
   MarkdownMeta,
   Navigation,
@@ -7,39 +11,43 @@ import type {
 import type { Readable } from 'svelte/store';
 
 import {
-  getFrontmatterStore,
-  getMarkdownStore,
-  getNavigationStore,
-  getRouteMatchesStore,
-  getRouteStore,
+  getFrontmatter,
+  getMarkdown,
+  getNavigation,
+  getRoute,
+  getRouteMatches,
+  getServerData,
+  getServerError,
+  getStaticData,
 } from '../context';
 
 export type NavigationStore = Readable<Navigation>;
-
-export const navigation: NavigationStore = {
-  subscribe: (fn) => getNavigationStore().subscribe(fn),
-};
+export const navigation: NavigationStore = toStore(getNavigation);
 
 export type RouteStore = Readable<ClientLoadedRoute>;
-
-export const route: RouteStore = {
-  subscribe: (fn) => getRouteStore().subscribe(fn),
-};
+export const route: RouteStore = toStore(getRoute);
 
 export type RouteMatchesStore = Readable<ClientLoadedRoute[]>;
-
-export const matches: RouteMatchesStore = {
-  subscribe: (fn) => getRouteMatchesStore().subscribe(fn),
-};
+export const matches: RouteMatchesStore = toStore(getRouteMatches);
 
 export type MarkdownStore = Readable<MarkdownMeta | undefined>;
-
-export const markdown: MarkdownStore = {
-  subscribe: (fn) => getMarkdownStore().subscribe(fn),
-};
+export const markdown: MarkdownStore = toStore(getMarkdown);
 
 export type FrontmatterStore = Readable<MarkdownFrontmatter>;
+export const frontmatter: FrontmatterStore = toStore(getFrontmatter);
 
-export const frontmatter: FrontmatterStore = {
-  subscribe: (fn) => getFrontmatterStore().subscribe(fn),
-};
+export type StaticDataStore<T extends LoadedStaticData = LoadedStaticData> =
+  Readable<T>;
+export const staticData: StaticDataStore = toStore(getStaticData);
+
+export type ServerDataStore<T extends LoadedServerData = LoadedServerData> =
+  Readable<T>;
+export const serverData: ServerDataStore = toStore(getServerData);
+
+export type ServerErrorStore<T extends HttpErrorData = HttpErrorData> =
+  Readable<HttpError<T>>;
+export const serverError: ServerErrorStore = toStore(getServerError);
+
+function toStore<T>(getContext: () => Readable<T>): Readable<T> {
+  return { subscribe: (fn) => getContext().subscribe(fn) };
+}

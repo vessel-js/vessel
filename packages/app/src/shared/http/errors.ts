@@ -1,6 +1,10 @@
 import { isNumber } from 'shared/utils/unit';
 
-export class HttpError<ErrorData = Record<string, any>> extends Error {
+export type HttpErrorData = Record<string, any>;
+
+export class HttpError<
+  ErrorData extends HttpErrorData = HttpErrorData,
+> extends Error {
   readonly name = 'HttpError' as const;
   readonly status: number;
 

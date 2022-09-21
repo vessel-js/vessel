@@ -1,6 +1,10 @@
 export * from '../shared';
-export { default as App } from './app.svelte';
-export { default as PageView } from './components/PageView.svelte';
-export { getRouter } from './context';
-export { default as PageLayouts } from './RouterView.svelte';
+export { default as App } from './+app.svelte';
+export {
+  getRouter,
+  getServerData,
+  getServerError,
+  getStaticData,
+} from './context';
+export { default as RouterOutlet } from './RouterOutlet.svelte';
 export * from './stores';
