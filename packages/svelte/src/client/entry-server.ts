@@ -13,5 +13,10 @@ export const render: ServerRenderer = async ({ route, matches, router }) => {
   delegate.matches.set(matches);
 
   const mod = App.module as SvelteServerModule;
-  return mod.default.render({}, { context });
+  const ssr = mod.default.render({}, { context });
+
+  return {
+    head: ssr.head,
+    html: ssr.html,
+  };
 };

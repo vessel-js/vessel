@@ -1,7 +1,7 @@
 <script>
   import './global.css';
 
-  import RouterOutlet from './RouterOutlet.svelte';
+  import { RouterOutlet } from '@vessel-js/svelte';
 </script>
 
 <RouterOutlet />

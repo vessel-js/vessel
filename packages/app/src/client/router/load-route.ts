@@ -9,12 +9,12 @@ import {
   resolveServerResponseData,
 } from 'shared/http';
 import {
-  getOrderedRouteComponentTypes,
-  LoadedRouteData,
-  LoadRouteResult,
+  getRouteComponentTypes,
+  type LoadedRouteData,
+  type LoadRouteResult,
   loadRoutes as __loadRoutes,
   resolveSettledPromiseValue,
-  RouteComponentType,
+  type RouteComponentType,
 } from 'shared/routing';
 
 import type { ClientLoadedRoute, ClientMatchedRoute } from './types';
@@ -68,7 +68,7 @@ export async function loadStaticData(
   const component = route[type];
   if (!component) return;
 
-  if (route.loaded) {
+  if (route.valid) {
     const loadedRoute = route as ClientLoadedRoute;
     return { data: loadedRoute[type]!.staticData };
   }
@@ -78,7 +78,7 @@ export async function loadStaticData(
 
   const id = resolveStaticDataAssetId(route.id, type, pathname),
     dataAssetId = import.meta.env.PROD
-      ? window['__VSL_STATIC_DATA_HASH_MAP__'][await hashStaticDataAssetId(id)]
+      ? window['__VSL_STATIC_DATA_HASH_MAP__'][await hash(id)]
       : id;
 
   if (!dataAssetId) return;
@@ -146,18 +146,42 @@ export async function loadServerData(
     return;
   }
 
-  if (route.loaded) {
+  if (!window['__VSL_ROUTER_STARTED__']) {
+    const id = route.id + '~' + type;
+    const res = window['__VSL_SERVER_DATA__']?.[id];
+    const error = res?.error;
+    if (error) {
+      if (error.expected) {
+        return {
+          error: new HttpError(error.message, error.status, error.data),
+        };
+      } else {
+        const err = new Error(error.message);
+        if (import.meta.env.DEV) err.stack = error.stack;
+        throw err;
+      }
+    } else if (res?.data) {
+      return { data: res.data };
+    }
+  }
+
+  if (route.valid) {
     const loadedRoute = route as ClientLoadedRoute;
     return { data: loadedRoute[type]?.serverData };
   }
 
-  url.searchParams.set('route_id', route.id);
-  url.searchParams.set('route_type', type);
+  const dataURL = new URL(route.matchedURL.href);
+  dataURL.searchParams.set('route_id', route.id);
+  dataURL.searchParams.set('route_type', type);
 
-  const response = await fetch(url.href, {
+  const response = await fetch(dataURL, {
     credentials: 'same-origin',
     signal,
   });
+
+  if (response.headers.get('X-Vessel-Data') === 'no') {
+    return;
+  }
 
   const redirect = response.headers.get('X-Vessel-Redirect');
   if (redirect) return { redirect };
@@ -188,7 +212,7 @@ function getInjectedStaticData(id: string) {
 }
 
 // Used in production to hash data id.
-async function hashStaticDataAssetId(id: string) {
+async function hash(id: string) {
   const encodedText = new TextEncoder().encode(id);
   const hashBuffer = await crypto.subtle.digest('SHA-1', encodedText);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -199,14 +223,12 @@ async function hashStaticDataAssetId(id: string) {
 }
 
 export function checkForLoadedRedirect(route: ClientLoadRouteResult) {
-  const orderedTypes = getOrderedRouteComponentTypes();
-
   // In production, we don't have to check build-time redirects (`staticData`) because the
   // redirect table is injected into the HTML document for a static site, or injected into the
   // network route table for a provider.
   if (import.meta.env.DEV) {
     const dataTypes = ['staticData', 'serverData'] as const;
-    for (const type of orderedTypes) {
+    for (const type of getRouteComponentTypes()) {
       for (const dataType of dataTypes) {
         const value = resolveSettledPromiseValue(route[type]?.[dataType]);
         if (value?.redirect) {
@@ -224,7 +246,7 @@ export function checkForLoadedRedirect(route: ClientLoadRouteResult) {
       }
     }
   } else {
-    for (const type of orderedTypes) {
+    for (const type of getRouteComponentTypes()) {
       const value = resolveSettledPromiseValue(route[type]?.serverData);
       if (value?.redirect) return value.redirect;
     }

@@ -1,13 +1,13 @@
-import type { BuildConfig, ResolvedBuildConfig } from './BuildConfig';
-import type { ClientConfig, ResolvedClientConfig } from './ClientConfig';
+import type { BuildConfig, ResolvedBuildConfig } from './build-config';
+import type { ClientConfig, ResolvedClientConfig } from './client-config';
 import type {
   DirectoriesConfig,
   ResolvedDirectoriesConfig,
-} from './DirectoriesConfig';
-import type { ResolvedEntryConfig } from './EntryConfig';
-import type { MarkdownConfig, ResolvedMarkdownConfig } from './MarkdownConfig';
-import type { ResolvedRoutesConfig, RoutesConfig } from './RoutesConfig';
-import type { ResolvedSitemapConfig, SitemapConfig } from './SitemapConfig';
+} from './directories-config';
+import type { ResolvedEntryConfig } from './entry-config';
+import type { MarkdownConfig, ResolvedMarkdownConfig } from './markdown-config';
+import type { ResolvedRoutesConfig, RoutesConfig } from './routes-config';
+import type { ResolvedSitemapConfig, SitemapConfig } from './sitemap-config';
 
 export type ResolvedAppConfig = {
   debug: boolean;

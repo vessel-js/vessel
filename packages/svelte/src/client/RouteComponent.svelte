@@ -20,7 +20,7 @@
 
   $: staticData.set(component?.staticData ?? {});
   $: serverData.set(component?.serverData);
-  $: serverError.set(component?.serverError);
+  $: serverError.set(component?.serverLoadError);
 </script>
 
 {#if component?.module?.default}

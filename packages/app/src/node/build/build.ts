@@ -3,16 +3,12 @@ import type { App } from 'node/app/App';
 import { createAppEntries } from 'node/app/create/app-factory';
 import { getRouteFileTypes, RouteFileType } from 'node/app/files';
 import type { AppRoute } from 'node/app/routes';
-import { loadStaticRoute } from 'node/vite/core';
+import { createStaticLoaderFetcher, loadStaticRoute } from 'node/vite/core';
+import { getDevServerOrigin } from 'node/vite/core/dev-server';
 import fs from 'node:fs';
 import type { OutputAsset, OutputBundle, OutputChunk } from 'rollup';
 import { createStaticLoaderDataMap } from 'server';
-import {
-  createHttpHandler,
-  createServerRouter,
-  error as httpError,
-  handleHttpError,
-} from 'server/http';
+import { createServerRouter } from 'server/http';
 import { installPolyfills } from 'server/polyfills';
 import type {
   ServerEntryModule,
@@ -40,8 +36,7 @@ export async function build(
 
   await installPolyfills();
 
-  const ssrProtocol = app.vite.resolved!.server.https ? 'https' : 'http';
-  const ssrOrigin = `${ssrProtocol}://localhost`;
+  const ssrOrigin = getDevServerOrigin(app);
 
   const entries = createAppEntries(app, { isSSR: true });
   const viteManifestPath = app.dirs.client.resolve('vite-manifest.json');
@@ -135,38 +130,12 @@ export async function build(
   // LOAD DATA
   // -------------------------------------------------------------------------------------------
 
+  const fetcher = createStaticLoaderFetcher(
+    app,
+    (route) => import(build.routeChunkFile.get(route.id)!.http!),
+  );
+
   const serverRouter = createServerRouter();
-
-  const fetch = globalThis.fetch;
-  globalThis.fetch = (input, init) => {
-    if (
-      typeof input === 'string' &&
-      httpRoutes.some((route) => route.pattern.test({ pathname: input }))
-    ) {
-      const url = new URL(`${ssrOrigin}${input}`);
-      const route = findRoute(url, httpRoutes);
-
-      if (!route) {
-        return Promise.resolve(
-          handleHttpError(httpError('not found', 404), true),
-        );
-      }
-
-      const handler = createHttpHandler({
-        pattern: route.pattern,
-        getClientAddress: () => {
-          throw new Error(
-            '[vessel] can not resolve `clientAddress` during SSR',
-          );
-        },
-        loader: () => import(build.routeChunkFile.get(route.id)!.http!),
-      });
-
-      return handler(new Request(url, init));
-    }
-
-    return fetch(input, init);
-  };
 
   const routeChunkLoader = (route: AppRoute, type: RouteFileType) =>
     import(build.routeChunkFile.get(route.id)![type]!);
@@ -176,6 +145,7 @@ export async function build(
       app,
       url,
       page,
+      fetcher,
       routeChunkLoader,
     );
 

@@ -25,16 +25,9 @@ export function createMatchedRoute<T extends Route>(
   };
 }
 
-// don't mess with this order -> reverse is top-down render order
-const routeTypes = ['page', 'errorBoundary', 'layout'] as const;
+const routeTypes = ['layout', 'errorBoundary', 'page'] as const;
 export function getRouteComponentTypes(): readonly RouteComponentType[] {
   return routeTypes;
-}
-
-/** in render order (layout -> errrorBoundary -> page) */
-const orderedRouteTypes = [...routeTypes].reverse();
-export function getOrderedRouteComponentTypes(): readonly RouteComponentType[] {
-  return orderedRouteTypes;
 }
 
 const componentDataKeys = ['module', 'staticData', 'serverData'] as const;
@@ -60,13 +53,11 @@ export function normalizeURL(url: URL, trailingSlash = true) {
   return url;
 }
 
+// type helper
 export function stripRouteComponentTypes<T extends Route>(
   route: T,
 ): Omit<T, RouteComponentType> {
-  return getRouteComponentTypes().reduce(
-    (p, type) => ({ ...p, [type]: undefined }),
-    route,
-  );
+  return { ...route };
 }
 
 export function filterMatchingRouteSegments<T extends Route>(

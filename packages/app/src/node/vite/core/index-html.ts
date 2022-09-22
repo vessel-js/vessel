@@ -18,19 +18,12 @@ export const DEFAULT_INDEX_HTML = `
 </html>
 `;
 
-export function readIndexHtmlFile(app: App, { dev = true } = {}): string {
+export function readIndexHtmlFile(app: App): string {
   const indexPath = app.dirs.app.resolve('index.html');
 
-  let html = fs.existsSync(indexPath)
+  const html = fs.existsSync(indexPath)
     ? fs.readFileSync(indexPath, 'utf-8')
     : DEFAULT_INDEX_HTML;
-
-  if (dev) {
-    html = html.replace(
-      '<!--@vessel/head-->',
-      '<script type="module" src="/:virtual/vessel/client"></script>\n\t<!--@vessel/head-->',
-    );
-  }
 
   return html.replace('{{ version }}', app.version);
 }

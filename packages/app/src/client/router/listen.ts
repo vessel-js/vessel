@@ -1,4 +1,4 @@
-import type { Router } from './Router';
+import type { Router } from './client-router';
 import { scrollPosition } from './scroll-delegate';
 
 export function listen(router: Router) {

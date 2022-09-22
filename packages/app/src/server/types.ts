@@ -3,6 +3,7 @@ import type {
   LoadedRoute,
   MatchedRoute,
   Route,
+  RouteComponentType,
   RouteMatch,
 } from 'shared/routing';
 
@@ -56,6 +57,7 @@ export type ServerRenderResult = {
 // ---------------------------------------------------------------------------------------
 
 export type ServerManifest = {
+  dev?: boolean;
   entry: ServerEntryLoader;
   routes: {
     app: ServerLoadableRoute[];
@@ -65,12 +67,13 @@ export type ServerManifest = {
     entry: string;
     template: string;
     stylesheet: string;
-    head: Record<string, string>;
-    body: Record<string, string>;
+    preload: Record<string, string>;
+    prefetch: Record<string, string>;
   };
   staticData: {
-    hashMap: string;
     loader: StaticDataLoader;
+    hashMap: string;
+    hashRecord?: Record<string, string>;
   };
   trailingSlash: boolean;
 };
@@ -112,13 +115,18 @@ export type ServerRedirect = {
 // Static Loader
 // ---------------------------------------------------------------------------------------
 
-export type StaticDataLoader = (id: string) => Promise<JSONData>;
+export type StaticDataLoader = (
+  url: URL,
+  route: ServerMatchedRoute,
+  type: RouteComponentType,
+) => Promise<JSONData | undefined>;
 
 export type StaticLoaderInput<Params extends RequestParams = RequestParams> =
   Readonly<{
     pathname: string;
     route: Route;
     params: Params;
+    fetcher: ServerFetcher;
   }>;
 
 /** Map of data asset id to server loaded data objects. */
@@ -148,6 +156,11 @@ export type StaticLoaderOutput<Data = JSONData> = {
   readonly redirect?: string | { path: string; status?: number };
   readonly cache?: StaticLoaderCacheKeyBuilder;
 };
+
+export type ServerFetcher = (
+  input: RequestInfo | URL,
+  init?: RequestInit,
+) => Promise<Response>;
 
 export type MaybeStaticLoaderOutput<Data = JSONData> =
   | void

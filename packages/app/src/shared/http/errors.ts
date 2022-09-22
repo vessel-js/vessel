@@ -18,8 +18,10 @@ export class HttpError<
   }
 }
 
-export function isHttpError(error: unknown): error is HttpError {
-  return error instanceof HttpError;
+export function isHttpError(error: any): error is HttpError {
+  // Don't do `instanceof HttpError` because this is bundled separately for client/server - they
+  // won't be the same type.
+  return error instanceof Error && error.name === 'HttpError';
 }
 
 export function isErrorResponse(response: Response) {

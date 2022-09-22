@@ -119,8 +119,8 @@ export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
         clientBundle = null;
 
         if (app.config.isBuild) {
-          rimraf(appFactory.dirs.tmp.path);
-          rimraf(appFactory.dirs.build.path);
+          rimraf(app.dirs.tmp.path);
+          rimraf(app.dirs.build.path);
 
           // Skip first build because $app is initialized in `configResolved` hook.
           if (!isFirstBuild) {

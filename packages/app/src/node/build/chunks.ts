@@ -81,6 +81,10 @@ export function resolvePageResources(
     app.files.routes.toArray('layout').map((file) => file.path.root),
   );
 
+  const errorBoundarySrc = new Set(
+    app.files.routes.toArray('errorBoundary').map((file) => file.path.root),
+  );
+
   const seen = new WeakSet<ViteManifestChunk>();
   const collectChunks = (chunk?: ViteManifestChunk, page = false) => {
     if (!chunk || seen.has(chunk) || (!page && pageSrc.has(chunk.src!))) {
@@ -111,7 +115,8 @@ export function resolvePageResources(
           chunk &&
           !imports.has(chunk.file) &&
           !pageSrc.has(chunk.src!) &&
-          !layoutSrc.has(chunk.src!)
+          !layoutSrc.has(chunk.src!) &&
+          !errorBoundarySrc.has(chunk.src!)
         ) {
           dynamicImports.add(chunk.file);
         }
@@ -133,12 +138,20 @@ export function resolvePageResources(
   collectChunks(viteManifest[appId]);
   imports.add(appChunk.fileName);
 
-  // Layouts
+  // Layouts + Error Boundaries
 
   const branch = app.routes.getBranch(route);
-  for (const { layout } of branch) {
+  for (const { layout, errorBoundary } of branch) {
     if (layout) {
       const chunk = viteManifest[layout.path.root];
+      if (chunk) {
+        collectChunks(chunk);
+        imports.add(chunk.file);
+      }
+    }
+
+    if (errorBoundary) {
+      const chunk = viteManifest[errorBoundary.path.root];
       if (chunk) {
         collectChunks(chunk);
         imports.add(chunk.file);

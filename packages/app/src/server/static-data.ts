@@ -6,6 +6,7 @@ import {
 } from 'shared/routing';
 
 import type {
+  ServerFetcher,
   ServerLoadedRoute,
   StaticLoaderDataMap,
   StaticLoaderInput,
@@ -14,17 +15,20 @@ import type {
 export function createStaticLoaderInput(
   url: URL,
   route: Route,
+  fetcher: ServerFetcher,
 ): StaticLoaderInput {
   const match = execRouteMatch(url, route)!;
   return {
     pathname: url.pathname,
     route,
     params: match.groups,
+    fetcher,
   };
 }
 
 export function createStaticLoaderDataMap(
   routes: ServerLoadedRoute[],
+  hashRecord?: Record<string, string>,
 ): StaticLoaderDataMap {
   const map: StaticLoaderDataMap = new Map();
 
@@ -35,10 +39,13 @@ export function createStaticLoaderDataMap(
         component?.staticData &&
         Object.keys(component.staticData).length > 0
       ) {
-        map.set(
-          resolveStaticDataAssetId(route.id, type, route.matchedURL.pathname),
-          component.staticData,
+        const id = resolveStaticDataAssetId(
+          route.id,
+          type,
+          route.matchedURL.pathname,
         );
+
+        map.set(hashRecord?.[id] ?? id, component.staticData);
       }
     }
   }

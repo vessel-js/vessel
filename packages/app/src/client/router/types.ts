@@ -29,13 +29,11 @@ export type ClientLoadableRoute = LoadableRoute<ClientModule>;
 export type ClientMatchedRoute<Params extends RouteParams = RouteParams> =
   MatchedRoute<ClientModule, Params> & {
     error?: LoadedRoute['error'];
-    loaded?: boolean;
+    valid?: boolean;
   };
 
 export type ClientLoadedRoute<Params extends RouteParams = RouteParams> =
-  LoadedRoute<ClientModule, Params> & {
-    loaded?: boolean;
-  };
+  LoadedRoute<ClientModule, Params>;
 
 export type ClientRouteDeclaration = Omit<
   ClientLoadableRoute,

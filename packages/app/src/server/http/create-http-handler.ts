@@ -14,12 +14,11 @@ export type HttpHandlerInit = {
   pattern: URLPattern;
   methods?: HttpMethod[];
   loader: () => HttpRequestModule | Promise<HttpRequestModule>;
-  getClientAddress: (request: Request) => unknown;
   onError?: (error: unknown) => Response | void;
 };
 
 export function createHttpHandler(init: HttpHandlerInit): ServerRequestHandler {
-  const { dev, pattern, methods, loader, getClientAddress, onError } = init;
+  const { dev, pattern, methods, loader, onError } = init;
 
   return async (request) => {
     try {
@@ -62,20 +61,25 @@ export function createHttpHandler(init: HttpHandlerInit): ServerRequestHandler {
       const params =
         pattern.exec({ pathname: url.pathname })?.pathname.groups ?? {};
 
-      const response = await handler(
-        createRequestEvent({
-          request,
-          url,
-          params,
-          getClientAddress: () => getClientAddress(request),
-        }),
-      );
+      const event = createRequestEvent({
+        request,
+        url,
+        params,
+      });
+
+      const response = await handler(event);
 
       if (!isResponse(response)) {
         throw new Error(
           `[vessel] invalid return value from route handler at ${url.pathname}, should return a \`Response\`.`,
         );
       }
+
+      for (const [key, value] of event.headers) {
+        response.headers.append(key, value);
+      }
+
+      event.cookies.serialize(response.headers);
 
       return response;
     } catch (error) {

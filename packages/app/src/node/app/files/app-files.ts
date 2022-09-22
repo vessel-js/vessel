@@ -1,6 +1,6 @@
 import { type App } from '../App';
-import { MarkdocFiles } from './MarkdocFiles';
-import { RouteFiles } from './RouteFiles';
+import { MarkdocFiles } from './markdoc-files';
+import { RouteFiles } from './route-files';
 
 export class AppFiles {
   routes = new RouteFiles();

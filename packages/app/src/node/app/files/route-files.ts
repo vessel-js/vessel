@@ -11,7 +11,7 @@ import {
   type SystemDirPath,
   type SystemFileMeta,
   SystemFiles,
-} from './SystemFiles';
+} from './system-files';
 
 export type RouteFileType = RouteComponentType | 'http';
 

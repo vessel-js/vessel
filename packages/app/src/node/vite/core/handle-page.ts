@@ -1,16 +1,16 @@
 import type { ServerResponse } from 'http';
 import type { App } from 'node/app/App';
-import { AppRoute } from 'node/app/routes';
+import { type AppRoute, toServerLoadable } from 'node/app/routes';
 import { handleHTTPRequest } from 'node/http';
-import { createPageHandler } from 'server/http';
-import type { ServerEntryModule } from 'server/types';
-import { matchRoute } from 'shared/routing';
+import { createPageHandler, JSONData } from 'server/http';
+import type { ServerEntryModule, ServerManifest } from 'server/types';
+import { getRouteComponentTypes, matchRoute } from 'shared/routing';
 import { coerceToError } from 'shared/utils/error';
 import type { Connect, ModuleNode, ViteDevServer } from 'vite';
 
-import { virtualModuleId } from '../alias';
-import { handleDevServerError } from './dev-server';
+import { handleDevServerError, logDevError } from './dev-server';
 import { readIndexHtmlFile } from './index-html';
+import { createStaticLoaderFetcher, loadStaticRoute } from './static-loader';
 
 type HandlePageRequestInit = {
   base: string;
@@ -19,6 +19,7 @@ type HandlePageRequestInit = {
   req: Connect.IncomingMessage;
   res: ServerResponse;
 };
+
 export async function handlePageRequest({
   base,
   app,
@@ -28,78 +29,89 @@ export async function handlePageRequest({
 }: HandlePageRequestInit) {
   url.pathname = url.pathname.replace('/index.html', '/');
 
-  const pathname = decodeURI(url.pathname);
-  const index = readIndexHtmlFile(app);
-  const route = matchRoute(url, app.routes.filterByType('page'));
-
-  // TODO: let request handle this.
-  if (!route) {
-    res.statusCode = 404;
-    res.end('Not found');
-    return;
-  }
-
-  if (url.searchParams.has('route_id')) {
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.end(JSON.stringify({}));
-  }
+  const fetcher = createStaticLoaderFetcher(app, (route) =>
+    app.vite.server!.ssrLoadModule(route.http!.path.absolute),
+  );
 
   try {
-    // // We're loading static data first to check for redirects because it supersedes server-side work.
-    // // Filesystem > Server-Side
-    // const { output: staticData, redirect } = await callStaticLoaders(
-    //   url,
-    //   app,
-    //   route,
-    //   app.vite.server!.ssrLoadModule as ServerNodeLoader,
-    // );
+    const route = matchRoute(url, app.routes.filterByType('page'));
+    const staticData: Record<string, JSONData> = {};
 
-    // if (redirect) {
-    //   res.statusCode = redirect.status;
-    //   res.setHeader('Location', redirect.pathname).end();
-    //   return;
-    // }
+    if (route) {
+      const { matches, redirect } = await loadStaticRoute(
+        app,
+        url,
+        route,
+        fetcher,
+        (route, type) => route[type]!.viteLoader(),
+      );
+
+      if (redirect) {
+        res.statusCode = redirect.status;
+        res.setHeader('Location', redirect.path);
+        res.end();
+        return;
+      }
+
+      for (const match of matches) {
+        for (const type of getRouteComponentTypes()) {
+          if (match[type]?.staticData) {
+            staticData[match.id + type] = match[type]!.staticData!;
+          }
+        }
+      }
+    }
 
     const template = await app.vite.server!.transformIndexHtml(
-      pathname,
-      index,
+      decodeURI(url.pathname),
+      readIndexHtmlFile(app),
       req.originalUrl,
     );
 
-    // const entryLoader = async () =>
-    //   (await app.vite.server!.ssrLoadModule(
-    //     app.config.entry.server,
-    //   )) as ServerEntryModule;
+    const entryLoader = async () =>
+      (await app.vite.server!.ssrLoadModule(
+        app.config.entry.server,
+      )) as ServerEntryModule;
 
-    // pattern: page.route.pattern,
-    // template,
-    // loader,
-    // getClientAddress: () => req.socket.remoteAddress,
-    // head: () => loadStyleTag(app, page),
-    // staticData: () => staticDataMap,
+    const manifest: ServerManifest = {
+      dev: true,
+      entry: entryLoader,
+      routes: {
+        app: app.routes.toArray().map(toServerLoadable),
+        http: app.routes.filterByType('http').map((route) => ({
+          ...route,
+          loader: route.http!.viteLoader,
+        })),
+      },
+      html: {
+        entry: '/:virtual/vessel/client',
+        template,
+        stylesheet: await loadStyleTag(app, route),
+        preload: {},
+        prefetch: {},
+      },
+      staticData: {
+        hashMap: '',
+        loader: async (_, route, type) => staticData[route.id + type],
+      },
+      trailingSlash: true,
+    };
 
-    // const handler = createPageHandler();
-
-    // await handleHTTPRequest(base, req, res, handler, (error) => {
-    //   logDevError(app, req, coalesceToError(error));
-    // });
-
-    res.end(template);
+    const handler = createPageHandler(manifest);
+    await handleHTTPRequest(base, req, res, handler, (error) => {
+      logDevError(app, req, coerceToError(error));
+    });
   } catch (error) {
     handleDevServerError(app, req, res, error);
   }
 }
 
-async function loadStyleTag(app: App, route: AppRoute) {
-  const appFilePath = app.vite
-    .server!.moduleGraph.getModuleById(`/${virtualModuleId.app}`)!
-    .importedModules.values()
-    .next().value.file;
+async function loadStyleTag(app: App, route?: AppRoute | null) {
+  if (!route) return '';
 
   const stylesMap = await Promise.all(
     [
-      appFilePath,
+      app.config.client.app,
       ...app.routes
         .getLayoutBranch(route)
         .map((layout) => layout.path.absolute),
@@ -121,7 +133,7 @@ export async function getStylesByFile(server: ViteDevServer, file: string) {
   const files = await server.moduleGraph.getModulesByFile(file);
   const node = Array.from(files ?? [])[0];
 
-  if (!node) throw new Error(`[vessel] could not find node for \`${file}\``);
+  if (!node) return {};
 
   const deps = new Set<ModuleNode>();
   await findModuleDeps(server, node, deps);

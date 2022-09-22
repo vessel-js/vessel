@@ -15,7 +15,6 @@
 // export function createEndpointHandler(init: VercelEdgeEndpointHandlerInit) {
 //   return createEndpointHandler({
 //     ...init,
-//     getClientAddress: (request) => request.headers.get('x-forwarded-for'),
 //   });
 // }
 

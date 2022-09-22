@@ -53,7 +53,6 @@ export class ProjectBuilder {
       },
       dest: {
         root: new FileDirectory(targetDir),
-        src: new FileDirectory(path.resolve(targetDir, 'src')),
         app: new FileDirectory(path.resolve(targetDir, 'app')),
       },
     };

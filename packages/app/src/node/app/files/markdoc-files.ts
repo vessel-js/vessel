@@ -7,7 +7,7 @@ import {
   type SystemFileMeta,
   SystemFiles,
   type SystemFilesOptions,
-} from './SystemFiles';
+} from './system-files';
 
 const STRIP_MARKDOC_DIR_RE = /\/\.markdoc\/.+/;
 

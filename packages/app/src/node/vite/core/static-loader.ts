@@ -3,9 +3,16 @@ import type { App } from 'node/app/App';
 import type { RouteFileType } from 'node/app/files';
 import type { AppRoute } from 'node/app/routes';
 import { logger } from 'node/utils';
-import { createStaticLoaderInput } from 'server';
+import {
+  createHttpHandler,
+  createStaticLoaderInput,
+  error as httpError,
+  handleHttpError,
+  type HttpRequestModule,
+} from 'server';
 import type {
   MaybeStaticLoaderOutput,
+  ServerFetcher,
   ServerLoadedRoute,
   ServerModule,
   ServerRedirect,
@@ -15,7 +22,7 @@ import type {
   StaticLoaderOutput,
 } from 'server/types';
 import {
-  getOrderedRouteComponentTypes,
+  findRoute,
   getRouteComponentTypes,
   matchAllRoutes,
   type Route,
@@ -23,8 +30,44 @@ import {
   type RouteMatch,
   stripRouteComponentTypes,
 } from 'shared/routing';
+import type { Mutable } from 'shared/types';
 import { isFunction, isString } from 'shared/utils/unit';
 import { isLinkExternal, slash } from 'shared/utils/url';
+
+import { getDevServerOrigin } from './dev-server';
+
+// Create fetcher to ensure relative paths work when fetching inside `staticLoader`. Also
+// ensures requests are able to load HTTP modules so they can respond because there's no server here.
+export function createStaticLoaderFetcher(
+  app: App,
+  loader: (route: AppRoute) => Promise<HttpRequestModule>,
+): ServerFetcher {
+  const ssrOrigin = getDevServerOrigin(app);
+  const httpRoutes = app.routes.filterByType('http');
+
+  return (input, init) => {
+    if (typeof input === 'string' && input.startsWith('/')) {
+      const url = new URL(`${ssrOrigin}${input}`);
+      const route = findRoute(url, httpRoutes);
+
+      if (!route) {
+        return Promise.resolve(
+          handleHttpError(httpError('not found', 404), true),
+        );
+      }
+
+      const handler = createHttpHandler({
+        dev: true,
+        pattern: route.pattern,
+        loader: () => loader(route),
+      });
+
+      return handler(new Request(url));
+    }
+
+    return fetch(input, init);
+  };
+}
 
 export type LoadStaticRouteResult = {
   matches: ServerLoadedRoute[];
@@ -38,15 +81,17 @@ const getServerModuleKey = (
 const serverModules = new Map<string, ServerModule>();
 
 const getStaticDataKey = (
+  url: URL,
   route: Route & RouteMatch,
   type: RouteComponentType,
-) => route.id + type + route.matchedURL.pathname;
+) => route.id + type + url.pathname;
 const staticData = new Map<string, MaybeStaticLoaderOutput>();
 
 export async function loadStaticRoute(
   app: App,
   url: URL,
   route: AppRoute,
+  fetcher: ServerFetcher,
   load: (route: AppRoute, type: RouteFileType) => Promise<ServerModule>,
 ): Promise<LoadStaticRouteResult> {
   const branch = app.routes.getBranch(route);
@@ -74,16 +119,18 @@ export async function loadStaticRoute(
       await Promise.all(
         getRouteComponentTypes().map(async (type) => {
           if (match[type]) {
-            const key = getStaticDataKey(match, type);
+            const key = getStaticDataKey(url, match, type);
             if (!staticData.has(key)) {
               const modKey = getServerModuleKey(match, type);
               const mod = serverModules.get(modKey)!;
-              staticData.set(
-                key,
-                await mod.staticLoader?.(
-                  createStaticLoaderInput(match.matchedURL, match),
-                ),
-              );
+              if (mod) {
+                staticData.set(
+                  key,
+                  await mod.staticLoader?.(
+                    createStaticLoaderInput(match.matchedURL, match, fetcher),
+                  ),
+                );
+              }
             }
           }
         }),
@@ -93,19 +140,17 @@ export async function loadStaticRoute(
 
   const results: ServerLoadedRoute[] = [];
   const baseUrl = app.vite.resolved!.base;
-  const orderedTypes = getOrderedRouteComponentTypes();
 
   // Go backwards for render order.
   for (let i = matches.length - 1; i >= 0; i--) {
     const match = matches[i];
 
-    const result: Writeable<ServerLoadedRoute> =
-      stripRouteComponentTypes(match);
+    const result: Mutable<ServerLoadedRoute> = stripRouteComponentTypes(match);
 
-    for (const type of orderedTypes) {
+    for (const type of getRouteComponentTypes()) {
       if (match[type]) {
         const mod = serverModules.get(getServerModuleKey(match, type))!;
-        const data = staticData.get(getStaticDataKey(match, type));
+        const data = staticData.get(getStaticDataKey(url, match, type));
 
         if (data?.redirect) {
           return {
@@ -117,12 +162,17 @@ export async function loadStaticRoute(
         result[type] = {
           module: mod,
           loader: () => Promise.resolve(mod),
-          staticData: { ...data },
+          staticData: { ...data?.data },
         };
       }
     }
 
     results.push(result);
+  }
+
+  if (!app.config.isBuild) {
+    serverModules.clear();
+    staticData.clear();
   }
 
   return { matches: results };
@@ -149,10 +199,11 @@ export function clearStaticLoaderCache(id: string) {
 export async function callStaticLoader(
   url: URL,
   route: Route,
+  fetcher: ServerFetcher,
   staticLoader?: StaticLoader,
 ): Promise<StaticLoaderOutput> {
   const id = route.id;
-  const input = createStaticLoaderInput(url, route);
+  const input = createStaticLoaderInput(url, route, fetcher);
 
   if (!staticLoader) {
     clearStaticLoaderCache(id);
@@ -211,5 +262,3 @@ export async function callStaticLoader(
 
   return output;
 }
-
-type Writeable<T> = { -readonly [P in keyof T]: T[P] };

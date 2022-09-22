@@ -3,7 +3,7 @@
  */
 
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import * as set_cookie_parser from 'set-cookie-parser';
+import * as setCookieParser from 'set-cookie-parser';
 
 export async function getRequest(base: string, req: IncomingMessage) {
   let headers = req.headers as Record<string, string>;
@@ -91,7 +91,7 @@ export async function setResponse(res: ServerResponse, response: Response) {
 
   if (response.headers.has('set-cookie')) {
     const header = response.headers.get('set-cookie');
-    const split = set_cookie_parser.splitCookiesString(header);
+    const split = setCookieParser.splitCookiesString(header);
     headers['set-cookie'] = split;
   }
 

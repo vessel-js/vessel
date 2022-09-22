@@ -13,7 +13,7 @@ import {
   findRoute,
   getRouteComponentDataKeys,
   getRouteComponentTypes,
-  LoadedRouteComponent,
+  type LoadedRouteComponent,
   matchAllRoutes,
   matchRoute,
   normalizeURL,
@@ -21,6 +21,7 @@ import {
   resolveSettledPromiseValue,
   stripRouteComponentTypes,
 } from 'shared/routing';
+import type { Mutable } from 'shared/types';
 import { coerceToError } from 'shared/utils/error';
 import { isFunction, isString } from 'shared/utils/unit';
 import { isLinkExternal } from 'shared/utils/url';
@@ -379,6 +380,7 @@ export class Router {
       removeSSRStyles();
       listen(this);
       this._listening = true;
+      window['__VSL_ROUTER_STARTED__'] = true;
     }
   }
 
@@ -555,9 +557,8 @@ export class Router {
       to.matchedURL,
       matches.map(
         (match) =>
-          // TODO: figure out when to invalidate data and reload - server actions?
           prevMatches.find(
-            (route) => !route.error && route.loaded && route.id === match.id,
+            (route) => !route.error && route.valid && route.id === match.id,
           ) ?? match,
       ),
       signal,
@@ -581,38 +582,43 @@ export class Router {
         const compResult = result[type];
         if (!compResult) continue;
 
-        const component = {} as Writeable<LoadedRouteComponent>;
+        const component = {} as Mutable<LoadedRouteComponent>;
 
         // Find any unexpected errors that were thrown during data loading.
         for (const dataKey of getRouteComponentDataKeys()) {
           // Attach first load error to route.
           const reason = resolveSettledPromiseRejection(compResult[dataKey]);
-          const error = reason ? coerceToError(reason) : null;
-          if (error && !route.error) route.error = error;
 
-          if (import.meta.env.DEV && error) {
-            console.error(
-              [
-                '[vessel] failed loading data',
-                `\nURL: ${fURL(route.matchedURL)}`,
-                `Route ID: ${route.id === '' ? '.' : ''}`,
-                `Component Type: ${type}`,
-                `Data Type: ${dataKey}`,
-                `\nError: ${error.message}${
-                  error.stack ? `\n\n${error.stack}` : ''
-                }`,
-              ].join('\n'),
-            );
+          if (reason) {
+            const error = coerceToError(reason);
+
+            if (import.meta.env.DEV) {
+              console.error(
+                [
+                  '[vessel] failed loading data',
+                  `\nURL: ${fURL(route.matchedURL)}`,
+                  `Route ID: ${route.id === '' ? '.' : ''}`,
+                  `Component Type: ${type}`,
+                  `Data Type: ${dataKey}`,
+                  `\nError: ${error.message}${
+                    error.stack ? `\n\n${error.stack}` : ''
+                  }`,
+                ].join('\n'),
+              );
+            }
+
+            if (!route.error) route.error = error;
+            continue;
           }
 
           if (dataKey === 'module') {
             const value = resolveSettledPromiseValue(compResult[dataKey])!;
             component.module = value;
           } else if (dataKey === 'staticData') {
-            const value = resolveSettledPromiseValue(compResult[dataKey])!;
+            const value = resolveSettledPromiseValue(compResult[dataKey]);
             component.staticData = value?.data;
           } else if (dataKey === 'serverData') {
-            const value = resolveSettledPromiseValue(compResult[dataKey])!;
+            const value = resolveSettledPromiseValue(compResult[dataKey]);
             component.serverData = value?.data;
             component.serverLoadError = value?.error;
           }
@@ -621,12 +627,17 @@ export class Router {
         route[type] = component;
       }
 
-      loadedRoutes.push({ ...route, loaded: true });
+      loadedRoutes.push({ ...route, valid: true });
     }
 
     if (rootError) {
       if (loadedRoutes[0]) {
-        loadedRoutes[0].error = rootError;
+        for (let i = loadedRoutes.length - 1; i >= 0; i--) {
+          if (i === 0 || loadedRoutes[i].errorBoundary) {
+            loadedRoutes[i].error = rootError;
+            break;
+          }
+        }
       } else {
         loadedRoutes[0] = {
           id: 'root_error_boundary',
@@ -734,5 +745,3 @@ function fURL(url: URL) {
 
   return '';
 }
-
-type Writeable<T> = { -readonly [P in keyof T]: T[P] };

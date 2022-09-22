@@ -14,7 +14,7 @@
 
   function reset() {
     // TODO: should we try and reload route?
-    error = null;
+    // error = null;
     renderError.set(null);
   }
 </script>

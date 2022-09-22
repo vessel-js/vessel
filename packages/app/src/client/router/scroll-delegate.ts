@@ -1,6 +1,6 @@
 import { isString, isUndefined } from 'shared/utils/unit';
 
-import type { Router } from './Router';
+import type { Router } from './client-router';
 import type { ClientLoadedRoute } from './types';
 
 const SCROLL_KEY = 'vessel:scroll';

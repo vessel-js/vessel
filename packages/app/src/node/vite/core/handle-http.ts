@@ -44,7 +44,6 @@ export async function handleHttpRequest({
     dev,
     pattern: route.pattern,
     loader: () => loader(route.http!),
-    getClientAddress: () => req.socket.remoteAddress,
     onError: (error) => {
       logDevError(app, req, coerceToError(error));
     },

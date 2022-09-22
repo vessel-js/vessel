@@ -1,4 +1,4 @@
-import { type BuildAdapterFactory } from '../BuildAdapter';
+import { type BuildAdapterFactory } from '../build-adapter';
 
 export type StaticBuildAdapterConfig = {
   trailingSlash?: boolean;
@@ -124,10 +124,11 @@ export function createStaticBuildAdapter(
           );
 
           const headTags = [
-            render.ssr.head ?? '',
             stylesheetTag,
+            render.ssr.css ?? '',
             ...preloadLinkTags,
             ...prefetchLinkTags,
+            render.ssr.head ?? '',
           ]
             .filter((t) => t.length > 0)
             .join('\n    ');

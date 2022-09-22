@@ -7,8 +7,8 @@ import type {
   ViteDevServer,
 } from 'vite';
 
-import type { ResolvedAppConfig } from './config/AppConfig';
-import type { DisposalBin } from './create/DisposalBin';
+import type { ResolvedAppConfig } from './config/app-config';
+import type { DisposalBin } from './create/disposal-bin';
 import type { AppFiles } from './files';
 import type { AppRoutes } from './routes';
 

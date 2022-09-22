@@ -1,7 +1,7 @@
 import type { App } from 'node/app/App';
 
 import { type BuildBundles, type BuildData } from '../build';
-import { type BuildAdapterUtils } from './BuildAdapterUtils';
+import { type BuildAdapterUtils } from './build-utils';
 
 export type BuildAdapterFactory = (
   app: App,

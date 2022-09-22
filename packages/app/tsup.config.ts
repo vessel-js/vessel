@@ -30,6 +30,7 @@ export default defineConfig([
     entry: {
       node: 'src/node/index.ts',
       server: 'src/server/index.ts',
+      'server/polyfills': 'src/server/polyfills.ts',
       'vercel/edge': 'src/vercel/edge.ts',
       'vercel/fn': 'src/vercel/fn.ts',
     },

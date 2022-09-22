@@ -7,14 +7,14 @@ export async function handleHTTPRequest(
   req: IncomingMessage,
   res: ServerResponse,
   handler: (request: Request) => Promise<Response>,
-  onInvalidBody?: (error: unknown) => void,
+  onInvalidRequestBody?: (error: unknown) => void,
 ) {
   let request!: Request;
 
   try {
     request = await getRequest(base, req);
   } catch (error) {
-    onInvalidBody?.(error);
+    onInvalidRequestBody?.(error);
     res.statusCode = 400;
     res.end('invalid request body');
     return;

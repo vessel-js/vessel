@@ -13,7 +13,11 @@ export type SvelteServerModule = {
     render(
       props: Record<string, unknown>,
       options: { context: Map<string | symbol, unknown> },
-    ): { html: string; head: string; css: string };
+    ): {
+      html: string;
+      head: string;
+      css?: string | { code: string; map: string | null };
+    };
   };
 };
 

@@ -14,14 +14,14 @@ const VIRTUAL_APP_ID = `${VM_PREFIX}/svelte/app` as const;
 export function sveltePlugin(): VesselPlugins {
   let appDir: string;
 
+  const require = createRequire(import.meta.url);
+
   function resolveAppId() {
     const appFile = normalizePath(path.resolve(appDir, '+app.svelte'));
     return fs.existsSync(appFile)
       ? { id: appFile }
-      : { id: '@vessel-js/svelte/+app.svelte' };
+      : { id: require.resolve('@vessel-js/svelte/+app.svelte') };
   }
-
-  const require = createRequire(import.meta.url);
 
   return [
     {
@@ -48,7 +48,6 @@ export function sveltePlugin(): VesselPlugins {
             },
             client: {
               app: appId,
-              configFiles: [config.isBuild ? appId : VIRTUAL_APP_ID],
             },
             markdown: {
               markdoc: { tags: svelteMarkdocTags },

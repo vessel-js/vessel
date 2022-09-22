@@ -1,5 +1,15 @@
 import { sortedInsert } from 'node/utils';
-import { type Route } from 'shared/routing';
+import type {
+  HttpRequestModule,
+  ServerLoadableRoute,
+  ServerModule,
+} from 'server';
+import {
+  getRouteComponentTypes,
+  type Route,
+  stripRouteComponentTypes,
+} from 'shared/routing';
+import type { Mutable } from 'shared/types';
 
 import type { App } from '../App';
 import type { RouteMatcherConfig } from '../config';
@@ -12,10 +22,15 @@ import {
 import { resolveRouteFromFilePath } from './resolve-file-route';
 
 export type AppRoute = Route & { dir: SystemDirPath } & {
-  [P in RouteFileType]?: RouteFile;
+  [P in RouteFileType]?: RouteFile & {
+    viteLoader: () => Promise<
+      P extends 'http' ? HttpRequestModule : ServerModule
+    >;
+  };
 };
 
 export class AppRoutes implements Iterable<AppRoute> {
+  protected _app!: App;
   protected _routesDir!: string;
   protected _matchers!: RouteMatcherConfig;
   protected _routes: AppRoute[] = [];
@@ -29,6 +44,7 @@ export class AppRoutes implements Iterable<AppRoute> {
   }
 
   init(app: App) {
+    this._app = app;
     this._routesDir = app.dirs.app.path;
     this._matchers = app.config.routes.matchers;
 
@@ -51,7 +67,11 @@ export class AppRoutes implements Iterable<AppRoute> {
       dir: file.dir,
     };
 
-    route[file.type] = file;
+    route[file.type] = {
+      ...file,
+      viteLoader: () =>
+        this._app.vite.server!.ssrLoadModule(file.path.absolute),
+    };
 
     if (!existingRoute) {
       sortedInsert(this._routes, route, (a, b) => b.score - a.score);
@@ -116,4 +136,19 @@ export class AppRoutes implements Iterable<AppRoute> {
       },
     } as IterableIterator<AppRoute>;
   }
+}
+
+export function toServerLoadable(route: AppRoute): ServerLoadableRoute {
+  const loadable: Mutable<ServerLoadableRoute> =
+    stripRouteComponentTypes(route);
+
+  for (const type of getRouteComponentTypes()) {
+    if (route[type]) {
+      loadable[type] = {
+        loader: route[type]!.viteLoader,
+      };
+    }
+  }
+
+  return loadable;
 }

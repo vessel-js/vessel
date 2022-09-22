@@ -3,7 +3,7 @@ import { requireShim } from 'node/utils';
 import path from 'node:path';
 import { HTTP_METHODS } from 'server/http';
 
-import { type BuildAdapterFactory } from '../BuildAdapter';
+import { type BuildAdapterFactory } from '../build-adapter';
 import { createStaticBuildAdapter } from '../static/adapter';
 import { trailingSlash } from './trailing-slash';
 

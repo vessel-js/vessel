@@ -4,11 +4,11 @@ import path from 'node:path';
 import { isArray } from 'shared/utils/unit';
 
 import type { ResolvedBuildConfig } from '.';
-import type { AppConfig, ResolvedAppConfig } from './AppConfig';
-import type { ResolvedClientConfig } from './ClientConfig';
-import type { ResolvedMarkdownConfig } from './MarkdownConfig';
-import type { ResolvedRoutesConfig } from './RoutesConfig';
-import type { ResolvedSitemapConfig } from './SitemapConfig';
+import type { AppConfig, ResolvedAppConfig } from './app-config';
+import type { ResolvedClientConfig } from './client-config';
+import type { ResolvedMarkdownConfig } from './markdown-config';
+import type { ResolvedRoutesConfig } from './routes-config';
+import type { ResolvedSitemapConfig } from './sitemap-config';
 
 export function resolveAppConfig(
   root: string,

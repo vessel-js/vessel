@@ -1,5 +1,5 @@
 import kleur from 'kleur';
-import { MarkdocSchema } from 'node/markdoc/MarkdocSchema';
+import { MarkdocSchema } from 'node/markdoc/markdoc-schema';
 import { logger, normalizePath, trimExt } from 'node/utils';
 import type { VesselPlugin } from 'node/vite/Plugin';
 import { installURLPattern } from 'shared/polyfills';
@@ -19,7 +19,7 @@ import { AppFiles } from '../files';
 import { AppRoutes } from '../routes';
 import { createAppDirectories } from './app-dirs';
 import { getAppVersion } from './app-utils';
-import { DisposalBin } from './DisposalBin';
+import { DisposalBin } from './disposal-bin';
 
 export const createAppFactory = async (
   config: AppConfig,

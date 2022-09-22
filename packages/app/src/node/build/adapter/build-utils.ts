@@ -141,7 +141,7 @@ export function getBuildAdapterUtils(
     },
     escapeHTML,
     createDirectory,
-    getHTMLTemplate: () => readIndexHtmlFile(app, { dev: false }),
+    getHTMLTemplate: () => readIndexHtmlFile(app),
   };
 }
 

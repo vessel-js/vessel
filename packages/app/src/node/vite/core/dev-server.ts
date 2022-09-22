@@ -4,7 +4,6 @@ import type { RouteFile } from 'node/app/files';
 import type { ServerResponse } from 'node:http';
 import { STATIC_DATA_ASSET_BASE_PATH } from 'shared/data';
 import { coerceToError } from 'shared/utils/error';
-import { noendslash } from 'shared/utils/url';
 import type { Connect, ViteDevServer } from 'vite';
 
 import { handleHttpRequest } from './handle-http';
@@ -17,22 +16,7 @@ export function configureDevServer(app: App, server: ViteDevServer) {
   const httpLoader = (file: RouteFile) =>
     app.vite.server!.ssrLoadModule(file.path.absolute);
 
-  // Ensure devs can call local API endpoints using relative paths (e.g., `fetch('/api/foo')`).
-  let origin: string;
-
-  const fetch = globalThis.fetch;
   const protocol = server.config.server.https ? 'https' : 'http';
-
-  globalThis.fetch = (input, init) => {
-    return fetch(
-      typeof input === 'string' && app.routes.test(input, 'http')
-        ? `${(origin ??= noendslash(
-            server.resolvedUrls?.local[0] ?? `${protocol}://localhost:5173`,
-          ))}${input}`
-        : input,
-      init,
-    );
-  };
 
   server.middlewares.use(async (req, res, next) => {
     try {
@@ -118,4 +102,9 @@ export function handleDevServerError(
   logDevError(app, req, error);
   res.statusCode = 500;
   res.end(error.stack);
+}
+
+export function getDevServerOrigin(app: App) {
+  const ssrProtocol = app.vite.resolved!.server.https ? 'https' : 'http';
+  return `${ssrProtocol}://localhost`;
 }

@@ -93,6 +93,10 @@ export type LoadedRoute<
      * Any unexpected error that was thrown during rendering or data loading.
      */
     error?: Error;
+    /**
+     * Whether route data is still valid. If set to `false`, the next fetch will reload data.
+     */
+    valid?: boolean;
   };
 
 export type RouteParams = {
