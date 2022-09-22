@@ -123,7 +123,7 @@ export function createAppEntries(app: App, { isSSR = false } = {}) {
 
   for (const file of files) {
     const name = trimExt(file.path.route);
-    entries[`routes/${name}`] = file.path.absolute;
+    entries[`nodes/${name}`] = file.path.absolute;
   }
 
   return entries;

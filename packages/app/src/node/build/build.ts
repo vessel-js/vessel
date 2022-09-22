@@ -135,6 +135,8 @@ export async function build(
   // LOAD DATA
   // -------------------------------------------------------------------------------------------
 
+  const serverRouter = createServerRouter();
+
   const fetch = globalThis.fetch;
   globalThis.fetch = (input, init) => {
     if (
@@ -247,17 +249,14 @@ export async function build(
     // Pages that are dynamically rendered on the server (i.e., has `serverLoader` in branch).
     if (!build.staticPages.has(pageRoute)) return;
 
-    const currentRoute = matches[0];
-    matches.reverse(); // render order.
-
     const result = {
       filename: $.resolveHTMLFilename(url),
       route: pageRoute,
       matches,
       ssr: await render({
-        route: currentRoute,
+        route: matches[matches.length - 1],
         matches,
-        router: createServerRouter(),
+        router: serverRouter,
       }),
       dataAssetIds: new Set(dataMap.keys()),
     };

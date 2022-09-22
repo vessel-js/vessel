@@ -36,7 +36,7 @@ export function createStaticLoaderDataMap(
         Object.keys(component.staticData).length > 0
       ) {
         map.set(
-          resolveStaticDataAssetId(route.id, type, route.url.pathname),
+          resolveStaticDataAssetId(route.id, type, route.matchedURL.pathname),
           component.staticData,
         );
       }

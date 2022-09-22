@@ -1,5 +1,3 @@
-import { slash } from 'shared/utils/url';
-
 import type { Route, RouteComponentType, RouteMatch } from './types';
 
 export function matchRoute<T extends Route>(url: URL, routes: T[]) {
@@ -22,8 +20,7 @@ export function createMatchedRoute<T extends Route>(
   const match = execRouteMatch(url, route);
   return {
     ...route,
-    url,
-    pathId: createPathId(url),
+    matchedURL: url,
     params: match?.groups ?? {},
   };
 }
@@ -32,6 +29,12 @@ export function createMatchedRoute<T extends Route>(
 const routeTypes = ['page', 'errorBoundary', 'layout'] as const;
 export function getRouteComponentTypes(): readonly RouteComponentType[] {
   return routeTypes;
+}
+
+/** in render order (layout -> errrorBoundary -> page) */
+const orderedRouteTypes = [...routeTypes].reverse();
+export function getOrderedRouteComponentTypes(): readonly RouteComponentType[] {
+  return orderedRouteTypes;
 }
 
 const componentDataKeys = ['module', 'staticData', 'serverData'] as const;
@@ -55,12 +58,6 @@ export function normalizeURL(url: URL, trailingSlash = true) {
   url.pathname = url.pathname.replace('/index.html', '/');
   if (!trailingSlash) url.pathname = url.pathname.replace(/\/$/, '');
   return url;
-}
-
-export function createPathId(url: URL, baseUrl = '/') {
-  const pathname = decodeURI(slash(url.pathname.slice(baseUrl.length)));
-  const query = new URLSearchParams(url.search);
-  return `${pathname}?${query}`;
 }
 
 export function stripRouteComponentTypes<T extends Route>(

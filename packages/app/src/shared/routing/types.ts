@@ -59,8 +59,7 @@ export type LoadableRoute<Module extends RouteModule = RouteModule> = Route & {
 };
 
 export type RouteMatch<Params extends RouteParams = RouteParams> = {
-  readonly url: URL;
-  readonly pathId: string;
+  readonly matchedURL: URL;
   readonly params: Params;
 };
 

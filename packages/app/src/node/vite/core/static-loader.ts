@@ -5,6 +5,7 @@ import type { AppRoute } from 'node/app/routes';
 import { logger } from 'node/utils';
 import { createStaticLoaderInput } from 'server';
 import type {
+  MaybeStaticLoaderOutput,
   ServerLoadedRoute,
   ServerModule,
   ServerRedirect,
@@ -13,13 +14,34 @@ import type {
   StaticLoaderCacheMap,
   StaticLoaderOutput,
 } from 'server/types';
-import { type Route } from 'shared/routing';
-import { isFunction } from 'shared/utils/unit';
+import {
+  getOrderedRouteComponentTypes,
+  getRouteComponentTypes,
+  matchAllRoutes,
+  type Route,
+  type RouteComponentType,
+  type RouteMatch,
+  stripRouteComponentTypes,
+} from 'shared/routing';
+import { isFunction, isString } from 'shared/utils/unit';
+import { isLinkExternal, slash } from 'shared/utils/url';
 
 export type LoadStaticRouteResult = {
   matches: ServerLoadedRoute[];
   redirect?: ServerRedirect;
 };
+
+const getServerModuleKey = (
+  route: Route & RouteMatch,
+  type: RouteComponentType,
+) => route.id + type;
+const serverModules = new Map<string, ServerModule>();
+
+const getStaticDataKey = (
+  route: Route & RouteMatch,
+  type: RouteComponentType,
+) => route.id + type + route.matchedURL.pathname;
+const staticData = new Map<string, MaybeStaticLoaderOutput>();
 
 export async function loadStaticRoute(
   app: App,
@@ -27,28 +49,93 @@ export async function loadStaticRoute(
   route: AppRoute,
   load: (route: AppRoute, type: RouteFileType) => Promise<ServerModule>,
 ): Promise<LoadStaticRouteResult> {
-  const input = createStaticLoaderInput(url, route);
+  const branch = app.routes.getBranch(route);
+  const matches = matchAllRoutes(url, branch);
 
-  return { matches: [] };
+  // load modules - ensuring we only do it once for a given route/type combo
+  await Promise.all(
+    matches.map(async (match) => {
+      await Promise.all(
+        getRouteComponentTypes().map(async (type) => {
+          if (match[type]) {
+            const key = getServerModuleKey(match, type);
+            if (!serverModules.has(key)) {
+              serverModules.set(key, await load(match, type));
+            }
+          }
+        }),
+      );
+    }),
+  );
 
-  // const segments = createLoadablePageSegments(app, page, load);
-  // const loaded = await Promise.all(
-  //   segments.map(async (segment) => {
-  //     const matched = createMatchedRoute();
-  //     //
-  //   }),
-  // );
-  // if (output.redirect) {
-  //   const path = isString(output.redirect)
-  //     ? output.redirect
-  //     : output.redirect.path;
-  //   const status = isString(output.redirect)
-  //     ? 302
-  //     : output.redirect.status ?? 302;
-  //   const normalizedPath = !isLinkExternal(path, app.vite.resolved!.base)
-  //     ? slash(path)
-  //     : path;
-  // }
+  // load static data - ensuring we only do it once for a given route/type/path combo
+  await Promise.all(
+    matches.map(async (match) => {
+      await Promise.all(
+        getRouteComponentTypes().map(async (type) => {
+          if (match[type]) {
+            const key = getStaticDataKey(match, type);
+            if (!staticData.has(key)) {
+              const modKey = getServerModuleKey(match, type);
+              const mod = serverModules.get(modKey)!;
+              staticData.set(
+                key,
+                await mod.staticLoader?.(
+                  createStaticLoaderInput(match.matchedURL, match),
+                ),
+              );
+            }
+          }
+        }),
+      );
+    }),
+  );
+
+  const results: ServerLoadedRoute[] = [];
+  const baseUrl = app.vite.resolved!.base;
+  const orderedTypes = getOrderedRouteComponentTypes();
+
+  // Go backwards for render order.
+  for (let i = matches.length - 1; i >= 0; i--) {
+    const match = matches[i];
+
+    const result: Writeable<ServerLoadedRoute> =
+      stripRouteComponentTypes(match);
+
+    for (const type of orderedTypes) {
+      if (match[type]) {
+        const mod = serverModules.get(getServerModuleKey(match, type))!;
+        const data = staticData.get(getStaticDataKey(match, type));
+
+        if (data?.redirect) {
+          return {
+            redirect: normalizeRedirectPath(data.redirect, baseUrl),
+            matches: [],
+          };
+        }
+
+        result[type] = {
+          module: mod,
+          loader: () => Promise.resolve(mod),
+          staticData: { ...data },
+        };
+      }
+    }
+
+    results.push(result);
+  }
+
+  return { matches: results };
+}
+
+function normalizeRedirectPath(
+  redirect: string | Partial<ServerRedirect>,
+  baseUrl = '/',
+): ServerRedirect {
+  const path = isString(redirect) ? redirect : redirect.path!;
+  const status = isString(redirect) ? 302 : redirect.status ?? 302;
+  const normalizedPath = !isLinkExternal(path, baseUrl) ? slash(path) : path;
+  return { path: normalizedPath, status };
 }
 
 const loaderCache = new Map<string, StaticLoaderCacheMap>();
@@ -124,3 +211,5 @@ export async function callStaticLoader(
 
   return output;
 }
+
+type Writeable<T> = { -readonly [P in keyof T]: T[P] };

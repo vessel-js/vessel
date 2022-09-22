@@ -360,7 +360,7 @@ export class Router {
     if (route) {
       this._fw.route.set({
         ...route,
-        url: this._url,
+        matchedURL: this._url,
       });
     }
   }
@@ -540,17 +540,19 @@ export class Router {
     const from = this.currentRoute ?? null;
     const to = matches[0];
 
-    this._fw.navigation.set({ from: from?.url, to: to.url });
+    this._fw.navigation.set({ from: from?.matchedURL, to: to.matchedURL });
 
     if (import.meta.env.DEV && from) {
       console.log(
-        `[vessel] navigating from \`${fURL(from.url)}\` to \`${fURL(to.url)}\``,
+        `[vessel] navigating from \`${fURL(from.matchedURL)}\` to \`${fURL(
+          to.matchedURL,
+        )}\``,
       );
     }
 
     const prevMatches = this._fw.matches.get();
     const loadResults = await loadRoutes(
-      to.url,
+      to.matchedURL,
       matches.map(
         (match) =>
           // TODO: figure out when to invalidate data and reload - server actions?
@@ -564,7 +566,7 @@ export class Router {
     // Abort if user navigated away during load.
     if (nav.token !== navigationToken) return nav.blocked?.();
 
-    // Look for a redirect backwards because anything earlier in the tree should "win".
+    // Look for a redirect backwards because anything earlier in the tree (shallow paths) should "win".
     for (let i = loadResults.length - 1; i >= 0; i--) {
       const redirect = checkForLoadedRedirect(loadResults[i]);
       if (redirect) return nav.redirect(redirect);
@@ -592,7 +594,7 @@ export class Router {
             console.error(
               [
                 '[vessel] failed loading data',
-                `\nURL: ${fURL(route.url)}`,
+                `\nURL: ${fURL(route.matchedURL)}`,
                 `Route ID: ${route.id === '' ? '.' : ''}`,
                 `Component Type: ${type}`,
                 `Data Type: ${dataKey}`,
@@ -628,7 +630,7 @@ export class Router {
       } else {
         loadedRoutes[0] = {
           id: 'root_error_boundary',
-          url: to.url,
+          url: to.matchedURL,
           error: rootError,
         } as any;
       }
@@ -646,17 +648,17 @@ export class Router {
     // Wait a tick so page is rendered before updating history.
     await this._fw.tick();
 
-    this._changeHistoryState(currentRoute.url, nav.state, nav.replace);
+    this._changeHistoryState(currentRoute.matchedURL, nav.state, nav.replace);
     if (!nav.keepfocus) resetFocus();
 
-    this._url = to.url;
+    this._url = to.matchedURL;
     this._fw.navigation.set(null);
 
     await this._scrollDelegate.scroll?.({
       from,
       to: currentRoute,
       target: nav.scroll,
-      hash: currentRoute.url.hash,
+      hash: currentRoute.matchedURL.hash,
     });
 
     for (const hook of this._afterNavigate) {

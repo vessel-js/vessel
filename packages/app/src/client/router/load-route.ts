@@ -9,7 +9,7 @@ import {
   resolveServerResponseData,
 } from 'shared/http';
 import {
-  getRouteComponentTypes,
+  getOrderedRouteComponentTypes,
   LoadedRouteData,
   LoadRouteResult,
   loadRoutes as __loadRoutes,
@@ -199,12 +199,14 @@ async function hashStaticDataAssetId(id: string) {
 }
 
 export function checkForLoadedRedirect(route: ClientLoadRouteResult) {
+  const orderedTypes = getOrderedRouteComponentTypes();
+
   // In production, we don't have to check build-time redirects (`staticData`) because the
   // redirect table is injected into the HTML document for a static site, or injected into the
   // network route table for a provider.
   if (import.meta.env.DEV) {
     const dataTypes = ['staticData', 'serverData'] as const;
-    for (const type of getRouteComponentTypes()) {
+    for (const type of orderedTypes) {
       for (const dataType of dataTypes) {
         const value = resolveSettledPromiseValue(route[type]?.[dataType]);
         if (value?.redirect) {
@@ -222,7 +224,7 @@ export function checkForLoadedRedirect(route: ClientLoadRouteResult) {
       }
     }
   } else {
-    for (const type of getRouteComponentTypes()) {
+    for (const type of orderedTypes) {
       const value = resolveSettledPromiseValue(route[type]?.serverData);
       if (value?.redirect) return value.redirect;
     }
