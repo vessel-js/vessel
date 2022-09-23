@@ -73,7 +73,6 @@ export function getBuildAdapterUtils(
     readFile: (filePath) => fsp.readFile(filePath, 'utf-8'),
     writeFile: (filePath, fileContent) =>
       fsp.writeFile(filePath, fileContent, 'utf-8'),
-    createFilesArray: () => [],
     writeFiles,
     isLinkExternal: (path) => isLinkExternal(path, baseURL),
     pluralize: (word, count) => (count === 1 ? word : `${word}s`),
@@ -210,21 +209,24 @@ async function findPreviewScriptName(app: App) {
 }
 
 async function writeFiles(
-  files: { filename: string; content: string }[],
+  files: Map<string, string>,
   resolveFilePath: (filename: string) => string,
   resolvePendingMessage: (filesCount: string) => string,
   resolveSuccessMessage: (filesCount: string) => string,
 ) {
+  if (files.size === 0) return;
+
   const writingSpinner = ora();
-  const filesCount = kleur.underline(files.length);
+  const filesCount = kleur.underline(files.size);
   const pendingMessage = resolvePendingMessage?.(filesCount);
   const successMessage = resolveSuccessMessage?.(filesCount);
 
   writingSpinner.start(kleur.bold(pendingMessage));
 
   await Promise.all(
-    files.map(async ({ filename, content }) => {
+    Array.from(files.keys()).map(async (filename) => {
       const filePath = normalizePath(resolveFilePath(filename));
+      const content = files.get(filename)!;
       await ensureDir(path.posix.dirname(filePath));
       await fsp.writeFile(filePath, content);
     }),
@@ -255,9 +257,8 @@ export type BuildAdapterUtils = {
   rimraf(dirname: string): void;
   readFile(filePath: string): Promise<string>;
   writeFile(filePath: string, fileContent: string): Promise<void>;
-  createFilesArray(): { filename: string; content: string }[];
   writeFiles: (
-    files: { filename: string; content: string }[],
+    files: Map<string, string>,
     resolveFilePath: (filename: string) => string,
     resolvePendingMessage: (filesCount: string) => string,
     resolveSuccessMessage: (filesCount: string) => string,

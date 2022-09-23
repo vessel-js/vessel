@@ -45,14 +45,11 @@ export function createStaticBuildAdapter(
         // REDIRECTS
         // ---------------------------------------------------------------------------------------
 
-        const redirectFiles = $.createFilesArray();
+        const redirectFiles = new Map<string, string>();
         const redirectsTable: Record<string, string> = {};
 
         for (const redirect of build.staticRedirects.values()) {
-          redirectFiles.push({
-            filename: redirect.filename,
-            content: redirect.html,
-          });
+          redirectFiles.set(redirect.filename, redirect.html);
           redirectsTable[redirect.from] = redirect.to;
         }
 
@@ -72,13 +69,10 @@ export function createStaticBuildAdapter(
         // ---------------------------------------------------------------------------------------
 
         const dataTable: Record<string, string> = {};
-        const dataFiles = $.createFilesArray();
+        const dataFiles = new Map<string, string>();
 
         for (const data of build.staticData.values()) {
-          dataFiles.push({
-            filename: data.filename,
-            content: data.serializedData,
-          });
+          dataFiles.set(data.filename, data.serializedData);
           dataTable[data.idHash] = data.contentHash;
         }
 
@@ -94,7 +88,7 @@ export function createStaticBuildAdapter(
         // HTML Pages
         // ---------------------------------------------------------------------------------------
 
-        const htmlFiles = $.createFilesArray();
+        const htmlFiles = new Map<string, string>();
 
         const buildingSpinner = $.createSpinner();
         const htmlPagesCount = $.color.underline(build.staticRenders.size);
@@ -148,10 +142,7 @@ export function createStaticBuildAdapter(
             .replace(`<!--@vessel/app-->`, render.ssr.html)
             .replace('<!--@vessel/body-->', bodyTags);
 
-          htmlFiles.push({
-            filename: render.filename,
-            content: pageHtml,
-          });
+          htmlFiles.set(render.filename, pageHtml);
         }
 
         buildingSpinner.stopAndPersist({
@@ -173,7 +164,7 @@ export function createStaticBuildAdapter(
 
           const sitemaps = await $.buildSitemaps();
           for (const [filename, content] of sitemaps) {
-            htmlFiles.push({ filename, content });
+            htmlFiles.set(filename, content);
           }
 
           sitemapsSpinner.stopAndPersist({
@@ -193,23 +184,19 @@ export function createStaticBuildAdapter(
           (count) => `Committed ${count} HTML files`,
         );
 
-        if (redirectFiles.length) {
-          await $.writeFiles(
-            dataFiles,
-            (filename) => app.dirs.client.resolve(filename),
-            (count) => `Writing ${count} HTML redirect files`,
-            (count) => `Committed ${count} HTML redirect files`,
-          );
-        }
+        await $.writeFiles(
+          dataFiles,
+          (filename) => app.dirs.client.resolve(filename),
+          (count) => `Writing ${count} HTML redirect files`,
+          (count) => `Committed ${count} HTML redirect files`,
+        );
 
-        if (dataFiles.length) {
-          await $.writeFiles(
-            dataFiles,
-            (filename) => app.dirs.client.resolve(filename),
-            (count) => `Writing ${count} data files`,
-            (count) => `Committed ${count} data files`,
-          );
-        }
+        await $.writeFiles(
+          dataFiles,
+          (filename) => app.dirs.client.resolve(filename),
+          (count) => `Writing ${count} data files`,
+          (count) => `Committed ${count} data files`,
+        );
       },
       async close() {
         $.logBadLinks();

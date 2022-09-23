@@ -38,30 +38,45 @@ export function resolveLoaderChunks(
   app: App,
   { chunks }: BuildBundles['server'],
 ) {
-  const staticLoaderRoutes: BuildData['staticLoaderRoutes'] = new Set();
-  const serverLoaderRoutes: BuildData['serverLoaderRoutes'] = new Set();
+  const staticRoutes: BuildData['staticRoutes'] = new Set();
+  const serverRoutes: BuildData['serverRoutes'] = new Set();
 
   const routes = app.routes.toArray();
 
-  for (let i = 0; i < routes.length; i++) {
+  const serverBranchIds: string[] = [];
+
+  for (let i = routes.length - 1; i >= 0; i--) {
     const route = routes[i];
+
+    if (serverBranchIds.some((id) => route.id.startsWith(id))) {
+      staticRoutes.delete(route);
+      serverRoutes.add(route);
+      continue;
+    }
+
+    let server = false;
+
     for (const type of getRouteComponentTypes()) {
       if (route[type]) {
         const filePath = route[type]!.path.absolute;
         const chunk = chunks.find((chunk) => chunk.facadeModuleId === filePath);
-
-        if (chunk?.exports.includes('staticLoader')) {
-          staticLoaderRoutes.add(route);
-        }
-
         if (chunk?.exports.includes('serverLoader')) {
-          serverLoaderRoutes.add(route);
+          server = true;
+          if (type === 'layout') {
+            serverBranchIds.push(route.id);
+          }
         }
       }
     }
+
+    if (server) {
+      serverRoutes.add(route);
+    } else {
+      staticRoutes.add(route);
+    }
   }
 
-  return { staticLoaderRoutes, serverLoaderRoutes };
+  return { staticRoutes, serverRoutes };
 }
 
 export function resolvePageResources(

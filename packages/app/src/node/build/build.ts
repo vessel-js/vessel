@@ -90,8 +90,7 @@ export async function build(
 
   // staticPages + serverPages
   for (const pageRoute of pageRoutes) {
-    const branch = app.routes.getBranch(pageRoute);
-    if (branch.some((route) => build.serverLoaderRoutes.has(route))) {
+    if (build.serverRoutes.has(pageRoute)) {
       build.serverPages.add(pageRoute);
     } else {
       build.staticPages.add(pageRoute);
@@ -426,14 +425,14 @@ export type BuildData = {
    */
   routeChunkFile: Map<string, { [P in RouteFileType]?: string }>;
   /**
-   * File routes (pages/layouts) that contain a `staticLoader` export.
+   * File routes that _do not_ contain a `serverLoader` in their branch.
    */
-  staticLoaderRoutes: Set<AppRoute>;
+  staticRoutes: Set<AppRoute>;
   /**
-   * File routes (pages/layouts) that contain a `serverLoader` export. These routes should be
+   * File routes that contain a `serverLoader` export in their branch. These routes should be
    * dynamically rendered on the server.
    */
-  serverLoaderRoutes: Set<AppRoute>;
+  serverRoutes: Set<AppRoute>;
   /**
    * Page routes that are dynamic meaning they contain a `serverLoader` in their branch (page
    * itself or any of its layouts). These pages are dynamically rendered on the server.
