@@ -8,8 +8,9 @@ export function matchRoute<T extends Route>(url: URL, routes: T[]) {
 export function matchAllRoutes<T extends Route>(
   url: URL,
   routes: T[],
+  trailingSlash = false,
 ): (RouteMatch & T)[] {
-  const segments = filterMatchingRouteSegments(url, routes);
+  const segments = filterMatchingRouteSegments(url, routes, trailingSlash);
   return segments.map(([url, route]) => createMatchedRoute(url, route));
 }
 
@@ -63,6 +64,7 @@ export function stripRouteComponentTypes<T extends Route>(
 export function filterMatchingRouteSegments<T extends Route>(
   url: URL,
   routes: T[],
+  trailingSlash = false,
 ) {
   if (routes.length === 0) return [];
 
@@ -72,7 +74,11 @@ export function filterMatchingRouteSegments<T extends Route>(
   let start = 0;
   for (let i = pathSegments.length; i >= 0; i--) {
     const segment = pathSegments.slice(0, i).join('/');
-    const segmentURL = new URL(segment === '' ? '/' : `/${segment}/`, url);
+
+    const segmentURL = new URL(
+      segment === '' ? '/' : `/${segment}${trailingSlash ? '/' : ''}`,
+      url,
+    );
 
     const match = routes.slice(start).findIndex(
       (route) =>

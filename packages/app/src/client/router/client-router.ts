@@ -252,7 +252,9 @@ export class Router {
    */
   matchAll(pathnameOrURL: string | URL): ClientMatchedRoute[] {
     const url = this.createURL(pathnameOrURL);
-    return this.owns(url) ? matchAllRoutes(url, this._routes) : [];
+    return this.owns(url)
+      ? matchAllRoutes(url, this._routes, this.trailingSlash)
+      : [];
   }
 
   /**
@@ -380,7 +382,8 @@ export class Router {
     mount: (target: HTMLElement) => void | Promise<void>,
   ): Promise<void> {
     if (!this._listening) {
-      await this.go(location.href, { replace: true });
+      const startingURL = this.normalizeURL(new URL(location.href));
+      await this.go(startingURL.href, { replace: true });
       const target = document.getElementById('app')!;
       await mount(target);
       removeSSRStyles();

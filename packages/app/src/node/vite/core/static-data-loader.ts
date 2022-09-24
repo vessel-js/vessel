@@ -95,7 +95,7 @@ export async function loadStaticRoute(
   load: (route: AppRoute, type: RouteFileType) => Promise<ServerModule>,
 ): Promise<LoadStaticRouteResult> {
   const branch = app.routes.getBranch(route);
-  const matches = matchAllRoutes(url, branch);
+  const matches = matchAllRoutes(url, branch, app.config.routes.trailingSlash);
 
   // load modules - ensuring we only do it once for a given route/type combo
   await Promise.all(

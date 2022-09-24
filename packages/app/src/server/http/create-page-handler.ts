@@ -21,7 +21,6 @@ import {
   loadRoutes,
   matchAllRoutes,
   matchRoute,
-  normalizeURL,
   resolveSettledPromiseRejection,
   resolveSettledPromiseValue,
   type RouteComponentType,
@@ -49,7 +48,10 @@ export function createPageHandler(
   }
 
   return async (request) => {
-    const url = normalizeURL(new URL(request.url), manifest.trailingSlash);
+    const url = new URL(request.url);
+
+    const redirect = resolveTrailingSlashRedirect(url, manifest.trailingSlash);
+    if (redirect) return redirect;
 
     let response: Response;
 
@@ -160,7 +162,11 @@ export async function renderPage(
 
   const headers = new Headers();
   const cookies = new Cookies({ url });
-  const matches = matchAllRoutes(url, manifest.routes.app);
+  const matches = matchAllRoutes(
+    url,
+    manifest.routes.app,
+    manifest.trailingSlash,
+  );
 
   const loadResults = await loadRoutes(
     url,
@@ -520,23 +526,18 @@ export function resolveDocumentResourceRel(
   }
 }
 
-// TODO: buggy in dev for some reason (redirecting back/forth)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function resolveTrailingSlashRedirect(
-  url: URL,
-  { trailingSlash }: ServerManifest,
-) {
+function resolveTrailingSlashRedirect(url: URL, trailingSlash: boolean) {
   if (url.pathname === '/') {
     return false;
   } else if (url.pathname.endsWith('/index.html')) {
     const cleanHref = url.href.replace('/index.html', trailingSlash ? '/' : '');
-    return redirect(cleanHref);
+    return redirect(cleanHref, 308);
   } else if (!trailingSlash && url.pathname.endsWith('/')) {
     url.pathname = noendslash(url.pathname);
-    return redirect(url.href);
+    return redirect(url.href, 308);
   } else if (trailingSlash && !url.pathname.endsWith('/')) {
     url.pathname = endslash(url.pathname);
-    return redirect(url.href);
+    return redirect(url.href, 308);
   }
 
   return false;
