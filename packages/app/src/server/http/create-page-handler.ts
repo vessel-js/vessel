@@ -1,4 +1,3 @@
-import { installURLPattern } from 'server/polyfills';
 import {
   createStaticDataScriptTag,
   createStaticLoaderDataMap,
@@ -13,6 +12,7 @@ import type {
   ServerRequestHandler,
 } from 'server/types';
 import { HttpError, isHttpError, resolveServerResponseData } from 'shared/http';
+import { installURLPattern } from 'shared/polyfills';
 import {
   getRouteComponentDataKeys,
   getRouteComponentTypes,
@@ -38,17 +38,22 @@ import { isRedirectResponse, isResponse, json, redirect } from './response';
 export function createPageHandler(
   manifest: ServerManifest,
 ): ServerRequestHandler {
-  if (!manifest.dev) {
-    installURLPattern();
-    Object.keys(manifest.routes)
-      .flatMap((key) => manifest.routes[key])
-      .forEach((route) => {
-        route.pattern = new URLPattern({ pathname: route.pathname });
-      });
-  }
+  let installed = false;
 
   return async (request) => {
     const url = new URL(request.url);
+
+    if (!manifest.dev && !installed) {
+      await installURLPattern();
+
+      Object.keys(manifest.routes)
+        .flatMap((key) => manifest.routes[key])
+        .forEach((route) => {
+          route.pattern = new URLPattern({ pathname: route.pathname });
+        });
+
+      installed = true;
+    }
 
     const redirect = resolveTrailingSlashRedirect(url, manifest.trailingSlash);
     if (redirect) return redirect;

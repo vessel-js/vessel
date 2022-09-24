@@ -1,5 +1,5 @@
-import { installURLPattern } from 'server/polyfills';
 import type { ServerRequestHandler } from 'server/types';
+import { installURLPattern } from 'shared/polyfills';
 
 import { error, handleHttpError } from './errors';
 import {
@@ -19,13 +19,17 @@ export type HttpHandlerInit = {
 };
 
 export function createHttpHandler(init: HttpHandlerInit): ServerRequestHandler {
-  installURLPattern();
-
   const { dev, pathname, methods, loader, onError } = init;
-  const pattern = new URLPattern({ pathname });
+
+  let pattern!: URLPattern;
 
   return async (request) => {
     try {
+      if (!pattern) {
+        await installURLPattern();
+        pattern = new URLPattern({ pathname });
+      }
+
       const methodOverride =
         request.method === 'POST'
           ? (await request.formData()).get('_method')
