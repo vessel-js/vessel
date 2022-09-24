@@ -58,24 +58,64 @@ export type ServerRenderResult = {
 
 export type ServerManifest = {
   dev?: boolean;
+  baseUrl: string;
+  trailingSlash: boolean;
   entry: ServerEntryLoader;
   routes: {
     app: ServerLoadableRoute[];
     http: ServerLoadableHttpRoute[];
   };
-  html: {
+  document: {
     entry: string;
     template: string;
-    stylesheet: string;
-    preload: Record<string, string>;
-    prefetch: Record<string, string>;
+    resources: {
+      all: DocumentResource[];
+      entry: DocumentResourceEntry[];
+      app: DocumentResourceEntry[];
+      routes: Record<string, DocumentResourceEntry[]>;
+    };
+    /**
+     * Used in dev only to discover and inline styles _after_ modules have loaded. This ensures
+     * Vite has had a chance to resolve module graph and discover stylesheets that are lazy. For
+     * example, Svelte/Vue SFC styles are only determined after the module has run through Vite
+     * resolution.
+     */
+    devStylesheets?: () => Promise<string>;
   };
   staticData: {
     loader: StaticDataLoader;
     hashMap: string;
     hashRecord?: Record<string, string>;
   };
-  trailingSlash: boolean;
+};
+
+/**
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTML/Element/link}
+ */
+export type DocumentResource = {
+  href: string;
+  rel?: 'prefetch' | 'preload' | 'modulepreload' | 'stylesheet';
+  as?:
+    | 'audio'
+    | 'video'
+    | 'image'
+    | 'fetch'
+    | 'font'
+    | 'script'
+    | 'style'
+    | 'track'
+    | 'worker';
+  type?: string;
+  crossorigin?: boolean;
+};
+
+/**
+ * - `index` should point to a resource in a resource collection (i.e., `DocumentResource[]`).
+ * - `dynamic` refers to lazy loaded modules/assets (i.e., dynamically imported).
+ */
+export type DocumentResourceEntry = {
+  index: number;
+  dynamic?: boolean;
 };
 
 // ---------------------------------------------------------------------------------------

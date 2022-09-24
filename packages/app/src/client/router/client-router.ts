@@ -141,14 +141,20 @@ export class Router {
    * Called when navigating to a new route and right before a new page is loaded. Returning a
    * redirect path will navigate to the matching route declaration.
    */
-  beforeNavigate(hook: BeforeNavigateHook): void {
+  beforeNavigate(hook: BeforeNavigateHook) {
     this._beforeNavigate.push(hook);
+    return () => {
+      this._beforeNavigate = this._beforeNavigate.filter((h) => h !== hook);
+    };
   }
   /**
    * Called after navigating to a new route and it's respective page has loaded.
    */
-  afterNavigate(hook: AfterNavigateHook): void {
+  afterNavigate(hook: AfterNavigateHook) {
     this._afterNavigate.push(hook);
+    return () => {
+      this._afterNavigate = this._afterNavigate.filter((h) => h !== hook);
+    };
   }
   /**
    * Set a new delegate for handling scroll-related tasks.
@@ -405,7 +411,7 @@ export class Router {
       return;
     }
 
-    await loadRoutes(url, matches);
+    await this._loadRoutes(url, matches);
   }
 
   async navigate(url: URL, nav: NavigationOptions) {
@@ -552,17 +558,7 @@ export class Router {
       );
     }
 
-    const prevMatches = this._fw.matches.get();
-    const loadResults = await loadRoutes(
-      to.matchedURL,
-      matches.map(
-        (match) =>
-          prevMatches.find(
-            (route) => !route.error && route.valid && route.id === match.id,
-          ) ?? match,
-      ),
-      signal,
-    );
+    const loadResults = await this._loadRoutes(to.matchedURL, matches, signal);
 
     // Abort if user navigated away during load.
     if (nav.token !== navigationToken) return nav.blocked?.();
@@ -679,6 +675,24 @@ export class Router {
     this._navAbortController = null;
   }
 
+  protected _loadRoutes(
+    url: URL,
+    matches: ClientMatchedRoute[],
+    signal = this._navAbortController?.signal,
+  ) {
+    const prevMatches = this._fw.matches.get();
+    return loadRoutes(
+      url,
+      matches.map(
+        (match) =>
+          prevMatches.find(
+            (route) => !route.error && route.valid && route.id === match.id,
+          ) ?? match,
+      ),
+      signal,
+    );
+  }
+
   protected _createRedirector(
     from: URL,
     handle: (url: URL) => void | Promise<void>,
@@ -695,11 +709,9 @@ export class Router {
     url: URL,
     handle: (to: URL) => void | Promise<void>,
   ): void | Promise<void> {
-    const href = this.normalizeURL(url).href;
+    if (!this._redirectsMap.has(url.href)) return;
 
-    if (!this._redirectsMap.has(href)) return;
-
-    const redirectHref = this._redirectsMap.get(href)!;
+    const redirectHref = this._redirectsMap.get(url.href)!;
     const redirectURL = new URL(redirectHref);
 
     return this.owns(url) ? handle(redirectURL) : this.goLocation(url);

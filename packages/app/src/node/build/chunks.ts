@@ -1,10 +1,43 @@
 import type { App } from 'node/app/App';
-import type { AppRoute } from 'node/app/routes';
-import type { GetManualChunk } from 'rollup';
-import { getRouteComponentTypes } from 'shared/routing';
-import type { ManifestChunk as ViteManifestChunk } from 'vite';
+import type {
+  GetManualChunk,
+  OutputAsset,
+  OutputBundle,
+  OutputChunk,
+} from 'rollup';
+import {
+  getRouteComponentTypes,
+  type RouteComponentType,
+} from 'shared/routing';
 
-import type { BuildBundles, BuildData } from './build';
+import type { BuildBundles, BuildData } from './build-data';
+
+export function resolveChunks(bundle: OutputBundle) {
+  const chunks: OutputChunk[] = [];
+
+  for (const value of Object.values(bundle)) {
+    if (value.type === 'chunk') {
+      chunks.push(value);
+    }
+  }
+
+  return chunks;
+}
+
+export function resolveChunksAndAssets(bundle: OutputBundle) {
+  const chunks: OutputChunk[] = [];
+  const assets: OutputAsset[] = [];
+
+  for (const value of Object.values(bundle)) {
+    if (value.type === 'asset') {
+      assets.push(value);
+    } else {
+      chunks.push(value);
+    }
+  }
+
+  return { chunks, assets };
+}
 
 export function extendManualChunks(): GetManualChunk {
   return (id) => {
@@ -34,15 +67,15 @@ export function extendManualChunks(): GetManualChunk {
   };
 }
 
-export function resolveLoaderChunks(
+export function resolveRoutesLoaderInfo(
   app: App,
-  { chunks }: BuildBundles['server'],
+  { server: { chunks } }: BuildBundles,
 ) {
   const staticRoutes: BuildData['staticRoutes'] = new Set();
   const serverRoutes: BuildData['serverRoutes'] = new Set();
+  const serverLoadable: BuildData['serverLoadable'] = new Map();
 
   const routes = app.routes.toArray();
-
   const serverBranchIds: string[] = [];
 
   for (let i = routes.length - 1; i >= 0; i--) {
@@ -55,6 +88,9 @@ export function resolveLoaderChunks(
     }
 
     let server = false;
+    const serverLoader: {
+      [P in RouteComponentType]?: boolean;
+    } = {};
 
     for (const type of getRouteComponentTypes()) {
       if (route[type]) {
@@ -62,6 +98,7 @@ export function resolveLoaderChunks(
         const chunk = chunks.find((chunk) => chunk.facadeModuleId === filePath);
         if (chunk?.exports.includes('serverLoader')) {
           server = true;
+          serverLoader[type] = true;
           if (type === 'layout') {
             serverBranchIds.push(route.id);
           }
@@ -74,118 +111,9 @@ export function resolveLoaderChunks(
     } else {
       staticRoutes.add(route);
     }
+
+    serverLoadable.set(route.id, serverLoader);
   }
 
-  return { staticRoutes, serverRoutes };
-}
-
-export function resolvePageResources(
-  app: App,
-  route: AppRoute,
-  { entryChunk, appChunk, viteManifest }: BuildBundles['client'],
-) {
-  const imports = new Set<string>();
-  const dynamicImports = new Set<string>();
-  const assets = new Set<string>();
-
-  const pageSrc = new Set(
-    app.files.routes.toArray('page').map((file) => file.path.root),
-  );
-
-  const layoutSrc = new Set(
-    app.files.routes.toArray('layout').map((file) => file.path.root),
-  );
-
-  const errorBoundarySrc = new Set(
-    app.files.routes.toArray('errorBoundary').map((file) => file.path.root),
-  );
-
-  const seen = new WeakSet<ViteManifestChunk>();
-  const collectChunks = (chunk?: ViteManifestChunk, page = false) => {
-    if (!chunk || seen.has(chunk) || (!page && pageSrc.has(chunk.src!))) {
-      return;
-    }
-
-    if (chunk.assets) {
-      for (const id of chunk.assets) {
-        const asset = viteManifest[id];
-        if (asset) assets.add(asset.file);
-      }
-    }
-
-    if (chunk.imports) {
-      for (const id of chunk.imports) {
-        const chunk = viteManifest[id];
-        if (chunk) {
-          collectChunks(chunk);
-          imports.add(chunk.file);
-        }
-      }
-    }
-
-    if (chunk.dynamicImports) {
-      for (const id of chunk.dynamicImports) {
-        const chunk = viteManifest[id];
-        if (
-          chunk &&
-          !imports.has(chunk.file) &&
-          !pageSrc.has(chunk.src!) &&
-          !layoutSrc.has(chunk.src!) &&
-          !errorBoundarySrc.has(chunk.src!)
-        ) {
-          dynamicImports.add(chunk.file);
-        }
-      }
-    }
-
-    seen.add(chunk);
-  };
-
-  // Entry
-
-  const entryId = app.dirs.root.relative(entryChunk.facadeModuleId!);
-  collectChunks(viteManifest[entryId]);
-  imports.add(entryChunk.fileName);
-
-  // App
-
-  const appId = app.dirs.root.relative(appChunk.facadeModuleId!);
-  collectChunks(viteManifest[appId]);
-  imports.add(appChunk.fileName);
-
-  // Layouts + Error Boundaries
-
-  const branch = app.routes.getBranch(route);
-  for (const { layout, errorBoundary } of branch) {
-    if (layout) {
-      const chunk = viteManifest[layout.path.root];
-      if (chunk) {
-        collectChunks(chunk);
-        imports.add(chunk.file);
-      }
-    }
-
-    if (errorBoundary) {
-      const chunk = viteManifest[errorBoundary.path.root];
-      if (chunk) {
-        collectChunks(chunk);
-        imports.add(chunk.file);
-      }
-    }
-  }
-
-  // Page
-
-  const pageChunk = viteManifest[route.page!.path.root];
-
-  if (pageChunk) {
-    collectChunks(pageChunk, true);
-    imports.add(pageChunk.file);
-  }
-
-  return {
-    assets: Array.from(assets),
-    imports: Array.from(imports),
-    dynamicImports: Array.from(dynamicImports),
-  };
+  return { staticRoutes, serverRoutes, serverLoadable };
 }

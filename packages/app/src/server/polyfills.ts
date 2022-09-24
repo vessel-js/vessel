@@ -1,3 +1,5 @@
+import { URLPattern } from 'urlpattern-polyfill';
+
 async function interop<T>(loader: () => Promise<T>, specifier: keyof T) {
   const mod = await loader();
   return mod[specifier] ?? (mod as any).default[specifier];
@@ -5,7 +7,7 @@ async function interop<T>(loader: () => Promise<T>, specifier: keyof T) {
 
 const globals = {
   crypto: () => import('node:crypto'),
-  URLPattern: () => interop(() => import('urlpattern-polyfill'), 'URLPattern'),
+  URLPattern: () => URLPattern,
   Headers: () => interop(() => import('undici'), 'Headers'),
   ReadableStream: () =>
     interop(() => import('node:stream/web'), 'ReadableStream'),
@@ -51,4 +53,12 @@ export async function installPolyfills() {
   }
 
   installed = true;
+}
+
+export function installURLPattern() {
+  // @ts-expect-error - .
+  if (!globalThis.URLPattern) {
+    // @ts-expect-error - .
+    globalThis.URLPattern = URLPattern;
+  }
 }

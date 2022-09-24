@@ -45,6 +45,7 @@ export function resolveAppConfig(
 
   const __routes: ResolvedRoutesConfig = {
     entries: routes.entries ?? [],
+    trailingSlash: routes.trailingSlash ?? true,
     matchers: [
       ...(routes.matchers ?? []),
       { name: 'int', matcher: /\d+/ },

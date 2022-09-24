@@ -27,6 +27,7 @@ export function resolveBuildConfig(app: App): ViteConfig {
   const immutableDir = '_immutable';
 
   const input = {
+    index: app.dirs.app.resolve('index.html'),
     entry: ssr ? app.config.entry.server : app.config.entry.client,
     app: app.config.client.app,
     ...createAppEntries(app),
@@ -43,7 +44,7 @@ export function resolveBuildConfig(app: App): ViteConfig {
       target: ssr ? 'node16' : undefined,
       manifest: !ssr && `vite-manifest.json`,
       ssrManifest: false,
-      cssCodeSplit: false,
+      cssCodeSplit: true,
       assetsDir: `${immutableDir}/assets`,
       minify: !ssr && !app.config.debug,
       polyfillModulePreload: true,

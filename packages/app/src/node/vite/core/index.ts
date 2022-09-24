@@ -1,2 +1,2 @@
 export * from './index-html';
-export * from './static-loader';
+export * from './static-data-loader';

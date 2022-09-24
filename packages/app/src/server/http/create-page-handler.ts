@@ -1,8 +1,11 @@
+import { installURLPattern } from 'server/polyfills';
 import {
   createStaticDataScriptTag,
   createStaticLoaderDataMap,
 } from 'server/static-data';
 import type {
+  DocumentResource,
+  DocumentResourceEntry,
   ServerLoadedRoute,
   ServerLoaderOutput,
   ServerManifest,
@@ -26,15 +29,25 @@ import {
 } from 'shared/routing';
 import type { Mutable } from 'shared/types';
 import { coerceToError } from 'shared/utils/error';
+import { endslash, noendslash, slash } from 'shared/utils/url';
 
 import { Cookies } from './cookies';
 import { handleHttpError } from './errors';
 import { createRequestEvent } from './request';
-import { isRedirectResponse, isResponse, json } from './response';
+import { isRedirectResponse, isResponse, json, redirect } from './response';
 
 export function createPageHandler(
   manifest: ServerManifest,
 ): ServerRequestHandler {
+  if (!manifest.dev) {
+    installURLPattern();
+    Object.keys(manifest.routes)
+      .flatMap((key) => manifest.routes[key])
+      .forEach((route) => {
+        route.pattern = new URLPattern({ pathname: route.pathname });
+      });
+  }
+
   return async (request) => {
     const url = normalizeURL(new URL(request.url), manifest.trailingSlash);
 
@@ -286,25 +299,39 @@ export async function renderPage(
     ? '<script>__VSL_TRAILING_SLASH__ = false;</script>'
     : '';
 
-  const entryScriptTag = `<script type="module" src="${manifest.html.entry}"></script>`;
+  const entryScriptTag = `<script type="module" src="${manifest.document.entry}"></script>`;
 
-  const html = manifest.html.template
-    .replace(
-      '<!--@vessel/head-->',
-      manifest.html.stylesheet +
-        (ssr.css ?? '') +
-        (manifest.html.preload[route.id] ?? '') +
-        (manifest.html.prefetch[route.id] ?? '') +
-        (ssr.head ?? ''),
-    )
-    .replace(
-      '<!--@vessel/body-->',
-      dataHashScriptTag +
-        staticDataScriptTag +
-        serverDataScriptTag +
-        trailingSlashScriptTag +
-        entryScriptTag,
-    )
+  const linkTags = createDocumentResourceLinkTags(
+    manifest.document.resources.all,
+    [
+      ...manifest.document.resources.entry,
+      ...manifest.document.resources.app,
+      ...(manifest.document.resources[route.id] ?? []),
+    ],
+  );
+
+  const devStylesheet =
+    manifest.dev && manifest.document.devStylesheets
+      ? await manifest.document.devStylesheets()
+      : '';
+
+  const headTags = [...linkTags, devStylesheet, ssr.css ?? '', ssr.head ?? '']
+    .filter((t) => t.length > 0)
+    .join('\n    ');
+
+  const bodyTags = [
+    dataHashScriptTag,
+    staticDataScriptTag,
+    serverDataScriptTag,
+    trailingSlashScriptTag,
+    entryScriptTag,
+  ]
+    .filter((t) => t.length > 0)
+    .join('\n    ');
+
+  const html = manifest.document.template
+    .replace('<!--@vessel/head-->', headTags)
+    .replace('<!--@vessel/body-->', bodyTags)
     .replace(`<!--@vessel/app-->`, ssr.html);
 
   const response = new Response(html, {
@@ -418,4 +445,99 @@ export function generateETag(html: string) {
   }
 
   return (hash >>> 0).toString(36);
+}
+
+export function createDocumentResourceLinkTags(
+  resources: DocumentResource[],
+  entries: DocumentResourceEntry[],
+) {
+  const tags: string[] = [];
+  const seen = new Set<number>();
+
+  for (const entry of entries) {
+    if (seen.has(entry.index)) continue;
+
+    const resource = resources[entry.index];
+
+    const attrs: string[] = [
+      `rel="${resolveDocumentResourceRel(resource.href, entry.dynamic)}"`,
+      `href="${resource.href}"`,
+    ];
+
+    if (resource.as) attrs.push(`as="${resource.as}"`);
+    if (resource.type) attrs.push(`type="${resource.type}"`);
+    if (resource.crossorigin) attrs.push(`crossorigin`);
+
+    tags.push(`<link ${attrs.join(' ')} />`);
+
+    seen.add(entry.index);
+  }
+
+  return tags;
+}
+
+export function createDocumentResource(
+  file: string,
+  baseUrl: string,
+): DocumentResource {
+  const href = `${baseUrl}${slash(file)}`;
+  if (file.endsWith('.js')) {
+    return { href, as: 'script' };
+  } else if (file.endsWith('.css')) {
+    return { href, as: 'style' };
+  } else if (file.endsWith('.json')) {
+    return { href, as: 'fetch', type: 'application/json' };
+  } else if (file.endsWith('.woff2')) {
+    return { href, as: 'font', type: 'font/woff2' };
+  } else if (file.endsWith('.gif')) {
+    return { href, as: 'image', type: 'image/gif' };
+  } else if (file.endsWith('.jpg') || file.endsWith('.jpeg')) {
+    return { href, as: 'image', type: 'image/jpeg' };
+  } else if (file.endsWith('.png')) {
+    return { href, as: 'image', type: 'image/png' };
+  } else if (file.endsWith('.mp4')) {
+    return { href, as: 'video', type: 'video/mp4' };
+  } else if (file.endsWith('.webm')) {
+    return { href, as: 'video', type: 'video/webm' };
+  } else if (file.endsWith('.mp3')) {
+    return { href, as: 'audio', type: 'audio/mp3' };
+  } else {
+    // TODO: handle all Vite supported assets
+    return { href };
+  }
+}
+
+export function resolveDocumentResourceRel(
+  file: string,
+  dynamic?: boolean,
+): DocumentResource['rel'] {
+  if (file.endsWith('.js')) {
+    return !dynamic ? 'modulepreload' : 'prefetch';
+  } else if (file.endsWith('.css')) {
+    return !dynamic ? 'stylesheet' : 'prefetch';
+  } else {
+    return !dynamic ? 'preload' : 'prefetch';
+  }
+}
+
+// TODO: buggy in dev for some reason (redirecting back/forth)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function resolveTrailingSlashRedirect(
+  url: URL,
+  { trailingSlash }: ServerManifest,
+) {
+  if (url.pathname === '/') {
+    return false;
+  } else if (url.pathname.endsWith('/index.html')) {
+    const cleanHref = url.href.replace('/index.html', trailingSlash ? '/' : '');
+    return redirect(cleanHref);
+  } else if (!trailingSlash && url.pathname.endsWith('/')) {
+    url.pathname = noendslash(url.pathname);
+    return redirect(url.href);
+  } else if (trailingSlash && !url.pathname.endsWith('/')) {
+    url.pathname = endslash(url.pathname);
+    return redirect(url.href);
+  }
+
+  return false;
 }

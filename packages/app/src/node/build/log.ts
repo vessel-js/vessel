@@ -1,9 +1,9 @@
 import kleur from 'kleur';
-import type { AppRoute, RoutesLoggerInput } from 'node';
+import type { App, AppRoute, RoutesLoggerInput } from 'node';
 import { LoggerIcon } from 'node/utils';
 import { noslash } from 'shared/utils/url';
 
-import type { BuildData } from './build';
+import type { BuildData } from './build-data';
 
 export function logBadLinks(badLinks: BuildData['badLinks']) {
   if (badLinks.size === 0) return;
@@ -50,9 +50,9 @@ export function logRoutesList({ level, ...build }: RoutesLoggerInput) {
     }
   }
 
-  if (level === 'info' && build.serverHttpEndpoints.size > 0) {
+  if (level === 'info' && build.serverEndpoints.size > 0) {
     logs.push('', `⚙️  ${kleur.bold(kleur.underline('SERVER ENDPOINTS'))}`, '');
-    for (const route of Array.from(build.serverHttpEndpoints).reverse()) {
+    for (const route of Array.from(build.serverEndpoints).reverse()) {
       logs.push(`- ${kleur.cyan(route.dir.route)}`);
     }
   }
@@ -114,7 +114,7 @@ export function logRoutesTree({ level, ...build }: RoutesLoggerInput) {
   }
 
   const serverHttp = new Map<string, AppRoute>();
-  for (const route of build.serverHttpEndpoints) {
+  for (const route of build.serverEndpoints) {
     serverHttp.set(route.http!.path.pathname, route);
   }
 
@@ -221,5 +221,22 @@ export function logRoutesTree({ level, ...build }: RoutesLoggerInput) {
       ),
     );
     console.log(print(tree, 1, '').join('\n'));
+  }
+}
+
+export function logRoutes(app: App, build: BuildData) {
+  const style = app.config.routes.log;
+  if (style !== 'none') {
+    const logger =
+      style === 'list'
+        ? logRoutesList
+        : style === 'tree'
+        ? logRoutesTree
+        : style;
+
+    logger({
+      level: app.config.routes.logLevel,
+      ...build,
+    });
   }
 }

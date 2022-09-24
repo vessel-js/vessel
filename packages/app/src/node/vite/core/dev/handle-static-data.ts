@@ -8,7 +8,7 @@ import {
 } from 'shared/routing';
 import { isString } from 'shared/utils/unit';
 
-import { callStaticLoader } from './static-loader';
+import { callStaticLoader } from '../static-data-loader';
 
 type HandleStaticDataRequestInit = {
   app: App;

@@ -3,8 +3,8 @@ import { type RouteFile } from 'node/app/files';
 import { installPolyfills } from 'server/polyfills';
 import type { PreviewServerHook } from 'vite';
 
-import { handleDevServerError } from './dev-server';
 import { handleHttpRequest } from './handle-http';
+import { handleDevServerError } from './server';
 
 export async function configurePreviewServer(
   app: App,

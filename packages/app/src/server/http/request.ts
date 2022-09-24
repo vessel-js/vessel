@@ -116,7 +116,7 @@ function createServerFetcher(
       if (route) {
         const handler = createHttpHandler({
           dev: manifest.dev,
-          pattern: route.pattern,
+          pathname: route.pathname,
           loader: route.loader,
         });
 

@@ -1,26 +1,40 @@
 import kleur from 'kleur';
 import type { App } from 'node/app/App';
 import { createAppEntries } from 'node/app/create/app-factory';
-import { getRouteFileTypes, RouteFileType } from 'node/app/files';
+import { getRouteFileTypes, type RouteFileType } from 'node/app/files';
 import type { AppRoute } from 'node/app/routes';
+import { hash, rimraf } from 'node/utils';
 import { createStaticLoaderFetcher, loadStaticRoute } from 'node/vite/core';
-import { getDevServerOrigin } from 'node/vite/core/dev-server';
+import { getDevServerOrigin } from 'node/vite/core/dev/server';
 import fs from 'node:fs';
-import type { OutputAsset, OutputBundle, OutputChunk } from 'rollup';
+import type { OutputBundle } from 'rollup';
 import { createStaticLoaderDataMap } from 'server';
 import { createServerRouter } from 'server/http';
 import { installPolyfills } from 'server/polyfills';
-import type {
-  ServerEntryModule,
-  ServerLoadedRoute,
-  ServerRenderResult,
-} from 'server/types';
-import { cleanRoutePath, findRoute } from 'shared/routing';
+import type { ServerEntryModule } from 'server/types';
+import {
+  cleanRoutePath,
+  findRoute,
+  normalizeURL as __normalizeURL,
+} from 'shared/routing';
 import { isFunction } from 'shared/utils/unit';
-import { type Manifest as ViteManifest } from 'vite';
+import { isLinkExternal, slash } from 'shared/utils/url';
+import type { Manifest as ViteManifest } from 'vite';
 
-import { createAutoBuildAdapter, getBuildAdapterUtils } from './adapter';
-import { resolveLoaderChunks } from './chunks';
+import { createAutoBuildAdapter } from './adapter';
+import type { BuildBundles, BuildData } from './build-data';
+import {
+  createRedirectMetaTag,
+  resolveDataFilename,
+  resolveHTMLFilename,
+} from './build-utils';
+import {
+  resolveChunks,
+  resolveChunksAndAssets,
+  resolveRoutesLoaderInfo,
+} from './chunks';
+import { crawl } from './crawl';
+import { resolveDocumentResourcesFromManifest } from './resources';
 
 export async function build(
   app: App,
@@ -28,6 +42,7 @@ export async function build(
   serverBundle: OutputBundle,
 ): Promise<void> {
   const pageRoutes = app.routes.filterByType('page');
+  const httpRoutes = app.routes.filterByType('http');
 
   if (pageRoutes.length === 0) {
     console.log(kleur.bold(`❓ No pages were resolved`));
@@ -36,45 +51,75 @@ export async function build(
 
   await installPolyfills();
 
-  const ssrOrigin = getDevServerOrigin(app);
-
   const entries = createAppEntries(app, { isSSR: true });
-  const viteManifestPath = app.dirs.client.resolve('vite-manifest.json');
-  const { chunks, assets } = collectOutput(clientBundle);
 
-  const entryChunk = chunks.find(
-    (chunk) => chunk.isEntry && /^_immutable\/entry-/.test(chunk.fileName),
+  const template = await fs.readFileSync(
+    app.dirs.client.resolve('app/index.html'),
+    'utf-8',
+  );
+
+  rimraf(app.dirs.client.resolve('app'));
+
+  const viteManifestPath = app.dirs.client.resolve('vite-manifest.json');
+  const clientManifest = JSON.parse(
+    await fs.promises.readFile(viteManifestPath, 'utf-8'),
+  ) as ViteManifest;
+
+  // Client/server chunks and assets
+  const { chunks: clientChunks, assets: clientAssets } =
+    resolveChunksAndAssets(clientBundle);
+  const serverChunks = resolveChunks(serverBundle);
+
+  // Entry client/server chunks
+  const entryRootPath = app.dirs.root.relative(app.config.entry.client);
+  const entryFileName = clientManifest[entryRootPath].file;
+  const entryChunk = clientChunks.find(
+    (chunk) => chunk.isEntry && chunk.fileName === entryFileName,
   )!;
-  const appChunk = chunks.find(
-    (chunk) => chunk.isEntry && /^_immutable\/app-/.test(chunk.fileName),
+  const serverEntryPath = app.dirs.server.resolve('entry.js');
+  const serverEntryChunk = serverChunks.find(
+    (chunk) => chunk.isEntry && chunk.fileName === 'entry.js',
   )!;
-  const appCSSAsset = assets.find((asset) => asset.fileName.endsWith('.css'))!;
+
+  // App client/server chunks
+  const appRootPath = app.dirs.root.relative(app.config.client.app);
+  const appFileName = clientManifest[appRootPath].file;
+  const appManifestChunk = clientManifest[appRootPath];
+  const serverAppChunk = serverChunks.find(
+    (chunk) => chunk.isEntry && chunk.fileName === 'app.js',
+  )!;
 
   const bundles: BuildBundles = {
     entries,
     client: {
-      output: clientBundle,
-      entryChunk,
-      appChunk,
-      appCSSAsset,
-      chunks,
-      assets,
-      viteManifest: JSON.parse(
-        await fs.promises.readFile(viteManifestPath, 'utf-8'),
-      ),
+      bundle: clientBundle,
+      chunks: clientChunks,
+      assets: clientAssets,
+      manifest: clientManifest,
+      entry: { chunk: entryChunk },
+      app: {
+        chunk: clientChunks.find(
+          (chunk) => chunk.isEntry && chunk.fileName === appFileName,
+        )!,
+        css: (appManifestChunk.css ?? []).map(
+          (file) => clientAssets.find((asset) => asset.fileName === file)!,
+        ),
+        assets: (appManifestChunk.assets ?? []).map(
+          (file) => clientAssets.find((asset) => asset.fileName === file)!,
+        ),
+      },
     },
     server: {
-      output: serverBundle,
-      chunks: collectChunks(serverBundle),
+      bundle: serverBundle,
+      chunks: serverChunks,
+      entry: { chunk: serverEntryChunk },
+      app: { chunk: serverAppChunk },
     },
   };
 
-  console.log();
-
-  const httpRoutes = app.routes.filterByType('http');
-
   const build: BuildData = {
     entries,
+    template,
     links: new Map(),
     badLinks: new Map(),
     staticPages: new Set(),
@@ -82,13 +127,14 @@ export async function build(
     staticRedirects: new Map(),
     staticRenders: new Map(),
     serverPages: new Set(),
-    serverHttpEndpoints: new Set(httpRoutes),
+    serverEndpoints: new Set(httpRoutes),
     routeChunks: new Map(),
     routeChunkFile: new Map(),
-    ...resolveLoaderChunks(app, bundles.server),
+    resources: resolveDocumentResourcesFromManifest(app, bundles),
+    ...resolveRoutesLoaderInfo(app, bundles),
   };
 
-  // staticPages + serverPages
+  // Determine which pages are static and which are dynamically rendered on the server.
   for (const pageRoute of pageRoutes) {
     if (build.serverRoutes.has(pageRoute)) {
       build.serverPages.add(pageRoute);
@@ -97,6 +143,7 @@ export async function build(
     }
   }
 
+  // Resolve route chunks.
   for (const route of app.routes) {
     const chunks = {};
     const files = {};
@@ -117,24 +164,26 @@ export async function build(
     build.routeChunkFile.set(route.id, files);
   }
 
-  const $ = getBuildAdapterUtils(app, bundles, build);
-
   const adapterFactory = isFunction(app.config.build.adapter)
     ? app.config.build.adapter
     : createAutoBuildAdapter(app.config.build.adapter);
 
-  const adapter = await adapterFactory(app, bundles, build, $);
+  const adapter = await adapterFactory(app, bundles, build);
 
   // -------------------------------------------------------------------------------------------
-  // LOAD DATA
+  // LOAD STATIC DATA
   // -------------------------------------------------------------------------------------------
+
+  const trailingSlashes = app.config.routes.trailingSlash;
+  const normalizeURL = (url: URL) => __normalizeURL(url, trailingSlashes);
+
+  const ssrOrigin = getDevServerOrigin(app);
+  const ssrRouter = createServerRouter();
 
   const fetcher = createStaticLoaderFetcher(
     app,
     (route) => import(build.routeChunkFile.get(route.id)!.http!),
   );
-
-  const serverRouter = createServerRouter();
 
   const routeChunkLoader = (route: AppRoute, type: RouteFileType) =>
     import(build.routeChunkFile.get(route.id)![type]!);
@@ -149,12 +198,12 @@ export async function build(
     );
 
     if (redirect) {
-      const pathname = $.normalizeURL(url).pathname;
+      const pathname = normalizeURL(url).pathname;
       build.staticRedirects.set(pathname, {
         from: pathname,
         to: redirect.path,
-        filename: $.resolveHTMLFilename(url),
-        html: $.createRedirectMetaTag(redirect.path),
+        filename: resolveHTMLFilename(url),
+        html: createRedirectMetaTag(redirect.path),
         status: redirect.status,
       });
     }
@@ -164,12 +213,12 @@ export async function build(
       const content = dataMap.get(id)!;
       if (Object.keys(content).length > 0) {
         const serializedContent = JSON.stringify(content);
-        const contentHash = $.hash(serializedContent);
+        const contentHash = hash(serializedContent);
         build.staticData.set(id, {
           data: content,
-          idHash: $.hash(id),
+          idHash: hash(id),
           contentHash,
-          filename: $.resolveDataFilename(contentHash),
+          filename: resolveDataFilename(contentHash),
           serializedData: JSON.stringify(content),
         });
       }
@@ -182,23 +231,25 @@ export async function build(
   // RENDER
   // -------------------------------------------------------------------------------------------
 
-  const serverEntryPath = app.dirs.server.resolve('entry.js');
-  const validPathname = /(\/|\.html)$/;
+  const testTrailingSlash = (pathname: string) =>
+    pathname === '/' || trailingSlashes
+      ? /\/$/.test(pathname)
+      : !/\/$/.test(pathname);
 
   const { render } = (await import(serverEntryPath)) as ServerEntryModule;
 
   async function buildPage(url: URL, pageRoute: AppRoute) {
-    const normalizedURL = $.normalizeURL(url);
+    const normalizedURL = normalizeURL(url);
     const pathname = normalizedURL.pathname;
 
     if (build.links.has(pathname) || build.badLinks.has(pathname)) {
       return;
     }
 
-    if (!validPathname.test(pathname)) {
+    if (!testTrailingSlash(pathname)) {
       build.badLinks.set(pathname, {
         route: pageRoute,
-        reason: 'malformed URL pathname',
+        reason: `should ${trailingSlashes ? '' : 'not'} have trailing slash`,
       });
       return;
     }
@@ -219,13 +270,13 @@ export async function build(
     if (!build.staticPages.has(pageRoute)) return;
 
     const result = {
-      filename: $.resolveHTMLFilename(url),
+      filename: resolveHTMLFilename(url),
       route: pageRoute,
       matches,
       ssr: await render({
         route: matches[matches.length - 1],
         matches,
-        router: serverRouter,
+        router: ssrRouter,
       }),
       dataAssetIds: new Set(dataMap.keys()),
     };
@@ -233,17 +284,17 @@ export async function build(
     build.links.set(pathname, pageRoute);
     build.staticRenders.set(pathname, result);
 
-    const hrefs = $.crawl(result.ssr.html);
+    const hrefs = crawl(result.ssr.html);
     for (let i = 0; i < hrefs.length; i++) {
       await onFoundLink(pageRoute, hrefs[i]);
     }
   }
 
   async function onFoundLink(pageRoute: AppRoute, href: string) {
-    if (href.startsWith('#') || $.isLinkExternal(href)) return;
+    if (href.startsWith('#') || isLinkExternal(href)) return;
 
-    const url = new URL(`${ssrOrigin}${$.slash(href)}`);
-    const pathname = $.normalizeURL(url).pathname;
+    const url = new URL(`${ssrOrigin}${slash(href)}`);
+    const pathname = normalizeURL(url).pathname;
 
     if (build.links.has(pathname) || build.badLinks.has(pathname)) return;
 
@@ -270,7 +321,7 @@ export async function build(
   await adapter.startRenderingPages?.();
 
   for (const entry of app.config.routes.entries) {
-    const url = new URL(`${ssrOrigin}${$.slash(entry)}`);
+    const url = new URL(`${ssrOrigin}${slash(entry)}`);
     const route = findRoute(url, pageRoutes);
     if (route) {
       await buildPage(url, route);
@@ -285,161 +336,3 @@ export async function build(
   await adapter.write?.();
   await adapter.close?.();
 }
-
-function collectChunks(bundle: OutputBundle) {
-  const chunks: OutputChunk[] = [];
-
-  for (const value of Object.values(bundle)) {
-    if (value.type === 'chunk') {
-      chunks.push(value);
-    }
-  }
-
-  return chunks;
-}
-
-function collectOutput(bundle: OutputBundle) {
-  const chunks: OutputChunk[] = [];
-  const assets: OutputAsset[] = [];
-
-  for (const value of Object.values(bundle)) {
-    if (value.type === 'asset') {
-      assets.push(value);
-    } else {
-      chunks.push(value);
-    }
-  }
-
-  return { chunks, assets };
-}
-
-export type BuildBundles = {
-  entries: Record<string, string>;
-  client: {
-    output: OutputBundle;
-    entryChunk: OutputChunk;
-    appChunk: OutputChunk;
-    appCSSAsset?: OutputAsset;
-    chunks: OutputChunk[];
-    assets: OutputAsset[];
-    /**
-     * Vite manifest that can be used to build preload/prefetch directives. The manifest contains
-     * mappings of module IDs to their associated chunks and asset files.
-     *
-     * @see {@link https://vitejs.dev/guide/ssr.html#generating-preload-directives}
-     */
-    viteManifest: ViteManifest;
-  };
-  server: {
-    output: OutputBundle;
-    chunks: OutputChunk[];
-  };
-};
-
-export type BuildData = {
-  /**
-   * Application entry files that are passed to Rollup's `input` option.
-   */
-  entries: Record<string, string>;
-  /**
-   * Valid links and their respective routes that were found during the static build process.
-   */
-  links: Map<string, AppRoute>;
-  /**
-   * Map of invalid links that were either malformed or matched no route pattern during
-   * the static build process. The key contains the bad URL pathname.
-   */
-  badLinks: Map<string, { route?: AppRoute; reason: string }>;
-  /**
-   * Page routes that are static meaning they contain no `serverLoader` in their branch (page
-   * itself or any of its layouts).
-   */
-  staticPages: Set<AppRoute>;
-  /**
-   * Redirects returned from `staticLoader` calls. The object keys are the URL pathname being
-   * redirected from.
-   */
-  staticRedirects: Map<
-    string,
-    {
-      /** The URL pathname being redirected from. */
-      from: string;
-      /** The URL pathname being redirected to. */
-      to: string;
-      /** The redirect HTML file name which can be used to output file relative to build directory. */
-      filename: string;
-      /** The HTML file content containing the redirect meta tag. */
-      html: string;
-      /** HTTP status code used for the redirect. */
-      status: number;
-    }
-  >;
-  /**
-   * Map of links (URL pathname) and their respective SSR rendered content and loaded data asset
-   * IDs.
-   */
-  staticRenders: Map<
-    string,
-    {
-      /** The HTML file name which can be used to output file relative to build directory. */
-      filename: string;
-      /** The matching page route. */
-      route: AppRoute;
-      /** The loaded server routes. */
-      matches: ServerLoadedRoute[];
-      /** The SSR results containing head, css, and HTML renders. */
-      ssr: ServerRenderResult;
-      /**
-       * All static data asset ID's that belong to this path. These can be used find matching
-       * records in the `staticData` object.
-       */
-      dataAssetIds: Set<string>;
-    }
-  >;
-  /**
-   * Static JSON data that has been loaded by pages and layouts. The key is a unique data asset ID
-   * for the given route and URL path combination. You can find data ID's in the `renders` map
-   * for each page.
-   */
-  staticData: Map<
-    string,
-    {
-      /** The data JSON file name which can be used to output file relative to build directory. */
-      filename: string;
-      /** Loaded data. */
-      data: Record<string, unknown>;
-      /** The loaded data serailized (JSON.stringify). */
-      serializedData: string;
-      /** The data asset ID sha-1 hash. */
-      idHash: string;
-      /** The serialized content sha-1 hash. */
-      contentHash: string;
-    }
-  >;
-  /**
-   * Route ids and their respective chunks.
-   */
-  routeChunks: Map<string, { [P in RouteFileType]?: OutputChunk }>;
-  /**
-   * Route ids and their respective chunk file paths (absolute).
-   */
-  routeChunkFile: Map<string, { [P in RouteFileType]?: string }>;
-  /**
-   * File routes that _do not_ contain a `serverLoader` in their branch.
-   */
-  staticRoutes: Set<AppRoute>;
-  /**
-   * File routes that contain a `serverLoader` export in their branch. These routes should be
-   * dynamically rendered on the server.
-   */
-  serverRoutes: Set<AppRoute>;
-  /**
-   * Page routes that are dynamic meaning they contain a `serverLoader` in their branch (page
-   * itself or any of its layouts). These pages are dynamically rendered on the server.
-   */
-  serverPages: Set<AppRoute>;
-  /**
-   * Server endpoints that are used server-side to respond to HTTP requests.
-   */
-  serverHttpEndpoints: Set<AppRoute>;
-};

@@ -7,6 +7,13 @@ export type ResolvedRoutesConfig = {
    */
   entries: string[];
   /**
+   * Whether trailing slashes on URL paths should be kept or removed. The default behavior is to
+   * keep it.
+   *
+   * @defaultValue true
+   */
+  trailingSlash: boolean;
+  /**
    * Route matchers are used to inject pattern matching into file paths. For example, a file path
    * like `[int]/page.md` has a matcher named `int` which can then be defined at `routes.matchers`
    * in your Vessel config. The `[int]` will be replaced with the string or Regex you provide.

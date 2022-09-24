@@ -1,3 +1,4 @@
+import { installURLPattern } from 'server/polyfills';
 import type { ServerRequestHandler } from 'server/types';
 
 import { error, handleHttpError } from './errors';
@@ -11,14 +12,17 @@ import { isResponse } from './response';
 
 export type HttpHandlerInit = {
   dev?: boolean;
-  pattern: URLPattern;
+  pathname: string;
   methods?: HttpMethod[];
   loader: () => HttpRequestModule | Promise<HttpRequestModule>;
   onError?: (error: unknown) => Response | void;
 };
 
 export function createHttpHandler(init: HttpHandlerInit): ServerRequestHandler {
-  const { dev, pattern, methods, loader, onError } = init;
+  installURLPattern();
+
+  const { dev, pathname, methods, loader, onError } = init;
+  const pattern = new URLPattern({ pathname });
 
   return async (request) => {
     try {

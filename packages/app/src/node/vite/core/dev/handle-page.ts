@@ -8,9 +8,12 @@ import { getRouteComponentTypes, matchRoute } from 'shared/routing';
 import { coerceToError } from 'shared/utils/error';
 import type { Connect, ModuleNode, ViteDevServer } from 'vite';
 
-import { handleDevServerError, logDevError } from './dev-server';
-import { readIndexHtmlFile } from './index-html';
-import { createStaticLoaderFetcher, loadStaticRoute } from './static-loader';
+import { readIndexHtmlFile } from '../index-html';
+import {
+  createStaticLoaderFetcher,
+  loadStaticRoute,
+} from '../static-data-loader';
+import { handleDevServerError, logDevError } from './server';
 
 type HandlePageRequestInit = {
   base: string;
@@ -76,6 +79,8 @@ export async function handlePageRequest({
     const manifest: ServerManifest = {
       dev: true,
       entry: entryLoader,
+      baseUrl: app.vite.resolved!.base,
+      trailingSlash: app.config.routes.trailingSlash,
       routes: {
         app: app.routes.toArray().map(toServerLoadable),
         http: app.routes.filterByType('http').map((route) => ({
@@ -83,18 +88,22 @@ export async function handlePageRequest({
           loader: route.http!.viteLoader,
         })),
       },
-      html: {
+      document: {
         entry: '/:virtual/vessel/client',
         template,
-        stylesheet: await loadStyleTag(app, route),
-        preload: {},
-        prefetch: {},
+        // Currently not used in dev.
+        resources: {
+          all: [],
+          entry: [],
+          app: [],
+          routes: {},
+        },
+        devStylesheets: () => resolveDevStylesheet(app, route),
       },
       staticData: {
         hashMap: '',
         loader: async (_, route, type) => staticData[route.id + type],
       },
-      trailingSlash: true,
     };
 
     const handler = createPageHandler(manifest);
@@ -106,7 +115,7 @@ export async function handlePageRequest({
   }
 }
 
-async function loadStyleTag(app: App, route?: AppRoute | null) {
+async function resolveDevStylesheet(app: App, route?: AppRoute | null) {
   if (!route) return '';
 
   const stylesMap = await Promise.all(
@@ -146,7 +155,8 @@ export async function getStylesByFile(server: ViteDevServer, file: string) {
 
     if (
       styleRE.test(dep.file!) ||
-      (query.has('svelte') && query.get('type') === 'style')
+      (query.has('svelte') && query.get('type') === 'style') ||
+      (query.has('vue') && query.get('type') === 'style')
     ) {
       try {
         const mod = await server.ssrLoadModule(dep.url);

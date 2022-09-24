@@ -1,20 +1,34 @@
+import kleur from 'kleur';
+import {
+  createStaticDataScriptTag,
+  findPreviewScriptName,
+  guessPackageManager,
+  writeFiles,
+} from 'node/build/build-utils';
+import { logBadLinks, logRoutes } from 'node/build/log';
+import { buildAllSitemaps } from 'node/build/sitemap';
+import { logger, LoggerIcon } from 'node/utils';
+import ora from 'ora';
+import { createDocumentResourceLinkTags } from 'server';
+
 import { type BuildAdapterFactory } from '../build-adapter';
 
 export type StaticBuildAdapterConfig = {
-  trailingSlash?: boolean;
+  // no-ops
 };
 
 export function createStaticBuildAdapter(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   options: StaticBuildAdapterConfig = {},
 ): BuildAdapterFactory {
-  return (app, bundles, build, $) => {
-    $.logger.info($.color.bold(`vessel@${app.version}`));
+  return (app, bundles, build) => {
+    logger.info(kleur.bold(`vessel@${app.version}`));
 
     const startTime = Date.now();
-    const renderingSpinner = $.createSpinner();
+    const renderingSpinner = ora();
 
-    const trailingSlash = options.trailingSlash ?? true;
-    const trailingSlashTag = !trailingSlash
+    const trailingSlashes = app.config.routes.trailingSlash;
+    const trailingSlashTag = !trailingSlashes
       ? `<script>__VSL_TRAILING_SLASH__ = false;</script>`
       : '';
 
@@ -22,8 +36,8 @@ export function createStaticBuildAdapter(
       name: 'static',
       startRenderingPages() {
         renderingSpinner.start(
-          $.color.bold(
-            `Rendering ${$.color.underline(
+          kleur.bold(
+            `Rendering ${kleur.underline(
               build.staticPages.size,
             )} static pages...`,
           ),
@@ -31,11 +45,9 @@ export function createStaticBuildAdapter(
       },
       finishRenderingPages() {
         renderingSpinner.stopAndPersist({
-          symbol: $.icons.success,
-          text: $.color.bold(
-            `Rendered ${$.color.underline(
-              build.staticPages.size,
-            )} static pages`,
+          symbol: LoggerIcon.Success,
+          text: kleur.bold(
+            `Rendered ${kleur.underline(build.staticPages.size)} static pages`,
           ),
         });
       },
@@ -90,38 +102,26 @@ export function createStaticBuildAdapter(
 
         const htmlFiles = new Map<string, string>();
 
-        const buildingSpinner = $.createSpinner();
-        const htmlPagesCount = $.color.underline(build.staticRenders.size);
+        const buildingSpinner = ora();
+        const htmlPagesCount = kleur.underline(build.staticRenders.size);
 
         buildingSpinner.start(
-          $.color.bold(`Building ${htmlPagesCount} HTML pages...`),
+          kleur.bold(`Building ${htmlPagesCount} HTML pages...`),
         );
 
-        const template = $.getHTMLTemplate();
-        const entrySrc = bundles.client.entryChunk.fileName;
+        const entrySrc = bundles.client.entry.chunk.fileName;
         const entryScriptTag = `<script type="module" src="/${entrySrc}" defer></script>`;
-        const stylesheetTag = bundles.client.appCSSAsset
-          ? $.createLinkTag('stylesheet', bundles.client.appCSSAsset.fileName)
-          : '';
 
         for (const render of build.staticRenders.values()) {
-          const { assets, imports, dynamicImports } = $.resolvePageResources(
-            render.route,
-          );
-
-          const preloadLinkTags = [...assets, ...imports].map((fileName) =>
-            $.createPreloadTag(fileName),
-          );
-
-          const prefetchLinkTags = dynamicImports.map((fileName) =>
-            $.createLinkTag('prefetch', fileName),
-          );
+          const linkTags = createDocumentResourceLinkTags(build.resources.all, [
+            ...build.resources.entry,
+            ...build.resources.app,
+            ...build.resources.routes.get(render.route.id)!,
+          ]);
 
           const headTags = [
-            stylesheetTag,
+            ...linkTags,
             render.ssr.css ?? '',
-            ...preloadLinkTags,
-            ...prefetchLinkTags,
             render.ssr.head ?? '',
           ]
             .filter((t) => t.length > 0)
@@ -130,24 +130,24 @@ export function createStaticBuildAdapter(
           const bodyTags = [
             redirectsScriptTag,
             dataHashScriptTag,
-            $.createStaticDataScriptTag(render.dataAssetIds),
+            createStaticDataScriptTag(render.dataAssetIds, build),
             trailingSlashTag,
             entryScriptTag,
           ]
             .filter((t) => t.length > 0)
-            .join('');
+            .join('\n    ');
 
-          const pageHtml = template
+          const pageHtml = build.template
             .replace(`<!--@vessel/head-->`, headTags)
-            .replace(`<!--@vessel/app-->`, render.ssr.html)
-            .replace('<!--@vessel/body-->', bodyTags);
+            .replace('<!--@vessel/body-->', bodyTags)
+            .replace(`<!--@vessel/app-->`, render.ssr.html);
 
           htmlFiles.set(render.filename, pageHtml);
         }
 
         buildingSpinner.stopAndPersist({
-          text: $.color.bold(`Built ${htmlPagesCount} HTML pages`),
-          symbol: $.icons.success,
+          text: kleur.bold(`Built ${htmlPagesCount} HTML pages`),
+          symbol: LoggerIcon.Success,
         });
 
         // ---------------------------------------------------------------------------------------
@@ -155,21 +155,21 @@ export function createStaticBuildAdapter(
         // ---------------------------------------------------------------------------------------
 
         if (app.config.sitemap.length > 0) {
-          const sitemapsSpinner = $.createSpinner();
-          const sitemapCount = $.color.underline(app.config.sitemap.length);
+          const sitemapsSpinner = ora();
+          const sitemapCount = kleur.underline(app.config.sitemap.length);
 
           sitemapsSpinner.start(
-            $.color.bold(`Building ${sitemapCount} sitemaps...`),
+            kleur.bold(`Building ${sitemapCount} sitemaps...`),
           );
 
-          const sitemaps = await $.buildSitemaps();
+          const sitemaps = await buildAllSitemaps(app, build);
           for (const [filename, content] of sitemaps) {
             htmlFiles.set(filename, content);
           }
 
           sitemapsSpinner.stopAndPersist({
-            text: $.color.bold(`Built ${sitemapCount} sitemaps`),
-            symbol: $.icons.success,
+            text: kleur.bold(`Built ${sitemapCount} sitemaps`),
+            symbol: LoggerIcon.Success,
           });
         }
 
@@ -177,21 +177,21 @@ export function createStaticBuildAdapter(
         // WRITE
         // ---------------------------------------------------------------------------------------
 
-        await $.writeFiles(
+        await writeFiles(
           htmlFiles,
           (filename) => app.dirs.client.resolve(filename),
           (count) => `Writing ${count} HTML files`,
           (count) => `Committed ${count} HTML files`,
         );
 
-        await $.writeFiles(
-          dataFiles,
+        await writeFiles(
+          redirectFiles,
           (filename) => app.dirs.client.resolve(filename),
           (count) => `Writing ${count} HTML redirect files`,
           (count) => `Committed ${count} HTML redirect files`,
         );
 
-        await $.writeFiles(
+        await writeFiles(
           dataFiles,
           (filename) => app.dirs.client.resolve(filename),
           (count) => `Writing ${count} data files`,
@@ -199,8 +199,8 @@ export function createStaticBuildAdapter(
         );
       },
       async close() {
-        $.logBadLinks();
-        $.logRoutes();
+        logBadLinks(build.badLinks);
+        logRoutes(app, build);
 
         const icons = {
           10: '🤯',
@@ -211,18 +211,18 @@ export function createStaticBuildAdapter(
         };
 
         const endTime = ((Date.now() - startTime) / 1000).toFixed(2);
-        const formattedEndTime = $.color.underline(endTime);
+        const formattedEndTime = kleur.underline(endTime);
         const icon = icons[Object.keys(icons).find((t) => endTime <= t)!];
 
-        $.logger.success(
-          $.color.bold(`Build complete in ${formattedEndTime} ${icon}`),
+        logger.success(
+          kleur.bold(`Build complete in ${formattedEndTime} ${icon}`),
         );
 
-        const pkgManager = await $.guessPackageManager();
-        const previewCommand = await $.findPreviewScriptName();
+        const pkgManager = await guessPackageManager(app);
+        const previewCommand = await findPreviewScriptName(app);
 
         console.log(
-          $.color.bold(
+          kleur.bold(
             `⚡ ${
               previewCommand
                 ? `Run \`${

@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import { isFunction } from 'shared/utils/unit';
 import { slash } from 'shared/utils/url';
 
-import { BuildData } from './build';
+import { type BuildData } from './build-data';
 
 export async function buildSitemap(
   app: App,
@@ -80,4 +80,12 @@ export function buildSitemapURL(url: SitemapURL, baseUrl = '/') {
     <changefreq>${url.changefreq ?? 'weekly'}</changefreq>
     <priority>${url.priority ?? 0.7}</priority>
   </url>`;
+}
+
+export async function buildAllSitemaps(app: App, build: BuildData) {
+  if (app.config.sitemap.length === 0) return [];
+  const sitemaps = app.config.sitemap
+    .map((config) => buildSitemap(app, build.links, config))
+    .filter(Boolean);
+  return (await Promise.all(sitemaps)) as [string, string][];
 }

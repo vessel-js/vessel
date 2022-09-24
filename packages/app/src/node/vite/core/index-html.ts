@@ -12,7 +12,9 @@ export const DEFAULT_INDEX_HTML = `
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="app"><!--@vessel/app--></div>
+    <div id="app">
+      <!--@vessel/app-->
+    </div>
     <!--@vessel/body-->
   </body>
 </html>

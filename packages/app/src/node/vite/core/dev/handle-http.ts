@@ -12,7 +12,7 @@ import {
 import { findRoute } from 'shared/routing';
 import { coerceToError } from 'shared/utils/error';
 
-import { handleDevServerError, logDevError } from './dev-server';
+import { handleDevServerError, logDevError } from './server';
 
 type HandleHttpRequestInit = {
   app: App;
@@ -42,7 +42,7 @@ export async function handleHttpRequest({
 
   const handler = createHttpHandler({
     dev,
-    pattern: route.pattern,
+    pathname: route.pathname,
     loader: () => loader(route.http!),
     onError: (error) => {
       logDevError(app, req, coerceToError(error));

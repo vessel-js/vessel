@@ -5,11 +5,7 @@ export * from './app/config';
 export * from './app/files';
 export * from './app/routes';
 export type { BuildBundles, BuildData } from './build';
-export type {
-  BuildAdapter,
-  BuildAdapterFactory,
-  BuildAdapterUtils,
-} from './build/adapter';
+export type { BuildAdapter, BuildAdapterFactory } from './build/adapter';
 export {
   type AutoBuildAdapterConfig,
   createAutoBuildAdapter,

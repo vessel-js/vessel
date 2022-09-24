@@ -1,7 +1,12 @@
 import esbuild from 'esbuild';
-import { requireShim } from 'node/utils';
+import kleur from 'kleur';
+import { createDirectory } from 'node/app/create/app-dirs';
+import { copyDir, LoggerIcon, mkdirp, requireShim, rimraf } from 'node/utils';
+import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import ora from 'ora';
 import { HTTP_METHODS } from 'server/http';
+import { endslash, isLinkExternal, noendslash, slash } from 'shared/utils/url';
 
 import { type BuildAdapterFactory } from '../build-adapter';
 import { createStaticBuildAdapter } from '../static/adapter';
@@ -28,38 +33,36 @@ const matchersRE = /\[?\[(?:.*?)\]\]?/g;
 export function createVercelBuildAdapter(
   config?: VercelBuildAdapterConfig,
 ): BuildAdapterFactory {
-  return async (app, bundles, build, $) => {
+  return async (app, bundles, build) => {
     const vercelDirs = {
-      root: $.createDirectory(app.dirs.root.resolve(outputRoot)),
-      static: $.createDirectory(app.dirs.root.resolve(`${outputRoot}/static`)),
-      fns: $.createDirectory(app.dirs.root.resolve(`${outputRoot}/functions`)),
+      root: createDirectory(app.dirs.root.resolve(outputRoot)),
+      static: createDirectory(app.dirs.root.resolve(`${outputRoot}/static`)),
+      fns: createDirectory(app.dirs.root.resolve(`${outputRoot}/functions`)),
     };
 
-    const useTrailingSlash = config?.trailingSlash ?? false;
-    const staticAdapter = await createStaticBuildAdapter({
-      trailingSlash: useTrailingSlash,
-    })(app, bundles, build, $);
+    const trailingSlashes = app.config.routes.trailingSlash;
+    const staticAdapter = await createStaticBuildAdapter()(app, bundles, build);
 
     return {
       ...staticAdapter,
       name: 'vercel',
       async write() {
-        $.rimraf(vercelDirs.root.path);
-        $.mkdirp(vercelDirs.root.path);
+        rimraf(vercelDirs.root.path);
+        mkdirp(vercelDirs.root.path);
 
         await staticAdapter.write?.();
 
-        $.copyDir(app.dirs.client.path, vercelDirs.static.path);
+        copyDir(app.dirs.client.path, vercelDirs.static.path);
 
         const redirects = Array.from(build.staticRedirects.values()).map(
           (redirect) => ({
             src: redirect.from.replace(/\/$/, '/?'),
             headers: {
-              Location: $.isLinkExternal(redirect.to)
+              Location: isLinkExternal(redirect.to, app.vite.resolved!.base)
                 ? redirect.to
-                : useTrailingSlash
-                ? $.endslash(redirect.to)
-                : $.noendslash(redirect.to),
+                : trailingSlashes
+                ? endslash(redirect.to)
+                : noendslash(redirect.to),
             },
             status: redirect.status,
           }),
@@ -68,7 +71,7 @@ export function createVercelBuildAdapter(
         const overrides: Record<string, { path: string }> = {};
         for (const page of build.staticRenders.values()) {
           overrides[page.filename] = {
-            path: $.noendslash(page.filename.replace('index.html', '')),
+            path: noendslash(page.filename.replace('index.html', '')),
           };
         }
 
@@ -79,7 +82,7 @@ export function createVercelBuildAdapter(
           status?: number;
           handle?: string;
         }[] = [
-          ...(useTrailingSlash ? trailingSlash.keep : trailingSlash.remove),
+          ...(trailingSlashes ? trailingSlash.keep : trailingSlash.remove),
           ...redirects,
           {
             src: '/_immutable/.+',
@@ -88,22 +91,22 @@ export function createVercelBuildAdapter(
           { handle: 'filesystem' },
         ];
 
-        const bundlingFunctionsSpinner = $.createSpinner();
-        const fnCount = $.color.underline(build.serverHttpEndpoints.size);
+        const bundlingFunctionsSpinner = ora();
+        const fnCount = kleur.underline(build.serverEndpoints.size);
         bundlingFunctionsSpinner.start(
-          $.color.bold(`Bundling ${fnCount} functions...`),
+          kleur.bold(`Bundling ${fnCount} functions...`),
         );
 
-        for (const route of build.serverHttpEndpoints) {
+        for (const route of build.serverEndpoints) {
           const routeDir = route.http!.dir.route;
           routes.push({
-            src: `^${$.slash(routeDir.replace(matchersRE, '([^/]+?)'))}/?$`, // ^/api/foo/?$
-            dest: $.slash(routeDir), // /api/foo
+            src: `^${slash(routeDir.replace(matchersRE, '([^/]+?)'))}/?$`, // ^/api/foo/?$
+            dest: slash(routeDir), // /api/foo
           });
         }
 
         await Promise.all(
-          Array.from(build.serverHttpEndpoints).map(async (route) => {
+          Array.from(build.serverEndpoints).map(async (route) => {
             const chunk = build.routeChunks.get(route.id)!.http;
 
             const allowedMethods = chunk?.exports.filter((id) =>
@@ -140,7 +143,7 @@ export function createVercelBuildAdapter(
             );
             const entryPath = path.posix.resolve(chunkDir, 'fn.js');
 
-            await $.writeFile(entryPath, code);
+            await writeFile(entryPath, code);
 
             // eslint-disable-next-line import/no-named-as-default-member
             await esbuild.build({
@@ -159,12 +162,12 @@ export function createVercelBuildAdapter(
               sourcemap: app.config.debug && 'external',
             });
 
-            await $.writeFile(
+            await writeFile(
               path.posix.resolve(outdir, 'package.json'),
               JSON.stringify({ type: 'module' }),
             );
 
-            await $.writeFile(
+            await writeFile(
               path.posix.resolve(outdir, '.vc-config.json'),
               JSON.stringify(vcConfig, null, 2),
             );
@@ -172,8 +175,8 @@ export function createVercelBuildAdapter(
         );
 
         bundlingFunctionsSpinner.stopAndPersist({
-          text: $.color.bold(`Committed ${fnCount} functions`),
-          symbol: $.icons.success,
+          text: kleur.bold(`Committed ${fnCount} functions`),
+          symbol: LoggerIcon.Success,
         });
 
         // SPA fallback so we can render 404 page.
@@ -182,7 +185,7 @@ export function createVercelBuildAdapter(
           dest: '/index.html',
         });
 
-        await $.writeFile(
+        await writeFile(
           vercelDirs.root.resolve('config.json'),
           JSON.stringify({ version: 3, routes, overrides }, null, 2),
         );
