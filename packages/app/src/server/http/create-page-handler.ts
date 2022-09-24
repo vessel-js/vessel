@@ -28,7 +28,7 @@ import {
 } from 'shared/routing';
 import type { Mutable } from 'shared/types';
 import { coerceToError } from 'shared/utils/error';
-import { endslash, noendslash, slash } from 'shared/utils/url';
+import { noendslash, slash } from 'shared/utils/url';
 
 import { Cookies } from './cookies';
 import { handleHttpError } from './errors';
@@ -541,7 +541,7 @@ function resolveTrailingSlashRedirect(url: URL, trailingSlash: boolean) {
     url.pathname = noendslash(url.pathname);
     return redirect(url.href, 308);
   } else if (trailingSlash && !url.pathname.endsWith('/')) {
-    url.pathname = endslash(url.pathname);
+    url.pathname = url.pathname + '/';
     return redirect(url.href, 308);
   }
 

@@ -176,7 +176,7 @@ export class Router {
   constructor(options: RouterOptions) {
     this._url = new URL(location.href);
     this.baseUrl = options.baseUrl;
-    this.trailingSlash = !!options.trailingSlash;
+    this.trailingSlash = options.trailingSlash ?? true;
     this._fw = options.frameworkDelegate;
     this._comparator = createSimpleComparator();
     this._scrollDelegate = createSimpleScrollDelegate(this);
