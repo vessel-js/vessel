@@ -47,6 +47,8 @@ export function createVercelBuildAdapter(
       ...staticAdapter,
       name: 'vercel',
       async write() {
+        console.log(kleur.magenta('\n+ vercel\n'));
+
         rimraf(vercelDirs.root.path);
         mkdirp(vercelDirs.root.path);
 
@@ -54,7 +56,7 @@ export function createVercelBuildAdapter(
 
         copyDir(app.dirs.client.path, vercelDirs.static.path);
 
-        const redirects = Array.from(build.staticRedirects.values()).map(
+        const redirects = Array.from(build.static.redirects.values()).map(
           (redirect) => ({
             src: redirect.from.replace(/\/$/, '/?'),
             headers: {
@@ -69,7 +71,7 @@ export function createVercelBuildAdapter(
         );
 
         const overrides: Record<string, { path: string }> = {};
-        for (const page of build.staticRenders.values()) {
+        for (const page of build.static.renders.values()) {
           overrides[page.filename] = {
             path: noendslash(page.filename.replace('index.html', '')),
           };
@@ -92,12 +94,12 @@ export function createVercelBuildAdapter(
         ];
 
         const bundlingFunctionsSpinner = ora();
-        const fnCount = kleur.underline(build.serverEndpoints.size);
+        const fnCount = kleur.underline(build.server.endpoints.size);
         bundlingFunctionsSpinner.start(
           kleur.bold(`Bundling ${fnCount} functions...`),
         );
 
-        for (const route of build.serverEndpoints) {
+        for (const route of build.server.endpoints) {
           const routeDir = route.http!.dir.route;
           routes.push({
             src: `^${slash(routeDir.replace(matchersRE, '([^/]+?)'))}/?$`, // ^/api/foo/?$
@@ -106,8 +108,8 @@ export function createVercelBuildAdapter(
         }
 
         await Promise.all(
-          Array.from(build.serverEndpoints).map(async (route) => {
-            const chunk = build.routeChunks.get(route.id)!.http;
+          Array.from(build.server.endpoints).map(async (route) => {
+            const chunk = build.server.chunks.get(route.id)!.http;
 
             const allowedMethods = chunk?.exports.filter((id) =>
               HTTP_METHODS.has(id),
@@ -139,7 +141,7 @@ export function createVercelBuildAdapter(
             const fndir = `${route.dir.route}.func`;
             const outdir = vercelDirs.fns.resolve(fndir);
             const chunkDir = path.posix.dirname(
-              build.routeChunkFile.get(route.id)!.http!,
+              build.server.chunkFiles.get(route.id)!.http!,
             );
             const entryPath = path.posix.resolve(chunkDir, 'fn.js');
 

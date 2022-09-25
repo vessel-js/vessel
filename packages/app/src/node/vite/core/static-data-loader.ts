@@ -4,12 +4,14 @@ import type { RouteFileType } from 'node/app/files';
 import type { AppRoute } from 'node/app/routes';
 import { logger } from 'node/utils';
 import {
-  createHttpHandler,
-  createStaticLoaderInput,
+  ALL_HTTP_METHODS,
+  coerceFetchInput,
   error as httpError,
   handleHttpError,
+  handleHttpRequest,
   type HttpRequestModule,
 } from 'server';
+import { createStaticLoaderInput } from 'server/static-data';
 import type {
   MaybeStaticLoaderOutput,
   ServerFetcher,
@@ -22,9 +24,9 @@ import type {
   StaticLoaderOutput,
 } from 'server/types';
 import {
-  findRoute,
   getRouteComponentTypes,
   matchAllRoutes,
+  matchRoute,
   type Route,
   type RouteComponentType,
   type RouteMatch,
@@ -43,12 +45,12 @@ export function createStaticLoaderFetcher(
   loader: (route: AppRoute) => Promise<HttpRequestModule>,
 ): ServerFetcher {
   const ssrOrigin = getDevServerOrigin(app);
-  const httpRoutes = app.routes.filterByType('http');
+  const httpRoutes = app.routes.filterHasType('http');
 
   return (input, init) => {
     if (typeof input === 'string' && input.startsWith('/')) {
       const url = new URL(`${ssrOrigin}${input}`);
-      const route = findRoute(url, httpRoutes);
+      const route = matchRoute(url, httpRoutes);
 
       if (!route) {
         return Promise.resolve(
@@ -56,13 +58,11 @@ export function createStaticLoaderFetcher(
         );
       }
 
-      const handler = createHttpHandler({
-        dev: true,
-        pathname: route.pathname,
+      return handleHttpRequest(url, coerceFetchInput(input, init, url), {
+        ...route,
         loader: () => loader(route),
+        methods: ALL_HTTP_METHODS,
       });
-
-      return handler(new Request(url));
     }
 
     return fetch(input, init);
@@ -162,7 +162,7 @@ export async function loadStaticRoute(
         result[type] = {
           module: mod,
           loader: () => Promise.resolve(mod),
-          staticData: { ...data?.data },
+          staticData: data?.data ? data.data : undefined,
         };
       }
     }

@@ -8,7 +8,10 @@ import {
 } from 'shared/routing';
 import { isString } from 'shared/utils/unit';
 
-import { callStaticLoader } from '../static-data-loader';
+import {
+  callStaticLoader,
+  createStaticLoaderFetcher,
+} from '../static-data-loader';
 
 type HandleStaticDataRequestInit = {
   app: App;
@@ -28,6 +31,10 @@ export async function handleStaticDataRequest({
   const dataURL = new URL(url);
   dataURL.pathname = pathname;
 
+  const fetcher = createStaticLoaderFetcher(app, (route) =>
+    route.http!.viteLoader(),
+  );
+
   const route = app.routes
     .toArray()
     .find((route) => route.dir.route === id && route[type]);
@@ -43,12 +50,12 @@ export async function handleStaticDataRequest({
     ...route,
     [type]: {
       ...route[type],
-      loader: () => app.vite.server!.ssrLoadModule(route[type]!.path.absolute),
+      loader: () => route[type]!.viteLoader(),
     },
   }) as ServerMatchedRoute;
 
   const { staticLoader } = await match[type]!.loader();
-  const output = await callStaticLoader(dataURL, match, staticLoader);
+  const output = await callStaticLoader(dataURL, match, fetcher, staticLoader);
 
   if (output.redirect) {
     res.setHeader(

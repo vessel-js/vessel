@@ -1,9 +1,7 @@
 import type { App } from 'node/app/App';
-import { type RouteFile } from 'node/app/files';
 import { installPolyfills } from 'server/polyfills';
 import type { PreviewServerHook } from 'vite';
 
-import { handleHttpRequest } from './handle-http';
 import { handleDevServerError } from './server';
 
 export async function configurePreviewServer(
@@ -17,11 +15,7 @@ export async function configurePreviewServer(
       ? 'https'
       : 'http';
 
-  const loader = (file: RouteFile) => {
-    return import(
-      app.dirs.server.resolve(file.path.route).replace(/\.ts$/, '.js')
-    );
-  };
+  // TODO: read in preview manifest and create handler
 
   server.middlewares.use(async (req, res, next) => {
     try {
@@ -33,24 +27,14 @@ export async function configurePreviewServer(
         req.headers[':authority'] || req.headers.host
       }`;
 
-      const url = new URL(base + req.url);
+      // const url = new URL(base + req.url);
       const decodedUrl = decodeURI(new URL(base + req.url).pathname);
 
-      // TODO: handle dynamic pages here (SSR) -- load from manifest. -> __data param? or __http
-      if (app.routes.test(decodedUrl, 'page')) {
-        //
-      }
-
-      if (app.routes.test(decodedUrl, 'http')) {
-        await handleHttpRequest({
-          base,
-          url,
-          app,
-          req,
-          res,
-          loader,
-        });
-        return;
+      if (
+        app.routes.test(decodedUrl, 'page') ||
+        app.routes.test(decodedUrl, 'http')
+      ) {
+        // TODO handle request here
       }
     } catch (error) {
       handleDevServerError(app, req, res, error);

@@ -14,6 +14,28 @@ export function pluralize(word: string, count: number) {
   return count === 1 ? word : `${word}s`;
 }
 
+export function formatWritingFilesTitle(
+  type: string,
+  word: string,
+  count: number,
+) {
+  return `Writing ${kleur.underline(count)} ${type} ${pluralize(
+    word,
+    count,
+  )}...`;
+}
+
+export function formatCommittedFilesTitle(
+  type: string,
+  word: string,
+  count: number,
+) {
+  return `Committed ${kleur.underline(count)} ${type} ${pluralize(
+    word,
+    count,
+  )}`;
+}
+
 export function resolveHTMLFilename(url: URL) {
   const decodedRoute = decodeURI(isString(url) ? url : url.pathname);
   const filePath = decodedRoute.replace(/\/$|$/, '/index.html');
@@ -25,13 +47,15 @@ export function resolveDataFilename(name: string) {
 }
 
 export function createStaticDataScriptTag(
-  dataAssetIds: Set<string>,
+  dataAssetIds: Set<string> | undefined,
   build: BuildData,
 ) {
+  if (!dataAssetIds) return '';
+
   const table: Record<string, unknown> = {};
 
   for (const id of dataAssetIds) {
-    const data = build.staticData.get(id)!;
+    const data = build.static.data.get(id)!;
     if (data && Object.keys(data.data).length > 0) {
       table[data.contentHash] = data.data;
     }
@@ -87,15 +111,14 @@ export async function findPreviewScriptName(app: App) {
 export async function writeFiles(
   files: Map<string, string>,
   resolveFilePath: (filename: string) => string,
-  resolvePendingMessage: (filesCount: string) => string,
-  resolveSuccessMessage: (filesCount: string) => string,
+  resolvePendingMessage: (count: number) => string,
+  resolveSuccessMessage: (count: number) => string,
 ) {
   if (files.size === 0) return;
 
   const writingSpinner = ora();
-  const filesCount = kleur.underline(files.size);
-  const pendingMessage = resolvePendingMessage?.(filesCount);
-  const successMessage = resolveSuccessMessage?.(filesCount);
+  const pendingMessage = resolvePendingMessage?.(files.size);
+  const successMessage = resolveSuccessMessage?.(files.size);
 
   writingSpinner.start(kleur.bold(pendingMessage));
 

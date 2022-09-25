@@ -1,9 +1,10 @@
 import type { ServerResponse } from 'http';
 import type { App } from 'node/app/App';
 import { type AppRoute, toServerLoadable } from 'node/app/routes';
-import { handleHTTPRequest } from 'node/http';
-import { createPageHandler, JSONData } from 'server/http';
+import { handleIncomingMessage } from 'node/http';
+import { ALL_HTTP_METHODS, createRequestHandler, JSONData } from 'server/http';
 import type { ServerEntryModule, ServerManifest } from 'server/types';
+import { resolveStaticDataAssetId } from 'shared/data';
 import { getRouteComponentTypes, matchRoute } from 'shared/routing';
 import { coerceToError } from 'shared/utils/error';
 import type { Connect, ModuleNode, ViteDevServer } from 'vite';
@@ -15,7 +16,7 @@ import {
 } from '../static-data-loader';
 import { handleDevServerError, logDevError } from './server';
 
-type HandlePageRequestInit = {
+type HandleDevRequestInit = {
   base: string;
   app: App;
   url: URL;
@@ -23,22 +24,22 @@ type HandlePageRequestInit = {
   res: ServerResponse;
 };
 
-export async function handlePageRequest({
+export async function handleDevRequest({
   base,
   app,
   url,
   req,
   res,
-}: HandlePageRequestInit) {
+}: HandleDevRequestInit) {
   url.pathname = url.pathname.replace('/index.html', '/');
 
   const fetcher = createStaticLoaderFetcher(app, (route) =>
-    app.vite.server!.ssrLoadModule(route.http!.path.absolute),
+    route.http!.viteLoader(),
   );
 
   try {
-    const route = matchRoute(url, app.routes.filterByType('page'));
-    const staticData: Record<string, JSONData> = {};
+    const route = matchRoute(url, app.routes.filterHasType('page'));
+    const staticDataLoaders: Record<string, () => Promise<JSONData>> = {};
 
     if (route) {
       const { matches, redirect } = await loadStaticRoute(
@@ -59,7 +60,9 @@ export async function handlePageRequest({
       for (const match of matches) {
         for (const type of getRouteComponentTypes()) {
           if (match[type]?.staticData) {
-            staticData[match.id + type] = match[type]!.staticData!;
+            const id = resolveStaticDataAssetId(match, type);
+            staticDataLoaders[id] = () =>
+              Promise.resolve(match[type]!.staticData ?? {});
           }
         }
       }
@@ -82,10 +85,12 @@ export async function handlePageRequest({
       baseUrl: app.vite.resolved!.base,
       trailingSlash: app.config.routes.trailingSlash,
       routes: {
-        app: app.routes.toArray().map(toServerLoadable),
-        http: app.routes.filterByType('http').map((route) => ({
+        app: app.routes.filterHasType('page').map(toServerLoadable),
+        http: app.routes.filterHasType('http').map((route) => ({
           ...route,
           loader: route.http!.viteLoader,
+          // Just use all in dev and let it fail.
+          methods: ALL_HTTP_METHODS,
         })),
       },
       document: {
@@ -101,13 +106,14 @@ export async function handlePageRequest({
         devStylesheets: () => resolveDevStylesheet(app, route),
       },
       staticData: {
-        hashMap: '',
-        loader: async (_, route, type) => staticData[route.id + type],
+        clientHashRecord: {},
+        serverHashRecord: {},
+        loaders: staticDataLoaders,
       },
     };
 
-    const handler = createPageHandler(manifest);
-    await handleHTTPRequest(base, req, res, handler, (error) => {
+    const handler = createRequestHandler(manifest);
+    await handleIncomingMessage(base, req, res, handler, (error) => {
       logDevError(app, req, coerceToError(error));
     });
   } catch (error) {

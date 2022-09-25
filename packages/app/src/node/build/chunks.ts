@@ -1,16 +1,14 @@
 import type { App } from 'node/app/App';
+import { getRouteFileTypes } from 'node/app/files';
 import type {
   GetManualChunk,
   OutputAsset,
   OutputBundle,
   OutputChunk,
 } from 'rollup';
-import {
-  getRouteComponentTypes,
-  type RouteComponentType,
-} from 'shared/routing';
+import { type RouteComponentType } from 'shared/routing';
 
-import type { BuildBundles, BuildData } from './build-data';
+import type { BuildData } from './build-data';
 
 export function resolveChunks(bundle: OutputBundle) {
   const chunks: OutputChunk[] = [];
@@ -67,53 +65,58 @@ export function extendManualChunks(): GetManualChunk {
   };
 }
 
-export function resolveRoutesLoaderInfo(
+export function resolveServerRoutes(
   app: App,
-  { server: { chunks } }: BuildBundles,
+  chunks: BuildData['server']['chunks'],
 ) {
-  const staticRoutes: BuildData['staticRoutes'] = new Set();
-  const serverRoutes: BuildData['serverRoutes'] = new Set();
-  const serverLoadable: BuildData['serverLoadable'] = new Map();
+  const edgeRoutes: BuildData['edge']['routes'] = new Set();
+  const serverLoaders: BuildData['server']['loaders'] = new Map();
 
   const routes = app.routes.toArray();
-  const serverBranchIds: string[] = [];
+
+  const serverLayouts: string[] = [];
+  const edgeLayouts: string[] = [];
+
+  const hasEdgeExport = (exports: string[]) => exports.includes('EDGE');
 
   for (let i = routes.length - 1; i >= 0; i--) {
     const route = routes[i];
 
-    if (serverBranchIds.some((id) => route.id.startsWith(id))) {
-      staticRoutes.delete(route);
-      serverRoutes.add(route);
-      continue;
-    }
+    let edge = false,
+      server = false;
 
-    let server = false;
     const serverLoader: {
       [P in RouteComponentType]?: boolean;
     } = {};
 
-    for (const type of getRouteComponentTypes()) {
-      if (route[type]) {
-        const filePath = route[type]!.path.absolute;
-        const chunk = chunks.find((chunk) => chunk.facadeModuleId === filePath);
-        if (chunk?.exports.includes('serverLoader')) {
-          server = true;
-          serverLoader[type] = true;
-          if (type === 'layout') {
-            serverBranchIds.push(route.id);
-          }
+    const chunk = chunks.get(route.id)!;
+
+    for (const type of getRouteFileTypes()) {
+      if (!route[type]) continue;
+
+      if (type === 'http') {
+        if (hasEdgeExport(chunk.http!.exports)) edgeRoutes.add(route.id);
+      } else if (chunk[type]!.exports.includes('serverLoader')) {
+        server = true;
+        serverLoader[type] = true;
+
+        const isEdge = hasEdgeExport(chunk[type]!.exports);
+        if (isEdge) edge = true;
+
+        if (type === 'layout') {
+          serverLayouts.push(route.id);
+          if (isEdge) edgeLayouts.push(route.id);
         }
       }
     }
 
-    if (server) {
-      serverRoutes.add(route);
-    } else {
-      staticRoutes.add(route);
+    if (server || serverLayouts.some((id) => route.id.startsWith(id))) {
+      serverLoaders.set(route.id, serverLoader);
+      if (edge || edgeLayouts.some((id) => route.id.startsWith(id))) {
+        edgeRoutes.add(route.id);
+      }
     }
-
-    serverLoadable.set(route.id, serverLoader);
   }
 
-  return { staticRoutes, serverRoutes, serverLoadable };
+  return { edgeRoutes, serverLoaders };
 }

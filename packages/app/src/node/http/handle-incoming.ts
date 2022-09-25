@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 
 import { getRequest, setResponse } from './http-bridge';
 
-export async function handleHTTPRequest(
+export async function handleIncomingMessage(
   base: string,
   req: IncomingMessage,
   res: ServerResponse,

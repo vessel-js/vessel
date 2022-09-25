@@ -3,14 +3,16 @@ import type { App } from 'node/app/App';
 import { createAppEntries } from 'node/app/create/app-factory';
 import { getRouteFileTypes, type RouteFileType } from 'node/app/files';
 import type { AppRoute } from 'node/app/routes';
-import { hash, rimraf } from 'node/utils';
+import { hash, logger, LoggerIcon, mkdirp, rimraf } from 'node/utils';
 import { createStaticLoaderFetcher, loadStaticRoute } from 'node/vite/core';
 import { getDevServerOrigin } from 'node/vite/core/dev/server';
 import fs from 'node:fs';
+import { writeFile } from 'node:fs/promises';
+import ora from 'ora';
 import type { OutputBundle } from 'rollup';
-import { createStaticLoaderDataMap } from 'server';
 import { createServerRouter } from 'server/http';
 import { installPolyfills } from 'server/polyfills';
+import { createStaticLoaderDataMap } from 'server/static-data';
 import type { ServerEntryModule } from 'server/types';
 import {
   cleanRoutePath,
@@ -25,15 +27,20 @@ import { createAutoBuildAdapter } from './adapter';
 import type { BuildBundles, BuildData } from './build-data';
 import {
   createRedirectMetaTag,
+  findPreviewScriptName,
+  guessPackageManager,
+  pluralize,
   resolveDataFilename,
   resolveHTMLFilename,
 } from './build-utils';
 import {
   resolveChunks,
   resolveChunksAndAssets,
-  resolveRoutesLoaderInfo,
+  resolveServerRoutes,
 } from './chunks';
 import { crawl } from './crawl';
+import { logBadLinks, logRoutes } from './log';
+import { buildServerManifests } from './manifest';
 import { resolveDocumentResourcesFromManifest } from './resources';
 
 export async function build(
@@ -41,8 +48,8 @@ export async function build(
   clientBundle: OutputBundle,
   serverBundle: OutputBundle,
 ): Promise<void> {
-  const pageRoutes = app.routes.filterByType('page');
-  const httpRoutes = app.routes.filterByType('http');
+  const pageRoutes = app.routes.filterHasType('page');
+  const httpRoutes = app.routes.filterHasType('http');
 
   if (pageRoutes.length === 0) {
     console.log(kleur.bold(`❓ No pages were resolved`));
@@ -51,6 +58,7 @@ export async function build(
 
   await installPolyfills();
 
+  const startTime = Date.now();
   const entries = createAppEntries(app, { isSSR: true });
 
   const template = await fs.readFileSync(
@@ -117,31 +125,8 @@ export async function build(
     },
   };
 
-  const build: BuildData = {
-    entries,
-    template,
-    links: new Map(),
-    badLinks: new Map(),
-    staticPages: new Set(),
-    staticData: new Map(),
-    staticRedirects: new Map(),
-    staticRenders: new Map(),
-    serverPages: new Set(),
-    serverEndpoints: new Set(httpRoutes),
-    routeChunks: new Map(),
-    routeChunkFile: new Map(),
-    resources: resolveDocumentResourcesFromManifest(app, bundles),
-    ...resolveRoutesLoaderInfo(app, bundles),
-  };
-
-  // Determine which pages are static and which are dynamically rendered on the server.
-  for (const pageRoute of pageRoutes) {
-    if (build.serverRoutes.has(pageRoute)) {
-      build.serverPages.add(pageRoute);
-    } else {
-      build.staticPages.add(pageRoute);
-    }
-  }
+  const serverRouteChunks: BuildData['server']['chunks'] = new Map();
+  const serverRouteChunkFiles: BuildData['server']['chunkFiles'] = new Map();
 
   // Resolve route chunks.
   for (const route of app.routes) {
@@ -160,8 +145,49 @@ export async function build(
       }
     }
 
-    build.routeChunks.set(route.id, chunks);
-    build.routeChunkFile.set(route.id, files);
+    serverRouteChunks.set(route.id, chunks);
+    serverRouteChunkFiles.set(route.id, files);
+  }
+
+  const { edgeRoutes, serverLoaders } = resolveServerRoutes(
+    app,
+    serverRouteChunks,
+  );
+
+  const build: BuildData = {
+    entries,
+    template,
+    links: new Map(),
+    badLinks: new Map(),
+    static: {
+      pages: new Set(),
+      redirects: new Map(),
+      renders: new Map(),
+      data: new Map(),
+      routeData: new Map(),
+      clientHashRecord: {},
+      serverHashRecord: {},
+    },
+    server: {
+      routes: new Set(),
+      endpoints: new Set(httpRoutes),
+      chunks: serverRouteChunks,
+      chunkFiles: serverRouteChunkFiles,
+      loaders: serverLoaders,
+    },
+    edge: {
+      routes: edgeRoutes,
+    },
+    resources: resolveDocumentResourcesFromManifest(app, bundles),
+  };
+
+  // Determine which pages are static and which are dynamically rendered on the server.
+  for (const route of pageRoutes) {
+    if (build.server.loaders.has(route.id)) {
+      build.server.routes.add(route);
+    } else {
+      build.static.pages.add(route);
+    }
   }
 
   const adapterFactory = isFunction(app.config.build.adapter)
@@ -182,11 +208,11 @@ export async function build(
 
   const fetcher = createStaticLoaderFetcher(
     app,
-    (route) => import(build.routeChunkFile.get(route.id)!.http!),
+    (route) => import(serverRouteChunkFiles.get(route.id)!.http!),
   );
 
   const routeChunkLoader = (route: AppRoute, type: RouteFileType) =>
-    import(build.routeChunkFile.get(route.id)![type]!);
+    import(serverRouteChunkFiles.get(route.id)![type]!);
 
   async function loadRoute(url: URL, page: AppRoute) {
     const { matches, redirect } = await loadStaticRoute(
@@ -199,7 +225,7 @@ export async function build(
 
     if (redirect) {
       const pathname = normalizeURL(url).pathname;
-      build.staticRedirects.set(pathname, {
+      build.static.redirects.set(pathname, {
         from: pathname,
         to: redirect.path,
         filename: resolveHTMLFilename(url),
@@ -213,15 +239,27 @@ export async function build(
       const content = dataMap.get(id)!;
       if (Object.keys(content).length > 0) {
         const serializedContent = JSON.stringify(content);
+        const idHash = hash(id);
         const contentHash = hash(serializedContent);
-        build.staticData.set(id, {
+
+        build.static.data.set(id, {
           data: content,
-          idHash: hash(id),
+          idHash,
           contentHash,
           filename: resolveDataFilename(contentHash),
           serializedData: JSON.stringify(content),
         });
+
+        build.static.clientHashRecord[idHash] = contentHash;
+        build.static.serverHashRecord[id] = idHash;
       }
+    }
+
+    if (build.static.routeData.has(page.id)) {
+      const set = build.static.routeData.get(page.id)!;
+      for (const id of dataMap.keys()) set.add(id);
+    } else {
+      build.static.routeData.set(page.id, new Set(dataMap.keys()));
     }
 
     return { redirect, matches, dataMap };
@@ -230,6 +268,8 @@ export async function build(
   // -------------------------------------------------------------------------------------------
   // RENDER
   // -------------------------------------------------------------------------------------------
+
+  console.log(kleur.magenta('+ build\n'));
 
   const testTrailingSlash = (pathname: string) =>
     pathname === '/' || trailingSlashes
@@ -267,24 +307,25 @@ export async function build(
     }
 
     // Pages that are dynamically rendered on the server (i.e., has `serverLoader` in branch).
-    if (!build.staticPages.has(pageRoute)) return;
+    if (!build.static.pages.has(pageRoute)) return;
 
-    const result = {
+    const ssr = await render({
+      route: matches[matches.length - 1],
+      matches,
+      router: ssrRouter,
+    });
+
+    build.links.set(pathname, pageRoute);
+
+    build.static.renders.set(pathname, {
       filename: resolveHTMLFilename(url),
       route: pageRoute,
       matches,
-      ssr: await render({
-        route: matches[matches.length - 1],
-        matches,
-        router: ssrRouter,
-      }),
-      dataAssetIds: new Set(dataMap.keys()),
-    };
+      ssr,
+      data: new Set(dataMap.keys()),
+    });
 
-    build.links.set(pathname, pageRoute);
-    build.staticRenders.set(pathname, result);
-
-    const hrefs = crawl(result.ssr.html);
+    const hrefs = crawl(ssr.html);
     for (let i = 0; i < hrefs.length; i++) {
       await onFoundLink(pageRoute, hrefs[i]);
     }
@@ -318,7 +359,17 @@ export async function build(
     );
   }
 
-  await adapter.startRenderingPages?.();
+  const renderingSpinner = ora();
+  const staticPagesCount = build.static.pages.size;
+
+  renderingSpinner.start(
+    kleur.bold(
+      `Rendering ${kleur.underline(staticPagesCount)} ${pluralize(
+        'static HTML page',
+        staticPagesCount,
+      )}...`,
+    ),
+  );
 
   for (const entry of app.config.routes.entries) {
     const url = new URL(`${ssrOrigin}${slash(entry)}`);
@@ -332,7 +383,103 @@ export async function build(
     }
   }
 
-  await adapter.finishRenderingPages?.();
+  renderingSpinner.stopAndPersist({
+    symbol: LoggerIcon.Success,
+    text: kleur.bold(
+      `Rendered ${kleur.underline(staticPagesCount)} ${pluralize(
+        'static HTML page',
+        staticPagesCount,
+      )}`,
+    ),
+  });
+
+  // -------------------------------------------------------------------------------------------
+  // SERVER MANIFEST
+  // -------------------------------------------------------------------------------------------
+
+  const serverManifests = buildServerManifests(app, bundles, build);
+
+  if (serverManifests) {
+    const { dataAssets, ...manifests } = serverManifests;
+
+    if (dataAssets.size > 0) {
+      const seen = new Set<string>();
+
+      const dataSpinner = logger.withSpinner('Writing server data files...', {
+        successTitle: () =>
+          `Committed ${kleur.underline(seen.size)} server data files`,
+      });
+
+      const dataDir = app.dirs.server.resolve('_data');
+      mkdirp(dataDir);
+
+      await dataSpinner(async () => {
+        await Promise.all(
+          Array.from(dataAssets).map(async (id) => {
+            const data = build.static.data.get(id)!;
+            if (!seen.has(data.contentHash)) {
+              await writeFile(
+                dataDir + `/${data.contentHash}.js`,
+                `export default ${data.serializedData};`,
+              );
+              seen.add(data.contentHash);
+            }
+          }),
+        );
+      });
+    }
+
+    const manifestNames = Object.keys(manifests).filter((k) => manifests[k]);
+    const manifestCount = kleur.underline(manifestNames.length);
+
+    const manifestSpinner = logger.withSpinner('Writing server manifests...', {
+      successTitle: `Committed ${manifestCount} server manifests`,
+    });
+
+    await manifestSpinner(async () => {
+      await Promise.all(
+        manifestNames.map(async (name) => {
+          app.dirs.server.write(`${name}.manifest.js`, manifests[name]!);
+        }),
+      );
+    });
+  }
+
   await adapter.write?.();
-  await adapter.close?.();
+
+  // -------------------------------------------------------------------------------------------
+  // CLOSE
+  // -------------------------------------------------------------------------------------------
+
+  logBadLinks(build.badLinks);
+  logRoutes(app, build);
+
+  const icons = {
+    10: '🤯',
+    20: '🏎️',
+    30: '🏃',
+    40: '🐌',
+    Infinity: '⚰️',
+  };
+
+  const endTime = ((Date.now() - startTime) / 1000).toFixed(2);
+  const formattedEndTime = kleur.underline(endTime);
+  const icon = icons[Object.keys(icons).find((t) => endTime <= t)!];
+
+  logger.success(kleur.bold(`Build complete in ${formattedEndTime} ${icon}`));
+
+  const pkgManager = await guessPackageManager(app);
+  const previewCommand = await findPreviewScriptName(app);
+
+  console.log(
+    kleur.bold(
+      `⚡ ${
+        previewCommand
+          ? `Run \`${
+              pkgManager === 'npm' ? 'npm run' : pkgManager
+            } ${previewCommand}\` to serve production build`
+          : 'Ready for preview'
+      }\n`,
+    ),
+  );
 }

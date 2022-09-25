@@ -27,7 +27,7 @@ export function createAutoBuildAdapter(
   config?: AutoBuildAdapterConfig,
 ): BuildAdapterFactory {
   const using = (name: string) =>
-    console.log(kleur.bold(kleur.magenta(`🏗️  Using ${name} build adapter`)));
+    console.log(kleur.bold(kleur.magenta(`\n🏗️  Using ${name} build adapter`)));
 
   // @ts-expect-error - value is returned
   return async (...args) => {

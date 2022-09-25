@@ -4,11 +4,7 @@ import type {
   ServerLoadableRoute,
   ServerModule,
 } from 'server';
-import {
-  getRouteComponentTypes,
-  type Route,
-  stripRouteComponentTypes,
-} from 'shared/routing';
+import { type Route } from 'shared/routing';
 import type { Mutable } from 'shared/types';
 
 import type { App } from '../App';
@@ -116,7 +112,7 @@ export class AppRoutes implements Iterable<AppRoute> {
       .map((route) => route.layout!);
   }
 
-  filterByType(type: RouteFileType) {
+  filterHasType(type: RouteFileType) {
     return this._routes.filter((route) => route[type]);
   }
 
@@ -138,15 +134,32 @@ export class AppRoutes implements Iterable<AppRoute> {
   }
 }
 
-export function toServerLoadable(route: AppRoute): ServerLoadableRoute {
-  const loadable: Mutable<ServerLoadableRoute> =
-    stripRouteComponentTypes(route);
+const validRouteKeys: (keyof Route)[] = [
+  'id',
+  'order',
+  'score',
+  'pathname',
+  'pattern',
+  'dynamic',
+];
 
-  for (const type of getRouteComponentTypes()) {
+export function toRoute(appRoute: AppRoute): Route {
+  const route: any = {};
+  for (const key of validRouteKeys) route[key] = appRoute[key];
+  return route;
+}
+
+export function toServerLoadable(route: AppRoute): ServerLoadableRoute {
+  const loadable: Mutable<ServerLoadableRoute> = toRoute(route);
+
+  for (const type of getRouteFileTypes()) {
     if (route[type]) {
       loadable[type] = {
         loader: route[type]!.viteLoader,
+        canFetch: true,
       };
+    } else {
+      delete loadable[type];
     }
   }
 

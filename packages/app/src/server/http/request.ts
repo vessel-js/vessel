@@ -1,8 +1,9 @@
 import type { ServerFetcher, ServerManifest } from 'server/types';
-import { findRoute } from 'shared/routing';
+import { matchRoute } from 'shared/routing';
 
 import { Cookies } from './cookies';
-import { createHttpHandler } from './create-http-handler';
+import { error, handleHttpError } from './errors';
+import { handleHttpRequest } from './handle-http';
 
 export function createRequestEvent<T extends RequestParams = RequestParams>(
   init: RequestEventInit<T>,
@@ -68,7 +69,6 @@ export interface RequestEvent<Params extends RequestParams = RequestParams> {
   request: Request & { cookies: Pick<Cookies, 'get' | 'serialize'> };
   headers: Headers;
   cookies: Cookies;
-  /** Only available inside `serverLoader` calls. */
   fetcher: ServerFetcher;
 }
 
@@ -83,12 +83,15 @@ export type HttpRequestModule = {
 export type HttpMethod = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
 export const HTTP_METHODS: Set<string> = new Set([
+  'ANY',
   'GET',
   'POST',
   'PUT',
   'PATCH',
   'DELETE',
 ]);
+
+export const ALL_HTTP_METHODS = Array.from(HTTP_METHODS);
 
 export function getAllowedMethods(mod: HttpRequestModule) {
   const allowed: string[] = [];
@@ -107,28 +110,26 @@ function createServerFetcher(
   manifest: ServerManifest,
 ): ServerFetcher {
   return (input, init) => {
-    const request = normalizeFetchInput(input, init, event.url);
+    const request = coerceFetchInput(input, init, event.url);
     const url = new URL(request.url);
 
     if (event.url.origin === url.origin) {
-      const route = findRoute(url, manifest.routes.http);
-      // TODO: should we 404 or just let it fall through?
-      if (route) {
-        const handler = createHttpHandler({
-          dev: manifest.dev,
-          pathname: route.pathname,
-          loader: route.loader,
-        });
+      const route = matchRoute(url, manifest.routes.http);
 
-        return handler(request);
+      if (!route) {
+        return Promise.resolve(
+          handleHttpError(error('not found', 404), manifest.dev),
+        );
       }
+
+      return handleHttpRequest(url, request, route, manifest);
     }
 
     return fetch(request, init);
   };
 }
 
-function normalizeFetchInput(
+export function coerceFetchInput(
   input: RequestInfo | URL,
   init: RequestInit | undefined,
   baseURL: URL,

@@ -48,12 +48,12 @@ export function resolveDocumentResourcesFromManifest(
 
     for (const file of [...js, ...css]) {
       const index = createResource(file);
-      resources.push({ index });
+      resources.push(index);
     }
 
     for (const file of [...dynamicJs, ...dynamicCss]) {
       const index = createResource(file);
-      resources.push({ index, dynamic: true });
+      resources.push(-index);
     }
 
     return resources.reverse();
@@ -70,8 +70,8 @@ export function resolveDocumentResourcesFromManifest(
   const appResources = resolveResources([appFile]);
 
   // Routes
-  const routeResources = new Map<string, DocumentResourceEntry[]>();
-  for (const route of app.routes.filterByType('page')) {
+  const routeResources: Record<string, DocumentResourceEntry[]> = {};
+  for (const route of app.routes.filterHasType('page')) {
     const branch = app.routes.getBranch(route);
 
     const entries = [
@@ -84,7 +84,7 @@ export function resolveDocumentResourcesFromManifest(
       route.page!.path.root,
     ].filter(Boolean) as string[];
 
-    routeResources.set(route.id, resolveResources(entries));
+    routeResources[route.id] = resolveResources(entries);
   }
 
   return {

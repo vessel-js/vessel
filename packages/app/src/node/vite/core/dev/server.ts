@@ -1,20 +1,15 @@
 import kleur from 'kleur';
 import type { App } from 'node/app/App';
-import type { RouteFile } from 'node/app/files';
 import type { ServerResponse } from 'node:http';
 import { STATIC_DATA_ASSET_BASE_PATH } from 'shared/data';
 import { coerceToError } from 'shared/utils/error';
 import type { Connect, ViteDevServer } from 'vite';
 
-import { handleHttpRequest } from './handle-http';
-import { handlePageRequest } from './handle-page';
+import { handleDevRequest } from './handle-dev-request';
 import { handleStaticDataRequest } from './handle-static-data';
 
 export function configureDevServer(app: App, server: ViteDevServer) {
   removeHtmlMiddlewares(server.middlewares);
-
-  const httpLoader = (file: RouteFile) =>
-    app.vite.server!.ssrLoadModule(file.path.absolute);
 
   const protocol = server.config.server.https ? 'https' : 'http';
 
@@ -35,25 +30,16 @@ export function configureDevServer(app: App, server: ViteDevServer) {
         return await handleStaticDataRequest({ url, app, res });
       }
 
-      if (app.routes.test(decodedUrl, 'page')) {
-        return await handlePageRequest({
+      if (
+        app.routes.test(decodedUrl, 'page') ||
+        app.routes.test(decodedUrl, 'http')
+      ) {
+        return await handleDevRequest({
           base,
           url,
           app,
           req,
           res,
-        });
-      }
-
-      if (app.routes.test(decodedUrl, 'http')) {
-        return await handleHttpRequest({
-          dev: true,
-          base,
-          url,
-          app,
-          req,
-          res,
-          loader: httpLoader,
         });
       }
     } catch (error) {

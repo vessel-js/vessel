@@ -4,7 +4,7 @@ export const EXTERNAL_URL_RE = /^https?:/i;
  * Ensure a url `string` has an ending slash `/`.
  */
 export const endslash = (str: string): string =>
-  /(\.html|\/)$/.test(str) ? str : str + '/';
+  str.endsWith('/') ? str : str + '/';
 
 const slashSplitRE = /(?=\/)/g;
 

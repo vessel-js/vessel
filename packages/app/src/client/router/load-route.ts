@@ -73,28 +73,29 @@ export async function loadStaticData(
     return { data: loadedRoute[type]!.staticData };
   }
 
-  let pathname = url.pathname;
-  if (!pathname.endsWith('/')) pathname += '/';
+  const dataId = resolveStaticDataAssetId(route, type);
 
-  const id = resolveStaticDataAssetId(route.id, type, pathname),
-    dataAssetId = import.meta.env.PROD
-      ? window['__VSL_STATIC_DATA_HASH_MAP__'][await hash(id)]
-      : id;
+  const hashedDataId = import.meta.env.PROD
+    ? window['__VSL_STATIC_DATA_HASH_MAP__']?.[await hash(dataId)]
+    : dataId;
 
-  if (!dataAssetId) return;
+  if (!hashedDataId) return;
 
-  const injectedData = getInjectedStaticData(dataAssetId);
-  if (injectedData) return { data: injectedData };
+  if (!window['__VSL_ROUTER_STARTED__']) {
+    const data = window['__VSL_STATIC_DATA__']?.[hashedDataId];
+    if (data) return { data };
+  }
 
   // Unique loading process during dev because we don't know static redirects or which routes
   // have a static loader. This is determined at build time and injected into the HTML document.
   if (import.meta.env.DEV) {
-    const queryParams = `?id=${encodeURIComponent(
-      route.id,
-    )}&type=${type}&pathname=${encodeURIComponent(pathname)}`;
+    const searchParams = new URLSearchParams();
+    searchParams.set('id', route.id);
+    searchParams.set('type', type);
+    searchParams.set('pathname', route.matchedURL.pathname);
 
     const response = await fetch(
-      `${STATIC_DATA_ASSET_BASE_PATH}/${route.id}.json${queryParams}`,
+      `${STATIC_DATA_ASSET_BASE_PATH}/${route.id}.json?${searchParams}`,
       { credentials: 'same-origin', signal },
     );
 
@@ -112,7 +113,7 @@ export async function loadStaticData(
     }
   } else {
     const response = await fetch(
-      `${STATIC_DATA_ASSET_BASE_PATH}/${dataAssetId}.json`,
+      `${STATIC_DATA_ASSET_BASE_PATH}/${hashedDataId}.json`,
       { credentials: 'same-origin', signal },
     );
 
@@ -171,6 +172,7 @@ export async function loadServerData(
   }
 
   const dataURL = new URL(route.matchedURL.href);
+  dataURL.searchParams.set('_data', '');
   dataURL.searchParams.set('route_id', route.id);
   dataURL.searchParams.set('route_type', type);
 
@@ -205,10 +207,6 @@ export async function loadServerData(
   }
 
   return { data: await resolveServerResponseData(response) };
-}
-
-function getInjectedStaticData(id: string) {
-  return window['__VSL_STATIC_DATA__']?.[id];
 }
 
 // Used in production to hash data id.

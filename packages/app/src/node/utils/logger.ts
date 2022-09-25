@@ -56,7 +56,7 @@ export const logger = {
     (
       pendingTitle: string,
       options: {
-        successTitle?: string;
+        successTitle?: string | (() => string);
         errorTitle?: string;
         timed?: boolean;
       } = {},
@@ -73,12 +73,15 @@ export const logger = {
         const result = await target();
         const endTime = ((Date.now() - startTime) / 1000).toFixed(2);
 
+        const title =
+          typeof successTitle === 'function' ? successTitle() : successTitle;
+
         spinner.stopAndPersist({
-          symbol: '',
-          text: formatSuccessTitle(
+          symbol: LoggerIcon.Success,
+          text: kleur.bold(
             options.timed
-              ? `${successTitle} in ${kleur.underline(`${endTime}s`)}`
-              : successTitle,
+              ? `${title} in ${kleur.underline(`${endTime}s`)}`
+              : title,
           ),
         });
 

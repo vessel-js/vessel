@@ -9,10 +9,9 @@ import type {
   ServerLoaderOutput,
   ServerManifest,
   ServerMatchedRoute,
-  ServerRequestHandler,
 } from 'server/types';
+import { resolveStaticDataAssetId } from 'shared/data';
 import { HttpError, isHttpError, resolveServerResponseData } from 'shared/http';
-import { installURLPattern } from 'shared/polyfills';
 import {
   getRouteComponentDataKeys,
   getRouteComponentTypes,
@@ -20,7 +19,6 @@ import {
   type LoadedServerData,
   loadRoutes,
   matchAllRoutes,
-  matchRoute,
   resolveSettledPromiseRejection,
   resolveSettledPromiseValue,
   type RouteComponentType,
@@ -28,124 +26,19 @@ import {
 } from 'shared/routing';
 import type { Mutable } from 'shared/types';
 import { coerceToError } from 'shared/utils/error';
-import { noendslash, slash } from 'shared/utils/url';
+import { slash } from 'shared/utils/url';
 
 import { Cookies } from './cookies';
-import { handleHttpError } from './errors';
 import { createRequestEvent } from './request';
-import { isRedirectResponse, isResponse, json, redirect } from './response';
+import { isRedirectResponse, isResponse } from './response';
 
-export function createPageHandler(
-  manifest: ServerManifest,
-): ServerRequestHandler {
-  let installed = false;
-
-  return async (request) => {
-    const url = new URL(request.url);
-
-    if (!manifest.dev && !installed) {
-      await installURLPattern();
-
-      Object.keys(manifest.routes)
-        .flatMap((key) => manifest.routes[key])
-        .forEach((route) => {
-          route.pattern = new URLPattern({ pathname: route.pathname });
-        });
-
-      installed = true;
-    }
-
-    const redirect = resolveTrailingSlashRedirect(url, manifest.trailingSlash);
-    if (redirect) return redirect;
-
-    let response: Response;
-
-    if (url.searchParams.has('route_id')) {
-      response = await handleDataRequest(url, request, manifest);
-    } else {
-      response = await handlePageRequest(url, request, manifest);
-    }
-
-    if (request.method === 'HEAD') {
-      return new Response(null, {
-        headers: response.headers,
-        status: response.status,
-        statusText: response.statusText,
-      });
-    }
-
-    return response;
-  };
-}
-
-export async function handleDataRequest(
+export async function handleDocumentRequest(
   url: URL,
   request: Request,
   manifest: ServerManifest,
 ): Promise<Response> {
   try {
-    const routeId = url.searchParams.get('route_id'),
-      routeType = url.searchParams.get('route_type') as RouteComponentType;
-
-    const route = manifest.routes.app.find(
-      (route) => route.id === routeId && route[routeType],
-    );
-
-    if (!route) {
-      throw new HttpError('not found', 404);
-    }
-
-    const match = matchRoute(url, [route]);
-
-    if (!match) {
-      throw new HttpError('not found', 404);
-    }
-
-    const mod = await match[routeType]!.loader();
-    const { serverLoader } = mod;
-
-    if (!serverLoader) {
-      const response = new Response(null, {
-        status: 200,
-      });
-      response.headers.set('X-Vessel-Data', 'no');
-      return response;
-    }
-
-    const event = createRequestEvent({
-      url,
-      request,
-      params: match.params,
-      manifest,
-    });
-
-    const output = await serverLoader(event);
-    const response = isResponse(output) ? output : json(output ?? {});
-
-    for (const [key, value] of event.headers) {
-      response.headers.append(key, value);
-    }
-
-    event.cookies.serialize(response.headers);
-
-    response.headers.set('X-Vessel-Data', 'yes');
-    return response;
-  } catch (error) {
-    if (isResponse(error)) {
-      return error;
-    } else {
-      return handleHttpError(error, manifest.dev);
-    }
-  }
-}
-
-export async function handlePageRequest(
-  url: URL,
-  request: Request,
-  manifest: ServerManifest,
-): Promise<Response> {
-  try {
-    return await renderPage(url, request, manifest);
+    return await renderDocument(url, request, manifest);
   } catch (err) {
     if (manifest.dev) {
       const error = coerceToError(err);
@@ -158,15 +51,16 @@ export async function handlePageRequest(
   }
 }
 
-export async function renderPage(
+async function renderDocument(
   url: URL,
   request: Request,
   manifest: ServerManifest,
-) {
+): Promise<Response> {
   const { render } = await manifest.entry();
 
   const headers = new Headers();
   const cookies = new Cookies({ url });
+
   const matches = matchAllRoutes(
     url,
     manifest.routes.app,
@@ -176,7 +70,11 @@ export async function renderPage(
   const loadResults = await loadRoutes(
     url,
     matches,
-    manifest.staticData.loader,
+    (_, route, type) => {
+      const id = resolveStaticDataAssetId(route, type);
+      const hashedId = manifest.staticData.serverHashRecord[id] ?? id;
+      return manifest.staticData.loaders[hashedId]();
+    },
     (url, route, type) => {
       return loadServerData({
         url,
@@ -287,17 +185,20 @@ export async function renderPage(
   });
 
   const dataHashScriptTag =
-    manifest.staticData.hashMap.length > 0
-      ? `<script>__VSL_STATIC_DATA_HASH_MAP__ = JSON.parse(${manifest.staticData.hashMap});</script>`
+    Object.keys(manifest.staticData.clientHashRecord).length > 0
+      ? `<script>__VSL_STATIC_DATA_HASH_MAP__ = JSON.parse(${JSON.stringify(
+          JSON.stringify(manifest.staticData.clientHashRecord),
+        )});</script>`
       : '';
 
-  const staticDataMap = createStaticLoaderDataMap(
-    loadedRoutes,
-    manifest.staticData.hashRecord,
-  );
-
+  const staticDataMap = createStaticLoaderDataMap(loadedRoutes);
   const staticDataScriptTag =
-    staticDataMap.size > 0 ? createStaticDataScriptTag(staticDataMap) : '';
+    staticDataMap.size > 0
+      ? createStaticDataScriptTag(
+          staticDataMap,
+          manifest.staticData.serverHashRecord,
+        )
+      : '';
 
   const serverDataScriptTag =
     Object.keys(serverData).length > 0
@@ -466,12 +367,12 @@ export function createDocumentResourceLinkTags(
   const seen = new Set<number>();
 
   for (const entry of entries) {
-    if (seen.has(entry.index)) continue;
+    if (seen.has(entry)) continue;
 
-    const resource = resources[entry.index];
+    const resource = resources[Math.abs(entry)];
 
     const attrs: string[] = [
-      `rel="${resolveDocumentResourceRel(resource.href, entry.dynamic)}"`,
+      `rel="${resolveDocumentResourceRel(resource.href, entry < 0)}"`,
       `href="${resource.href}"`,
     ];
 
@@ -481,7 +382,7 @@ export function createDocumentResourceLinkTags(
 
     tags.push(`<link ${attrs.join(' ')} />`);
 
-    seen.add(entry.index);
+    seen.add(entry);
   }
 
   return tags;
@@ -529,21 +430,4 @@ export function resolveDocumentResourceRel(
   } else {
     return !dynamic ? 'preload' : 'prefetch';
   }
-}
-
-function resolveTrailingSlashRedirect(url: URL, trailingSlash: boolean) {
-  if (url.pathname === '/') {
-    return false;
-  } else if (url.pathname.endsWith('/index.html')) {
-    const cleanHref = url.href.replace('/index.html', trailingSlash ? '/' : '');
-    return redirect(cleanHref, 308);
-  } else if (!trailingSlash && url.pathname.endsWith('/')) {
-    url.pathname = noendslash(url.pathname);
-    return redirect(url.href, 308);
-  } else if (trailingSlash && !url.pathname.endsWith('/')) {
-    url.pathname = url.pathname + '/';
-    return redirect(url.href, 308);
-  }
-
-  return false;
 }

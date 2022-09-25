@@ -3,7 +3,6 @@ import type {
   LoadedRoute,
   MatchedRoute,
   Route,
-  RouteComponentType,
   RouteMatch,
 } from 'shared/routing';
 
@@ -83,9 +82,12 @@ export type ServerManifest = {
     devStylesheets?: () => Promise<string>;
   };
   staticData: {
-    loader: StaticDataLoader;
-    hashMap: string;
-    hashRecord?: Record<string, string>;
+    /** Used client-side to fetch. Hashed data asset id to hashed content id. */
+    clientHashRecord: Record<string, string>;
+    /** Used server-side to serialize data. Plain data asset id to hashed client id. */
+    serverHashRecord: Record<string, string>;
+    /** Hashed client data asset id to dynamic data loader. */
+    loaders: Record<string, () => Promise<JSONData | undefined>>;
   };
 };
 
@@ -110,13 +112,10 @@ export type DocumentResource = {
 };
 
 /**
- * - `index` should point to a resource in a resource collection (i.e., `DocumentResource[]`).
- * - `dynamic` refers to lazy loaded modules/assets (i.e., dynamically imported).
+ * The number should point to a resource in a resource collection (i.e., `DocumentResource[]`). A
+ * negative number means it's a dynamic import at the same absolute index.
  */
-export type DocumentResourceEntry = {
-  index: number;
-  dynamic?: boolean;
-};
+export type DocumentResourceEntry = number;
 
 // ---------------------------------------------------------------------------------------
 // Server Route
@@ -136,6 +135,7 @@ export type ServerLoadedRoute<Params extends RequestParams = RequestParams> =
 
 export type ServerLoadableHttpRoute = Route & {
   readonly loader: () => Promise<HttpRequestModule>;
+  readonly methods: string[];
 };
 
 export type ServerMatchedHttpRoute = ServerLoadableHttpRoute & RouteMatch;
@@ -154,12 +154,6 @@ export type ServerRedirect = {
 // ---------------------------------------------------------------------------------------
 // Static Loader
 // ---------------------------------------------------------------------------------------
-
-export type StaticDataLoader = (
-  url: URL,
-  route: ServerMatchedRoute,
-  type: RouteComponentType,
-) => Promise<JSONData | undefined>;
 
 export type StaticLoaderInput<Params extends RequestParams = RequestParams> =
   Readonly<{

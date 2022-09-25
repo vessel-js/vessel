@@ -5,6 +5,7 @@ import {
   type Route,
 } from 'shared/routing';
 
+import type { JSONData } from './http';
 import type {
   ServerFetcher,
   ServerLoadedRoute,
@@ -28,24 +29,17 @@ export function createStaticLoaderInput(
 
 export function createStaticLoaderDataMap(
   routes: ServerLoadedRoute[],
-  hashRecord?: Record<string, string>,
 ): StaticLoaderDataMap {
   const map: StaticLoaderDataMap = new Map();
 
   for (const route of routes) {
     for (const type of getRouteComponentTypes()) {
       const component = route[type];
-      if (
-        component?.staticData &&
-        Object.keys(component.staticData).length > 0
-      ) {
-        const id = resolveStaticDataAssetId(
-          route.id,
-          type,
-          route.matchedURL.pathname,
-        );
-
-        map.set(hashRecord?.[id] ?? id, component.staticData);
+      if (component) {
+        const id = resolveStaticDataAssetId(route, type);
+        if (component.staticData) {
+          map.set(id, component.staticData);
+        }
       }
     }
   }
@@ -53,13 +47,16 @@ export function createStaticLoaderDataMap(
   return map;
 }
 
-export function createStaticDataScriptTag(map: StaticLoaderDataMap) {
-  const table = {};
+export function createStaticDataScriptTag(
+  map: StaticLoaderDataMap,
+  hashRecord: Record<string, string>,
+) {
+  const table: Record<string, JSONData> = {};
 
   for (const id of map.keys()) {
     const data = map.get(id)!;
     if (data && Object.keys(data).length > 0) {
-      table[id] = data;
+      table[hashRecord[id] ?? id] = data;
     }
   }
 

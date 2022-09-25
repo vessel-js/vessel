@@ -26,12 +26,13 @@ export function resolveBuildConfig(app: App): ViteConfig {
   const ssr = app.config.isSSR;
   const immutableDir = '_immutable';
 
-  const input = {
-    index: app.dirs.app.resolve('index.html'),
+  const input: Record<string, string> = {
     entry: ssr ? app.config.entry.server : app.config.entry.client,
     app: app.config.client.app,
     ...createAppEntries(app),
   };
+
+  if (!ssr) input.index = app.dirs.app.resolve('index.html');
 
   return {
     appType: 'spa',

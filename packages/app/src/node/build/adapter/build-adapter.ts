@@ -11,8 +11,5 @@ export type BuildAdapterFactory = (
 // Really basic for now but we can expand on it later.
 export type BuildAdapter = {
   name: string;
-  startRenderingPages?(): void | Promise<void>;
-  finishRenderingPages?(): void | Promise<void>;
   write?(): void | Promise<void>;
-  close?(): void | Promise<void>;
 };

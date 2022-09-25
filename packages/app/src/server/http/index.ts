@@ -1,6 +1,11 @@
 export * from './cookies';
-export * from './create-http-handler';
-export * from './create-page-handler';
 export * from './errors';
+export {
+  createDocumentResource,
+  createDocumentResourceLinkTags,
+  createServerRouter,
+} from './handle-document';
+export { handleHttpRequest } from './handle-http';
+export { createRequestHandler } from './handle-request';
 export * from './request';
 export * from './response';

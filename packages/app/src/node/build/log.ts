@@ -1,7 +1,7 @@
 import kleur from 'kleur';
 import type { App, AppRoute, RoutesLoggerInput } from 'node';
 import { LoggerIcon } from 'node/utils';
-import { noslash } from 'shared/utils/url';
+import { noendslash, noslash } from 'shared/utils/url';
 
 import type { BuildData } from './build-data';
 
@@ -43,24 +43,69 @@ export function logRoutesList({ level, ...build }: RoutesLoggerInput) {
     }
   }
 
-  if (level === 'info' && build.serverPages.size > 0) {
-    logs.push('', `⚙️  ${kleur.bold(kleur.underline('SERVER PAGES'))}`, '');
-    for (const route of Array.from(build.serverPages).reverse()) {
+  if (level === 'info' && build.server.routes.size > 0) {
+    const serverPages: string[] = [];
+    const edgePages: string[] = [];
+
+    for (const route of Array.from(build.server.routes).reverse()) {
+      const logs = build.edge.routes.has(route.id) ? edgePages : serverPages;
       logs.push(`- ${kleur.cyan(route.dir.route)}`);
+    }
+
+    if (serverPages.length > 0) {
+      logs.push(
+        '',
+        `⚙️  ${kleur.bold(kleur.underline('SERVER PAGES'))}`,
+        '',
+        ...serverPages,
+      );
+    }
+
+    if (edgePages.length > 0) {
+      logs.push(
+        '',
+        `⚡  ${kleur.bold(kleur.underline('EDGE PAGES'))}`,
+        '',
+        ...edgePages,
+      );
     }
   }
 
-  if (level === 'info' && build.serverEndpoints.size > 0) {
-    logs.push('', `⚙️  ${kleur.bold(kleur.underline('SERVER ENDPOINTS'))}`, '');
-    for (const route of Array.from(build.serverEndpoints).reverse()) {
+  if (level === 'info' && build.server.endpoints.size > 0) {
+    const serverEndpoints: string[] = [];
+    const edgeEndpoints: string[] = [];
+
+    for (const route of Array.from(build.server.endpoints).reverse()) {
+      const logs = build.edge.routes.has(route.id)
+        ? edgeEndpoints
+        : serverEndpoints;
+
       logs.push(`- ${kleur.cyan(route.dir.route)}`);
+    }
+
+    if (serverEndpoints.length > 0) {
+      logs.push(
+        '',
+        `⚙️  ${kleur.bold(kleur.underline('SERVER ENDPOINTS'))}`,
+        '',
+        ...serverEndpoints,
+      );
+    }
+
+    if (edgeEndpoints.length > 0) {
+      logs.push(
+        '',
+        `⚡  ${kleur.bold(kleur.underline('EDGE ENDPOINTS'))}`,
+        '',
+        ...edgeEndpoints,
+      );
     }
   }
 
-  if (/(info|warn)/.test(level) && build.staticRedirects.size > 0) {
+  if (/(info|warn)/.test(level) && build.static.redirects.size > 0) {
     logs.push('', `➡️  ${kleur.bold(kleur.underline('STATIC REDIRECTS'))}`, '');
-    for (const link of build.staticRedirects.keys()) {
-      const redirect = build.staticRedirects.get(link)!;
+    for (const link of build.static.redirects.keys()) {
+      const redirect = build.static.redirects.get(link)!;
       logs.push(
         `- ${kleur.yellow(link)} -> ${kleur.yellow(redirect.to)} (${
           redirect.status
@@ -83,9 +128,9 @@ export function logRoutesList({ level, ...build }: RoutesLoggerInput) {
 }
 
 export function logRoutesTree({ level, ...build }: RoutesLoggerInput) {
-  type TreeDir = {
+  type Tree = {
     name: string;
-    path: TreeDir[];
+    path: Tree[];
     info?: string;
     route?: boolean;
     badLink?: boolean;
@@ -97,25 +142,25 @@ export function logRoutesTree({ level, ...build }: RoutesLoggerInput) {
     };
   };
 
-  const newDir = (name: string): TreeDir => ({
+  const node = (name: string): Tree => ({
     name,
     path: [],
   });
 
-  const tree = newDir('.');
+  const tree = node('/');
 
   const warnOnly = level === 'warn';
   const errorOnly = level === 'error';
-  const redirectLinks = new Set(build.staticRedirects.keys());
+  const redirectLinks = new Set(build.static.redirects.keys());
 
   const serverPages = new Map<string, AppRoute>();
-  for (const route of build.serverPages) {
+  for (const route of build.server.routes) {
     serverPages.set(route.page!.path.pathname, route);
   }
 
-  const serverHttp = new Map<string, AppRoute>();
-  for (const route of build.serverEndpoints) {
-    serverHttp.set(route.http!.path.pathname, route);
+  const httpEndpoints = new Map<string, AppRoute>();
+  for (const route of build.server.endpoints) {
+    httpEndpoints.set(route.http!.path.pathname, route);
   }
 
   const filteredLinks = errorOnly
@@ -127,18 +172,20 @@ export function logRoutesTree({ level, ...build }: RoutesLoggerInput) {
         ...redirectLinks,
         ...build.links.keys(),
         ...serverPages.keys(),
-        ...serverHttp.keys(),
+        ...httpEndpoints.keys(),
       ]);
 
   for (const link of filteredLinks) {
-    const segments = noslash(link).split('/');
+    if (link === '/') continue;
+
+    const segments = noendslash(noslash(link)).split('/');
 
     let current = tree;
-    for (const segment of segments.slice(0, -1)) {
+    for (const segment of segments) {
       let nextDir = current.path.find((dir) => dir.name === segment);
 
       if (!nextDir) {
-        nextDir = newDir(segment);
+        nextDir = node(segment);
         current.path.push(nextDir);
       }
 
@@ -147,10 +194,10 @@ export function logRoutesTree({ level, ...build }: RoutesLoggerInput) {
 
     if (build.badLinks.has(link)) {
       current.badLink = true;
-    } else if (build.staticRedirects.has(link)) {
-      const redirect = build.staticRedirects.get(link)!;
+    } else if (build.static.redirects.has(link)) {
+      const redirect = build.static.redirects.get(link)!;
       current.redirect = {
-        path: redirect.to.slice(1, -1),
+        path: redirect.to === '/' ? '/' : redirect.to.slice(1, -1),
         status: redirect.status,
       };
     } else {
@@ -158,8 +205,13 @@ export function logRoutesTree({ level, ...build }: RoutesLoggerInput) {
       if (build.links.has(link)) {
         current.icon = '📄';
         current.static = true;
-      } else if (serverHttp.has(link)) {
+      } else if (httpEndpoints.has(link)) {
         current.info = kleur.magenta('+http');
+        const routeId = httpEndpoints.get(link)!.id;
+        if (build.edge.routes.has(routeId)) current.icon = '⚡';
+      } else if (serverPages.has(link)) {
+        const routeId = serverPages.get(link)!.id;
+        if (build.edge.routes.has(routeId)) current.icon = '⚡';
       }
     }
   }
@@ -172,7 +224,7 @@ export function logRoutesTree({ level, ...build }: RoutesLoggerInput) {
     VERTICAL: '│   ',
   };
 
-  const print = (tree: TreeDir, depth: number, precedingSymbols: string) => {
+  const print = (tree: Tree, depth: number, precedingSymbols: string) => {
     const lines: string[] = [];
 
     for (const [index, dir] of tree.path.entries()) {
@@ -217,7 +269,7 @@ export function logRoutesTree({ level, ...build }: RoutesLoggerInput) {
 
     console.log(
       kleur.bold(
-        build.links.has('/') ? kleur.cyan('\n📄.') : kleur.magenta('.'),
+        build.links.has('/') ? kleur.cyan('\n📄/') : kleur.magenta('/'),
       ),
     );
     console.log(print(tree, 1, '').join('\n'));
