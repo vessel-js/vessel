@@ -596,7 +596,7 @@ export class Router {
                 [
                   '[vessel] failed loading data',
                   `\nURL: ${fURL(route.matchedURL)}`,
-                  `Route ID: ${route.id === '' ? '.' : ''}`,
+                  `Route ID: ${route.id}`,
                   `Component Type: ${type}`,
                   `Data Type: ${dataKey}`,
                   `\nError: ${error.message}${

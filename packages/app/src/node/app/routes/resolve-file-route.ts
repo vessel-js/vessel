@@ -65,7 +65,7 @@ export function resolveRouteFromFilePath(
   );
   const pattern = new URLPattern({ pathname });
   return {
-    id: routePath,
+    id: routePath === '.' ? '/' : `/${routePath}`,
     pathname,
     pattern,
     dynamic,

@@ -1,8 +1,15 @@
 import type { App } from 'node/app/App';
+import { handleIncomingMessage } from 'node/http';
+import fs from 'node:fs';
+import { createRequestHandler } from 'server/http';
+import { initManifestURLPatterns } from 'server/http/handle-request';
 import { installPolyfills } from 'server/polyfills';
+import type { ServerManifest } from 'server/types';
+import { findRoute } from 'shared/routing';
+import { coerceToError } from 'shared/utils/error';
 import type { PreviewServerHook } from 'vite';
 
-import { handleDevServerError } from './server';
+import { handleDevServerError, logDevError } from './server';
 
 export async function configurePreviewServer(
   app: App,
@@ -15,7 +22,20 @@ export async function configurePreviewServer(
       ? 'https'
       : 'http';
 
-  // TODO: read in preview manifest and create handler
+  const manifestPath = app.dirs.server.resolve('preview.manifest.js');
+
+  // Manifest won't exist if it's a completely static site.
+  const manifest = (
+    fs.existsSync(manifestPath) ? (await import(manifestPath)).default : null
+  ) as ServerManifest | null;
+
+  if (manifest) {
+    initManifestURLPatterns(manifest);
+  }
+
+  const handler = manifest
+    ? createRequestHandler({ dev: true, ...manifest })
+    : null;
 
   server.middlewares.use(async (req, res, next) => {
     try {
@@ -27,14 +47,17 @@ export async function configurePreviewServer(
         req.headers[':authority'] || req.headers.host
       }`;
 
-      // const url = new URL(base + req.url);
-      const decodedUrl = decodeURI(new URL(base + req.url).pathname);
+      const url = new URL(base + req.url);
 
       if (
-        app.routes.test(decodedUrl, 'page') ||
-        app.routes.test(decodedUrl, 'http')
+        manifest &&
+        handler &&
+        (findRoute(url, manifest.routes.app) ||
+          findRoute(url, manifest.routes.http))
       ) {
-        // TODO handle request here
+        return await handleIncomingMessage(base, req, res, handler, (error) => {
+          logDevError(app, req, coerceToError(error));
+        });
       }
     } catch (error) {
       handleDevServerError(app, req, res, error);

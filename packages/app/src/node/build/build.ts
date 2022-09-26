@@ -421,7 +421,7 @@ export async function build(
             if (!seen.has(data.contentHash)) {
               await writeFile(
                 dataDir + `/${data.contentHash}.js`,
-                `export default ${data.serializedData};`,
+                `export const data = ${data.serializedData};`,
               );
               seen.add(data.contentHash);
             }
@@ -452,13 +452,13 @@ export async function build(
     const canFetch: number[] = [];
     const serverLoaders = build.server.loaders;
 
-    let i = 0;
+    let loaderIndex = 0;
     for (const route of app.routes.toArray()) {
       const loaders = serverLoaders.get(route.id);
       for (const type of getRouteComponentTypes()) {
         if (route[type]) {
-          if (loaders?.[type]) canFetch.push(i);
-          i++;
+          loaderIndex++;
+          if (loaders?.[type]) canFetch.push(loaderIndex);
         }
       }
     }

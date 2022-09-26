@@ -70,10 +70,10 @@ async function renderDocument(
   const loadResults = await loadRoutes(
     url,
     matches,
-    (_, route, type) => {
+    async (_, route, type) => {
       const id = resolveStaticDataAssetId(route, type);
       const hashedId = manifest.staticData.serverHashRecord[id] ?? id;
-      return manifest.staticData.loaders[hashedId]();
+      return (await manifest.staticData.loaders[hashedId]?.())?.data;
     },
     (url, route, type) => {
       return loadServerData({
@@ -218,7 +218,7 @@ async function renderDocument(
     [
       ...manifest.document.resources.entry,
       ...manifest.document.resources.app,
-      ...(manifest.document.resources[route.id] ?? []),
+      ...(manifest.document.resources.routes[route.id] ?? []),
     ],
   );
 
@@ -370,9 +370,10 @@ export function createDocumentResourceLinkTags(
     if (seen.has(entry)) continue;
 
     const resource = resources[Math.abs(entry)];
+    const rel = resolveDocumentResourceRel(resource.href, entry < 0);
 
     const attrs: string[] = [
-      `rel="${resolveDocumentResourceRel(resource.href, entry < 0)}"`,
+      rel ? `rel="${rel}"` : '',
       `href="${resource.href}"`,
     ];
 

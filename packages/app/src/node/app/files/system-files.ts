@@ -161,7 +161,7 @@ export abstract class SystemFiles<T extends SystemFileMeta>
     const rootDir = path.posix.dirname(rootPath);
     const routePath = this._getRoutePath(filePath);
     const routeDir = path.posix.dirname(routePath);
-    const pathname = routeDir === '.' ? '/' : `/${routeDir}/`;
+    const pathname = routeDir === '.' ? '/' : `/${routeDir}`;
     const ext = this._ext(rootPath);
     const reset = path.posix.basename(rootPath).includes('.reset.');
     return {

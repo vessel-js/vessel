@@ -11,13 +11,18 @@ export function createRequestEvent<T extends RequestParams = RequestParams>(
   const headers = init.headers ?? new Headers();
   const cookies = init.cookies ?? new Cookies({ url: init.url });
 
-  const requestCookies = new Cookies(init);
-  Object.defineProperty(init.request, 'cookies', {
-    enumerable: true,
-    get() {
-      return requestCookies;
-    },
-  });
+  const requestCookies = init.request.cookies
+    ? init.request.cookies
+    : new Cookies(init);
+
+  if (!init.request.cookies) {
+    Object.defineProperty(init.request, 'cookies', {
+      enumerable: true,
+      get() {
+        return requestCookies;
+      },
+    });
+  }
 
   let fetcher: ServerFetcher | null = null;
 
@@ -55,7 +60,7 @@ export type RequestParams = {
 };
 
 export type RequestEventInit<T extends RequestParams> = {
-  request: Request;
+  request: Request & { cookies?: Cookies };
   url: URL;
   params: T;
   headers?: Headers;

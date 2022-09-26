@@ -18,13 +18,7 @@ export function createRequestHandler(
 
     if (!manifest.dev && !installed) {
       await installURLPattern();
-
-      Object.keys(manifest.routes)
-        .flatMap((key) => manifest.routes[key])
-        .forEach((route) => {
-          route.pattern = new URLPattern({ pathname: route.pathname });
-        });
-
+      initManifestURLPatterns(manifest);
       installed = true;
     }
 
@@ -69,4 +63,12 @@ function resolveTrailingSlashRedirect(url: URL, trailingSlash: boolean) {
   }
 
   return false;
+}
+
+export function initManifestURLPatterns(manifest: ServerManifest) {
+  Object.keys(manifest.routes)
+    .flatMap((key) => manifest.routes[key])
+    .forEach((route) => {
+      route.pattern = new URLPattern({ pathname: route.pathname });
+    });
 }

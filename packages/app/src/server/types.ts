@@ -87,7 +87,7 @@ export type ServerManifest = {
     /** Used server-side to serialize data. Plain data asset id to hashed client id. */
     serverHashRecord: Record<string, string>;
     /** Hashed client data asset id to dynamic data loader. */
-    loaders: Record<string, () => Promise<JSONData | undefined>>;
+    loaders: Record<string, () => Promise<{ data: JSONData } | undefined>>;
   };
 };
 

@@ -39,7 +39,8 @@ export async function handleDevRequest({
 
   try {
     const route = matchRoute(url, app.routes.filterHasType('page'));
-    const staticDataLoaders: Record<string, () => Promise<JSONData>> = {};
+    const staticDataLoaders: Record<string, () => Promise<{ data: JSONData }>> =
+      {};
 
     if (route) {
       const { matches, redirect } = await loadStaticRoute(
@@ -62,7 +63,7 @@ export async function handleDevRequest({
           if (match[type]?.staticData) {
             const id = resolveStaticDataAssetId(match, type);
             staticDataLoaders[id] = () =>
-              Promise.resolve(match[type]!.staticData ?? {});
+              Promise.resolve({ data: match[type]!.staticData ?? {} });
           }
         }
       }
