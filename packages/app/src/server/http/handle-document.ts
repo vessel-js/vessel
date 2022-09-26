@@ -75,7 +75,9 @@ async function renderDocument(
       const hashedId = manifest.staticData.serverHashRecord[id] ?? id;
       return (await manifest.staticData.loaders[hashedId]?.())?.data;
     },
-    (url, route, type) => {
+    async (url, route, type) => {
+      if (!manifest.dev && !route[type]!.canFetch) return;
+
       return loadServerData({
         url,
         request,
