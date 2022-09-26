@@ -17,6 +17,7 @@ import type { ServerEntryModule } from 'server/types';
 import {
   cleanRoutePath,
   findRoute,
+  getRouteComponentTypes,
   normalizeURL as __normalizeURL,
 } from 'shared/routing';
 import { isFunction } from 'shared/utils/unit';
@@ -443,6 +444,30 @@ export async function build(
         }),
       );
     });
+  }
+
+  // Insert which nodes can fetch from the server into the client app bundle. Order here is
+  // important. It should match how the client manifest is loaded in `files-plugin.ts`.
+  if (build.server.loaders.size > 0) {
+    const canFetch: number[] = [];
+    const serverLoaders = build.server.loaders;
+
+    let i = 0;
+    for (const route of app.routes.toArray()) {
+      const loaders = serverLoaders.get(route.id);
+      for (const type of getRouteComponentTypes()) {
+        if (route[type]) {
+          if (loaders?.[type]) canFetch.push(i);
+          i++;
+        }
+      }
+    }
+
+    const content = app.dirs.client.read(appFileName);
+    app.dirs.client.write(
+      appFileName,
+      content.replace('"__VSL_SERVER_FETCH__"', `[${canFetch.join(',')}]`),
+    );
   }
 
   await adapter.write?.();
