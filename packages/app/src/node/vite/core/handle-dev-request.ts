@@ -9,12 +9,12 @@ import { getRouteComponentTypes, matchRoute } from 'shared/routing';
 import { coerceToError } from 'shared/utils/error';
 import type { Connect, ModuleNode, ViteDevServer } from 'vite';
 
-import { readIndexHtmlFile } from '../index-html';
+import { handleDevServerError, logDevError } from './dev-server';
+import { readIndexHtmlFile } from './index-html';
 import {
   createStaticLoaderFetcher,
   loadStaticRoute,
-} from '../static-data-loader';
-import { handleDevServerError, logDevError } from './server';
+} from './static-data-loader';
 
 type HandleDevRequestInit = {
   base: string;

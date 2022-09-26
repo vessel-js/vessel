@@ -1,6 +1,7 @@
 import type { App } from 'node/app/App';
 import { handleIncomingMessage } from 'node/http';
 import fs from 'node:fs';
+import path from 'node:path';
 import { createRequestHandler } from 'server/http';
 import { initManifestURLPatterns } from 'server/http/handle-request';
 import { installPolyfills } from 'server/polyfills';
@@ -9,7 +10,7 @@ import { findRoute } from 'shared/routing';
 import { coerceToError } from 'shared/utils/error';
 import type { PreviewServerHook } from 'vite';
 
-import { handleDevServerError, logDevError } from './server';
+import { handleDevServerError, logDevError } from './dev-server';
 
 export async function configurePreviewServer(
   app: App,
@@ -36,6 +37,18 @@ export async function configurePreviewServer(
   const handler = manifest
     ? createRequestHandler({ dev: true, ...manifest })
     : null;
+
+  server.middlewares.use((req, res, next) => {
+    if (req.url?.startsWith('/_immutable')) {
+      res.setHeader('Cache-Control', 'public, immutable, max-age=31536000');
+      res.setHeader(
+        'ETag',
+        path.basename(req.url, path.extname(req.url)).replace(/^.+-/, ''),
+      );
+    }
+
+    next();
+  });
 
   server.middlewares.use(async (req, res, next) => {
     try {

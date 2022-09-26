@@ -36,7 +36,7 @@ import type { Mutable } from 'shared/types';
 import { isFunction, isString } from 'shared/utils/unit';
 import { isLinkExternal, slash } from 'shared/utils/url';
 
-import { getDevServerOrigin } from './dev/server';
+import { getDevServerOrigin } from './dev-server';
 
 // Create fetcher to ensure relative paths work when fetching inside `staticLoader`. Also
 // ensures requests are able to load HTTP modules so they can respond because there's no server here.

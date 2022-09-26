@@ -12,8 +12,8 @@ import {
 } from 'vite';
 
 import { virtualAliases, virtualModuleRequestPath } from './alias';
-import { configurePreviewServer } from './core/dev/preview-server';
-import { configureDevServer } from './core/dev/server';
+import { configureDevServer } from './core/dev-server';
+import { configurePreviewServer } from './core/preview-server';
 import { filesPlugin } from './files/files-plugin';
 import { markdownPlugin } from './markdown/markdown-plugin';
 

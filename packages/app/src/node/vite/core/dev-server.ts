@@ -2,6 +2,7 @@ import kleur from 'kleur';
 import type { App } from 'node/app/App';
 import type { ServerResponse } from 'node:http';
 import { STATIC_DATA_ASSET_BASE_PATH } from 'shared/data';
+import { findRoute } from 'shared/routing';
 import { coerceToError } from 'shared/utils/error';
 import type { Connect, ViteDevServer } from 'vite';
 
@@ -24,15 +25,15 @@ export function configureDevServer(app: App, server: ViteDevServer) {
       }`;
 
       const url = new URL(base + req.url);
-      const decodedUrl = decodeURI(new URL(base + req.url).pathname);
+      const urlPathname = decodeURI(new URL(base + req.url).pathname);
 
-      if (decodedUrl.startsWith(STATIC_DATA_ASSET_BASE_PATH)) {
+      if (urlPathname.startsWith(STATIC_DATA_ASSET_BASE_PATH)) {
         return await handleStaticDataRequest({ url, app, res });
       }
 
       if (
-        app.routes.test(decodedUrl, 'page') ||
-        app.routes.test(decodedUrl, 'http')
+        findRoute(url, app.routes.filterHasType('page')) ||
+        findRoute(url, app.routes.filterHasType('http'))
       ) {
         return await handleDevRequest({
           base,

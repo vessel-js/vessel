@@ -11,7 +11,7 @@ import { isString } from 'shared/utils/unit';
 import {
   callStaticLoader,
   createStaticLoaderFetcher,
-} from '../static-data-loader';
+} from './static-data-loader';
 
 type HandleStaticDataRequestInit = {
   app: App;

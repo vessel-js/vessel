@@ -5,7 +5,7 @@ import { getRouteFileTypes, type RouteFileType } from 'node/app/files';
 import type { AppRoute } from 'node/app/routes';
 import { hash, logger, LoggerIcon, mkdirp, rimraf } from 'node/utils';
 import { createStaticLoaderFetcher, loadStaticRoute } from 'node/vite/core';
-import { getDevServerOrigin } from 'node/vite/core/dev/server';
+import { getDevServerOrigin } from 'node/vite/core/dev-server';
 import fs from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import ora from 'ora';
