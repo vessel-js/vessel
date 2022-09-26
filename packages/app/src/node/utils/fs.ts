@@ -98,5 +98,7 @@ export function mkdirp(dir: string) {
 }
 
 export function rimraf(path: string) {
-  fs.rmSync(path, { force: true, recursive: true });
+  if (fs.existsSync(path)) {
+    fs.rmSync(path, { recursive: true });
+  }
 }

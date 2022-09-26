@@ -23,7 +23,7 @@ export async function configurePreviewServer(
       ? 'https'
       : 'http';
 
-  const manifestPath = app.dirs.server.resolve('preview.manifest.js');
+  const manifestPath = app.dirs.server.resolve('_manifests/preview.js');
 
   // Manifest won't exist if it's a completely static site.
   const manifest = (

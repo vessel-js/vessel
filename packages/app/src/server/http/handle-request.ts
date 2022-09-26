@@ -1,5 +1,4 @@
 import type { ServerManifest, ServerRequestHandler } from 'server/types';
-import { installURLPattern } from 'shared/polyfills';
 import { matchRoute } from 'shared/routing';
 import { noendslash } from 'shared/utils/url';
 
@@ -11,16 +10,12 @@ import { redirect } from './response';
 export function createRequestHandler(
   manifest: ServerManifest,
 ): ServerRequestHandler {
-  let installed = false;
+  if (!manifest.dev) {
+    initManifestURLPatterns(manifest);
+  }
 
   return async (request) => {
     const url = new URL(request.url);
-
-    if (!manifest.dev && !installed) {
-      await installURLPattern();
-      initManifestURLPatterns(manifest);
-      installed = true;
-    }
 
     const redirect = resolveTrailingSlashRedirect(url, manifest.trailingSlash);
     if (redirect) return redirect;

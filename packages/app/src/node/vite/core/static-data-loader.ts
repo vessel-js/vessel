@@ -225,7 +225,9 @@ export async function callStaticLoader(
   const output = await staticLoader(input);
 
   const isDataValid =
-    !output || (typeof output === 'object' && typeof output.data === 'object');
+    !output ||
+    (typeof output === 'object' &&
+      (!output.data || typeof output.data === 'object'));
 
   if (isDataValid && isFunction(output?.cache)) {
     const cacheKey = await output!.cache(input);

@@ -42,6 +42,8 @@ export function error(...params: ConstructorParameters<typeof HttpError>) {
 }
 
 export function handleHttpError(error: unknown, dev = false) {
+  console.error(error);
+
   let response!: Response;
 
   if (isHttpError(error)) {

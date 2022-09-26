@@ -16,13 +16,13 @@ export function buildServerManifests(
   bundles: BuildBundles,
   build: BuildData,
 ) {
-  const serverRoutes = app.routes
+  const documentRoutes = app.routes
     .toArray()
     .filter((route) => build.server.loaders.has(route.id));
-  const serverHttpRoutes = app.routes.filterHasType('http');
-  const edgeRoutes = build.edge.routes;
+  const httpRoutes = app.routes.filterHasType('http');
+  const edgeRouteIds = build.edge.routes;
 
-  if (serverRoutes.length === 0 && serverHttpRoutes.length === 0) {
+  if (documentRoutes.length === 0 && httpRoutes.length === 0) {
     return null;
   }
 
@@ -43,22 +43,22 @@ export function buildServerManifests(
     preview: createManifestInit(
       app,
       build,
-      serverRoutes,
-      serverHttpRoutes,
+      documentRoutes,
+      httpRoutes,
       sharedInit,
     ),
     edge: createManifestInit(
       app,
       build,
-      serverRoutes.filter((route) => edgeRoutes.has(route.id)),
-      serverHttpRoutes.filter((route) => edgeRoutes.has(route.id)),
+      documentRoutes.filter((route) => edgeRouteIds.has(route.id)),
+      httpRoutes.filter((route) => edgeRouteIds.has(route.id)),
       sharedInit,
     ),
     node: createManifestInit(
       app,
       build,
-      serverRoutes.filter((route) => !edgeRoutes.has(route.id)),
-      serverHttpRoutes.filter((route) => !edgeRoutes.has(route.id)),
+      documentRoutes.filter((route) => !edgeRouteIds.has(route.id)),
+      httpRoutes.filter((route) => !edgeRouteIds.has(route.id)),
       sharedInit,
     ),
   };
@@ -126,7 +126,7 @@ function createManifestInit(
       if (hashedId) {
         serverHashRecord[id] = hashedId;
         clientHashRecord[hashedId] = contentHash;
-        loaders[hashedId] = `() => import('./_data/${contentHash}.js')`;
+        loaders[hashedId] = `() => import('../_data/${contentHash}.js')`;
       }
     }
   }
@@ -155,7 +155,7 @@ function createManifestInit(
         for (const type of getRouteComponentTypes()) {
           if (appRoute[type]) {
             route[type] = {
-              loader: `() => import('./${chunks[type]!.fileName}')`,
+              loader: `() => import('../${chunks[type]!.fileName}')`,
               canFetch: serverLoaders?.[type],
             };
           }
@@ -170,7 +170,7 @@ function createManifestInit(
         return {
           ...toRoute(appRoute),
           pattern: undefined,
-          loader: `() => import('./${fileName}')`,
+          loader: `() => import('../${fileName}')`,
           methods,
         };
       }),
@@ -194,7 +194,7 @@ function serializeManifest({
   return `export default {
   baseUrl: '${baseUrl}',
   trailingSlash: ${trailingSlash},
-  entry: () => import('./${entry}'),
+  entry: () => import('../${entry}'),
   routes: {
     app: ${stripImportQuotesFromJson(JSON.stringify(routes.app, null, 2))},
     http: ${stripImportQuotesFromJson(JSON.stringify(routes.http, null, 2))},

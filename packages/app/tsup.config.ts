@@ -29,10 +29,9 @@ export default defineConfig([
     ...base(),
     entry: {
       node: 'src/node/index.ts',
+      'node/http': 'src/node/http/index.ts',
       server: 'src/server/index.ts',
       'server/polyfills': 'src/server/polyfills.ts',
-      'vercel/edge': 'src/vercel/edge.ts',
-      'vercel/fn': 'src/vercel/fn.ts',
     },
     target: 'node16',
     platform: 'node',

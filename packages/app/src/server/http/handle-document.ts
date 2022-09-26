@@ -40,6 +40,8 @@ export async function handleDocumentRequest(
   try {
     return await renderDocument(url, request, manifest);
   } catch (err) {
+    console.error(err);
+
     if (manifest.dev) {
       const error = coerceToError(err);
       return new Response(error.stack, { status: 500 });
@@ -122,6 +124,7 @@ async function renderDocument(
         const reason = resolveSettledPromiseRejection(compResult[dataKey]);
 
         if (reason) {
+          console.error(reason);
           const error = coerceToError(reason);
 
           if (!route.error) {

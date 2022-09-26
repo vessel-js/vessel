@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "type": "module",
   "types": "index.d.ts",
-  "sideEffects": false,
   "license": "MIT",
   "contributors": [
     "Rahim Alwer <rahim.alwer@gmail.com>"
@@ -36,7 +35,7 @@
       "default": "./dist/server.js"
     },
     "./server/*": "./dist/server/*",
-    "./vercel/*": "./dist/vercel/*",
+    "./node/*": "./dist/node/*",
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -50,7 +49,7 @@
     "@types/lru-cache": "^5.1.1",
     "@types/markdown-it": "^12.2.3",
     "cookie": "^0.5.0",
-    "esbuild": "^0.14.47",
+    "esbuild": "^0.15.9",
     "globby": "^13.1.1",
     "gray-matter": "^4.0.3",
     "hast-util-to-html": "^8.0.3",

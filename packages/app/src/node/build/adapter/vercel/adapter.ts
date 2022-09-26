@@ -1,12 +1,13 @@
 import esbuild from 'esbuild';
 import kleur from 'kleur';
+import type { App, Directory } from 'node/app/App';
 import { createDirectory } from 'node/app/create/app-dirs';
-import { copyDir, LoggerIcon, mkdirp, requireShim, rimraf } from 'node/utils';
+import { copyDir, LoggerIcon, mkdirp, rimraf } from 'node/utils';
+import fs from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import ora from 'ora';
-import { HTTP_METHODS } from 'server/http';
-import { endslash, isLinkExternal, noendslash, slash } from 'shared/utils/url';
+import { endslash, isLinkExternal, noendslash } from 'shared/utils/url';
 
 import { type BuildAdapterFactory } from '../build-adapter';
 import { createStaticBuildAdapter } from '../static/adapter';
@@ -28,14 +29,13 @@ const defaultEdgeConfig = {
   entrypoint: 'index.js',
 };
 
-const matchersRE = /\[?\[(?:.*?)\]\]?/g;
-
 export function createVercelBuildAdapter(
   config?: VercelBuildAdapterConfig,
 ): BuildAdapterFactory {
   return async (app, bundles, build) => {
     const vercelDirs = {
-      root: createDirectory(app.dirs.root.resolve(outputRoot)),
+      root: createDirectory(app.dirs.root.resolve('.vercel')),
+      output: createDirectory(app.dirs.root.resolve(outputRoot)),
       static: createDirectory(app.dirs.root.resolve(`${outputRoot}/static`)),
       fns: createDirectory(app.dirs.root.resolve(`${outputRoot}/functions`)),
     };
@@ -44,15 +44,22 @@ export function createVercelBuildAdapter(
     const staticAdapter = await createStaticBuildAdapter()(app, bundles, build);
 
     return {
-      ...staticAdapter,
       name: 'vercel',
       async write() {
+        await staticAdapter.write?.();
+
+        const serverRoutes = app.routes
+          .toArray()
+          .filter((route) => route.http || build.server.loaders.has(route.id));
+
+        if (serverRoutes.length === 0) {
+          return;
+        }
+
         console.log(kleur.magenta('\n+ vercel\n'));
 
-        rimraf(vercelDirs.root.path);
-        mkdirp(vercelDirs.root.path);
-
-        await staticAdapter.write?.();
+        rimraf(vercelDirs.output.path);
+        mkdirp(vercelDirs.output.path);
 
         copyDir(app.dirs.client.path, vercelDirs.static.path);
 
@@ -62,6 +69,8 @@ export function createVercelBuildAdapter(
             headers: {
               Location: isLinkExternal(redirect.to, app.vite.resolved!.base)
                 ? redirect.to
+                : redirect.to === '/'
+                ? '/'
                 : trailingSlashes
                 ? endslash(redirect.to)
                 : noendslash(redirect.to),
@@ -81,6 +90,7 @@ export function createVercelBuildAdapter(
           src?: string;
           dest?: string;
           headers?: Record<string, string>;
+          methods?: string[];
           status?: number;
           handle?: string;
         }[] = [
@@ -93,102 +103,41 @@ export function createVercelBuildAdapter(
           { handle: 'filesystem' },
         ];
 
-        const bundlingFunctionsSpinner = ora();
-        const fnCount = kleur.underline(build.server.endpoints.size);
-        bundlingFunctionsSpinner.start(
-          kleur.bold(`Bundling ${fnCount} functions...`),
-        );
-
-        for (const route of build.server.endpoints) {
-          const routeDir = route.http!.dir.route;
+        const edgeRouteIds = build.edge.routes;
+        for (const route of serverRoutes) {
           routes.push({
-            src: `^${slash(routeDir.replace(matchersRE, '([^/]+?)'))}/?$`, // ^/api/foo/?$
-            dest: slash(routeDir), // /api/foo
+            src: `^/${buildSrc(route.dir.route)}/?`,
+            dest: edgeRouteIds.has(route.id) ? '/edge' : '/node',
           });
         }
 
-        await Promise.all(
-          Array.from(build.server.endpoints).map(async (route) => {
-            const chunk = build.server.chunks.get(route.id)!.http;
-
-            const allowedMethods = chunk?.exports.filter((id) =>
-              HTTP_METHODS.has(id),
-            );
-
-            if (!chunk || allowedMethods!.length === 0) return;
-
-            const isEdge =
-              !!config?.edge?.all || chunk.exports.includes('EDGE');
-
-            const resolveCode = isEdge ? resolveEdgeCode : resolveFunctionCode;
-
-            const code = resolveCode(
-              route.pattern.pathname,
-              './+http.js',
-              allowedMethods!,
-            );
-
-            const vcConfig = isEdge
-              ? {
-                  ...defaultEdgeConfig,
-                  envVarsInUse: config?.edge?.envVarsInUse,
-                }
-              : {
-                  ...defaultFunctionsConfig,
-                  ...config?.functions,
-                };
-
-            const fndir = `${route.dir.route}.func`;
-            const outdir = vercelDirs.fns.resolve(fndir);
-            const chunkDir = path.posix.dirname(
-              build.server.chunkFiles.get(route.id)!.http!,
-            );
-            const entryPath = path.posix.resolve(chunkDir, 'fn.js');
-
-            await writeFile(entryPath, code);
-
-            // eslint-disable-next-line import/no-named-as-default-member
-            await esbuild.build({
-              entryPoints: { index: entryPath },
-              outdir,
-              target: 'es2020',
-              assetNames: 'assets/[name]-[hash]',
-              chunkNames: 'chunks/[name]-[hash]',
-              banner: !isEdge ? { js: requireShim } : undefined,
-              bundle: true,
-              splitting: true,
-              minify: !app.config.debug,
-              treeShaking: true,
-              platform: 'node',
-              format: 'esm',
-              sourcemap: app.config.debug && 'external',
-            });
-
-            await writeFile(
-              path.posix.resolve(outdir, 'package.json'),
-              JSON.stringify({ type: 'module' }),
-            );
-
-            await writeFile(
-              path.posix.resolve(outdir, '.vc-config.json'),
-              JSON.stringify(vcConfig, null, 2),
-            );
-          }),
-        );
-
-        bundlingFunctionsSpinner.stopAndPersist({
-          text: kleur.bold(`Committed ${fnCount} functions`),
-          symbol: LoggerIcon.Success,
-        });
+        const rootRoute = app.routes
+          .toArray()
+          .find((route) => route.id === '/');
 
         // SPA fallback so we can render 404 page.
-        routes.push({
-          src: '/(.*)',
-          dest: '/index.html',
-        });
+        if (rootRoute) {
+          const isServerRoute = build.server.loaders.has('/');
+          routes.push({
+            src: '/(.*)',
+            dest: isServerRoute
+              ? edgeRouteIds.has('/')
+                ? '/edge.func'
+                : '/node.func'
+              : '/index.html',
+          });
+        }
+
+        if (edgeRouteIds.size > 0) {
+          await bundleEdge(app, vercelDirs.output, config?.edge);
+        }
+
+        if (serverRoutes.length !== edgeRouteIds.size) {
+          await bundleNode(app, vercelDirs.output, config?.functions);
+        }
 
         await writeFile(
-          vercelDirs.root.resolve('config.json'),
+          vercelDirs.output.resolve('config.json'),
           JSON.stringify({ version: 3, routes, overrides }, null, 2),
         );
       },
@@ -196,50 +145,128 @@ export function createVercelBuildAdapter(
   };
 }
 
-function resolveFunctionCode(
-  pattern: string,
-  moduleId: string,
-  methods: string[],
-) {
-  return [
-    "import { createEndpointHandler } from '@vessel-js/app/vercel/fn.js';",
-    '',
-    'export default createEndpointHandler(',
-    `  () => new URLPattern({ pathname: '${pattern}' }),`,
-    `  () => import('${moduleId}'),`,
-    '  {',
-    `    methods: [${methods.map((method) => `'${method}'`).join(', ')}],`,
-    '  }',
-    ');',
-    '',
-  ].join('\n');
+const optionalRestMatcherRE = /\[\[\.\.\.(?:.*?)\]\]/g;
+const restMatcherRE = /\[\.\.\.(?:.*?)\]/g;
+const matcherRE = /\[(?:.*?)\]/g;
+
+function buildSrc(path: string) {
+  return path
+    .replace(optionalRestMatcherRE, '(.+)')
+    .replace(restMatcherRE, '(.*?)')
+    .replace(matcherRE, '([^/]+?)');
 }
 
-function resolveEdgeCode(pattern: string, moduleId: string, methods: string[]) {
-  return [
-    "import { createEndpointHandler } from '@vessel-js/app/vercel/edge.js';",
-    '',
-    'export default createEndpointHandler (',
-    `  new URLPattern({ pathname: '${pattern}' }),`,
-    `  () => import('${moduleId}'),`,
-    '  {',
-    `    methods: [${methods.map((method) => `'${method}'`).join(', ')}],`,
-    '  }',
-    ');',
-    '',
-  ].join('\n');
+async function bundleEdge(
+  app: App,
+  outputDir: Directory,
+  config?: VercelBuildAdapterConfig['edge'],
+) {
+  const spinner = ora();
+  spinner.start(kleur.bold(`Bundling edge functions...`));
+
+  app.dirs.server.write(
+    '_manifests/vercel.edge.js',
+    [
+      'import manifest from "./edge.js";',
+      'import { createRequestHandler } from "@vessel-js/app/server";',
+      'export default createRequestHandler(manifest);',
+    ].join('\n'),
+  );
+
+  const outdir = outputDir.resolve('functions/edge.func');
+
+  // eslint-disable-next-line import/no-named-as-default-member
+  await esbuild.build({
+    entryPoints: {
+      index: app.dirs.server.resolve('_manifests/vercel.edge.js'),
+    },
+    outdir,
+    target: 'es2020',
+    assetNames: 'assets/[name]-[hash]',
+    chunkNames: 'chunks/[name]-[hash]',
+    bundle: true,
+    splitting: true,
+    minify: !app.config.debug,
+    treeShaking: true,
+    platform: 'neutral',
+    format: 'esm',
+    sourcemap: app.config.debug && 'external',
+  });
+
+  await writeFile(
+    path.posix.resolve(outdir, 'package.json'),
+    JSON.stringify({ type: 'module' }),
+  );
+
+  await writeFile(
+    path.posix.resolve(outdir, '.vc-config.json'),
+    JSON.stringify({ ...defaultEdgeConfig, ...config }, null, 2),
+  );
+
+  spinner.stopAndPersist({
+    text: kleur.bold(`Bundled edge functions`),
+    symbol: LoggerIcon.Success,
+  });
+}
+
+async function bundleNode(
+  app: App,
+  outputDir: Directory,
+  config?: VercelBuildAdapterConfig['functions'],
+) {
+  const spinner = ora();
+  spinner.start(kleur.bold(`Bundling node functions...`));
+
+  app.dirs.server.write(
+    '_manifests/vercel.node.js',
+    [
+      'import manifest from "./node.js";',
+      'import { createIncomingMessageHandler } from "@vessel-js/app/node/http.js";',
+      'export default createIncomingMessageHandler(manifest);',
+    ].join('\n'),
+  );
+
+  const entry = app.dirs.server.resolve('_manifests/vercel.node.js');
+  const outdir = outputDir.resolve('functions/node.func');
+
+  // eslint-disable-next-line import/no-named-as-default-member
+  await esbuild.build({
+    entryPoints: { index: entry },
+    outdir,
+    target: 'es2020',
+    legalComments: 'none',
+    assetNames: 'assets/[name]-[hash]',
+    chunkNames: 'chunks/[name]-[hash]',
+    bundle: true,
+    splitting: true,
+    treeShaking: true,
+    platform: 'node',
+    format: 'esm',
+    sourcemap: app.config.debug && 'external',
+    banner: {
+      js: "import { createRequire } from 'module';const require = createRequire(import.meta.url);",
+    },
+  });
+
+  fs.writeFileSync(
+    `${outdir}/.vc-config.json`,
+    JSON.stringify({ ...defaultFunctionsConfig, ...config }),
+  );
+
+  fs.writeFileSync(
+    `${outdir}/package.json`,
+    JSON.stringify({ type: 'module' }),
+  );
+
+  spinner.stopAndPersist({
+    text: kleur.bold(`Bundled node functions`),
+    symbol: LoggerIcon.Success,
+  });
 }
 
 export { createVercelBuildAdapter as default };
 
 export type VercelBuildAdapterConfig = {
-  /**
-   * Whether trailing slashes should be kept or removed. The default behavior is to remove
-   * it (e.g., `foo.com/bar/` becomes `foo.com/bar`).
-   *
-   * @defaultValue false
-   */
-  trailingSlash?: boolean;
   /**
    * @see {@link https://vercel.com/docs/build-output-api/v3#vercel-primitives/serverless-functions}
    */
@@ -282,12 +309,6 @@ export type VercelBuildAdapterConfig = {
    * @see {@link https://vercel.com/docs/build-output-api/v3#vercel-primitives/edge-functions/configuration}
    */
   edge?: {
-    /**
-     * Whether all API endpoints should be output as edge functions.
-     *
-     * @defaultValue false
-     */
-    all?: boolean;
     /**
      * List of environment variable names that will be available for the Edge Function to utilize.
      *

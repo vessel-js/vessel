@@ -437,10 +437,13 @@ export async function build(
       successTitle: `Committed ${manifestCount} server manifests`,
     });
 
+    const manifestsDir = app.dirs.server.resolve('_manifests');
+    mkdirp(manifestsDir);
+
     await manifestSpinner(async () => {
       await Promise.all(
         manifestNames.map(async (name) => {
-          app.dirs.server.write(`${name}.manifest.js`, manifests[name]!);
+          app.dirs.server.write(`${manifestsDir}/${name}.js`, manifests[name]!);
         }),
       );
     });
