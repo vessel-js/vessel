@@ -42,8 +42,6 @@ export function error(...params: ConstructorParameters<typeof HttpError>) {
 }
 
 export function handleHttpError(error: unknown, dev = false) {
-  console.error(error);
-
   let response!: Response;
 
   if (isHttpError(error)) {
@@ -59,6 +57,8 @@ export function handleHttpError(error: unknown, dev = false) {
 
     response.headers.set('X-Vessel-Expected', 'yes');
   } else {
+    console.error(error);
+
     if (!dev) {
       response = json({ error: { message: 'internal server error' } }, 500);
     } else {
