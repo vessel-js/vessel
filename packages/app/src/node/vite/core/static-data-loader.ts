@@ -124,12 +124,13 @@ export async function loadStaticRoute(
               const modKey = getServerModuleKey(match, type);
               const mod = serverModules.get(modKey)!;
               if (mod) {
-                staticData.set(
-                  key,
-                  await mod.staticLoader?.(
-                    createStaticLoaderInput(match.matchedURL, match, fetcher),
-                  ),
+                const data = await callStaticLoader(
+                  url,
+                  match,
+                  fetcher,
+                  mod.staticLoader,
                 );
+                staticData.set(key, data);
               }
             }
           }
@@ -196,9 +197,11 @@ export function clearStaticLoaderCache(id: string) {
   cacheKeyBuilder.delete(id);
 }
 
+const warned = new Set<string>();
+
 export async function callStaticLoader(
   url: URL,
-  route: Route,
+  route: Route & RouteMatch,
   fetcher: ServerFetcher,
   staticLoader?: StaticLoader,
 ): Promise<StaticLoaderOutput> {
@@ -219,13 +222,13 @@ export async function callStaticLoader(
     }
   }
 
-  const output = (await staticLoader(input)) ?? {};
-  const data = output.data;
-  const buildCacheKey = output.cache;
-  const isDataValid = !data || typeof data === 'object';
+  const output = await staticLoader(input);
 
-  if (isDataValid && isFunction(buildCacheKey)) {
-    const cacheKey = await buildCacheKey(input);
+  const isDataValid =
+    !output || (typeof output === 'object' && typeof output.data === 'object');
+
+  if (isDataValid && isFunction(output?.cache)) {
+    const cacheKey = await output!.cache(input);
 
     if (cacheKey) {
       const cache = loaderCache.get(id) ?? new Map();
@@ -233,32 +236,42 @@ export async function callStaticLoader(
       loaderCache.set(id, cache);
     }
 
-    cacheKeyBuilder.set(id, buildCacheKey);
+    cacheKeyBuilder.set(id, output!.cache);
   }
 
   if (!isDataValid) {
-    logger.warn(
-      'Received invalid data from loader (expected object).',
-      [
-        `\n${kleur.bold('File:')} ${route.id}`,
-        `${kleur.bold('Data Type:')} ${typeof output.data}`,
-      ].join('\n'),
-      '\n',
-    );
+    if (!warned.has(id)) {
+      logger.warn(
+        'Received invalid data from loader (expected object).',
+        [
+          `\n${kleur.bold('File:')} ${route.id}`,
+          `${kleur.bold('Output Type:')} ${typeof output}`,
+          `${kleur.bold('Data Type:')} ${typeof output?.data}`,
+        ].join('\n'),
+        '\n',
+      );
 
-    output.data = {};
+      warned.add(id);
+    }
+
+    return {};
   }
 
-  if (buildCacheKey && !isFunction(buildCacheKey)) {
-    logger.warn(
-      'Received invalid cache builder from loader (expected function).',
-      [
-        `\n${kleur.bold('File:')} ${route.id}`,
-        `${kleur.bold('Cache Type:')} ${typeof buildCacheKey}`,
-      ].join('\n'),
-      '\n',
-    );
+  if (output?.cache && !isFunction(output.cache)) {
+    if (!warned.has(id)) {
+      logger.warn(
+        'Received invalid cache builder from loader (expected function).',
+        [
+          `\n${kleur.bold('File:')} ${route.id}`,
+          `${kleur.bold('Cache Type:')} ${typeof output.cache}`,
+        ].join('\n'),
+        '\n',
+      );
+
+      warned.add(id);
+    }
   }
 
-  return output;
+  warned.delete(id);
+  return output ?? {};
 }

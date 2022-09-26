@@ -1,9 +1,5 @@
 import { resolveStaticDataAssetId } from 'shared/data';
-import {
-  execRouteMatch,
-  getRouteComponentTypes,
-  type Route,
-} from 'shared/routing';
+import { getRouteComponentTypes, type MatchedRoute } from 'shared/routing';
 
 import type { JSONData } from './http';
 import type {
@@ -15,14 +11,13 @@ import type {
 
 export function createStaticLoaderInput(
   url: URL,
-  route: Route,
+  route: MatchedRoute,
   fetcher: ServerFetcher,
 ): StaticLoaderInput {
-  const match = execRouteMatch(url, route)!;
   return {
     pathname: url.pathname,
     route,
-    params: match.groups,
+    params: route.params,
     fetcher,
   };
 }
