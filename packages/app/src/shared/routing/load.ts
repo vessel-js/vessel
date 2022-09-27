@@ -67,8 +67,18 @@ export async function loadRoutes<
 ): Promise<
   LoadRouteResult<Route, LoadStaticDataResult, LoadServerDataResult>[]
 > {
+  if (routes.length === 0) return [];
+
+  const [leaf, ...branch] = routes;
+
+  const nodes = [
+    leaf,
+    // Don't load pages of branch routes.
+    ...(branch ?? []).map((b) => ({ ...b, page: undefined })),
+  ] as Route[];
+
   return Promise.all(
-    routes.map((route) =>
+    nodes.map((route) =>
       loadRoute(url, route, staticDataLoader, serverDataLoader, signal),
     ),
   );

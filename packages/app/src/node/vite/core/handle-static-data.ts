@@ -83,8 +83,8 @@ export async function handleStaticDataRequest({
 
     logger.error(
       error.message,
-      [`\n${kleur.bold('URL:')} ${url}`, '', ''].join('\n'),
-      error.stack,
+      `\n\n${kleur.bold('URL:')} ${url.pathname}${url.search}`,
+      `\n\n${error.stack}`,
       '\n',
     );
 

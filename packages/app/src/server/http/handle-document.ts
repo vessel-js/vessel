@@ -40,19 +40,27 @@ export async function handleDocumentRequest(
 ): Promise<Response> {
   try {
     return await renderDocument(url, request, manifest);
-  } catch (err) {
-    const __error = manifest.hooks?.onDocumentRenderError?.(url, err) ?? err;
+  } catch (e) {
+    manifest.hooks?.onDocumentRenderError?.(url, e);
+
+    const error = coerceToError(e);
 
     console.error(
-      kleur.bold(kleur.red(`\n🚨 Document Render Error: ${url}`)),
-      '\n\n',
-      __error,
+      kleur.bold(kleur.red(`\n🚨 Document Render Error`)),
+      `\n\n${kleur.bold('Messsage:')} ${error.message}`,
+      url ? `\n${kleur.bold('URL:')} ${url?.pathname}${url?.search}` : '',
+      error.stack ? `\n\n${error.stack}` : '',
       '\n',
     );
 
     if (manifest.dev) {
-      const error = coerceToError(__error);
-      return new Response(error.stack, { status: 500 });
+      return new Response(
+        JSON.stringify({
+          message: error.message,
+          stack: error.stack,
+        }),
+        { status: 500 },
+      );
     }
 
     // TODO: this shouldn't happen but is there a more appropriate course of action?

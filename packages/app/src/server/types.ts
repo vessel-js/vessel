@@ -90,9 +90,8 @@ export type ServerManifest = {
     loaders: Record<string, () => Promise<{ data: JSONData } | undefined>>;
   };
   hooks?: {
-    /** Hooks to read and optionally transform any unexpected errors. */
-    onDocumentRenderError?: (url: URL, error: unknown) => unknown;
-    onUnexpectedHttpError?: (url: URL, error: unknown) => unknown;
+    onDocumentRenderError?: (url: URL, error: unknown) => void;
+    onUnexpectedHttpError?: (url: URL, error: unknown) => void;
   };
 };
 

@@ -48,28 +48,17 @@ export function handleHttpError(
   url?: URL,
   manifest?: ServerManifest,
 ) {
-  const __error = url
-    ? manifest?.hooks?.onUnexpectedHttpError?.(url, error) ?? error
-    : error;
-
-  console.error(
-    kleur.bold(kleur.red(`\n🚨 Unexpected HTTP Error: ${url}`)),
-    '\n\n',
-    __error,
-    '\n',
-  );
-
   let response!: Response;
 
-  if (isHttpError(__error)) {
+  if (isHttpError(error)) {
     response = json(
       {
         error: {
-          message: __error.message,
-          data: __error.data,
+          message: error.message,
+          data: error.data,
         },
       },
-      __error.init,
+      error.init,
     );
 
     response.headers.set('X-Vessel-Expected', 'yes');
@@ -77,12 +66,23 @@ export function handleHttpError(
     if (!manifest?.dev) {
       response = json({ error: { message: 'internal server error' } }, 500);
     } else {
-      const error = coerceToError(__error);
+      if (url) manifest?.hooks?.onUnexpectedHttpError?.(url, error);
+
+      const err = coerceToError(error);
+
+      console.error(
+        kleur.bold(kleur.red(`\n🚨 Unexpected HTTP Error`)),
+        `\n\n${kleur.bold('Messsage:')} ${err.message}`,
+        url ? `\n${kleur.bold('URL:')} ${url?.pathname}${url?.search}` : '',
+        err.stack ? `\n\n${err.stack}` : '',
+        '\n',
+      );
+
       response = json(
         {
           error: {
-            message: error.message ?? 'internal server error',
-            stack: error.stack,
+            message: err.message ?? 'internal server error',
+            stack: err.stack,
           },
         },
         500,
