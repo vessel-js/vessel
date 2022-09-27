@@ -111,6 +111,18 @@ export async function handleDevRequest({
         serverHashRecord: {},
         loaders: staticDataLoaders,
       },
+      hooks: {
+        onDocumentRenderError: (_, error) => {
+          if (error instanceof Error) {
+            app.vite.server!.ssrFixStacktrace(error);
+          }
+        },
+        onUnexpectedHttpError: (_, error) => {
+          if (error instanceof Error) {
+            app.vite.server!.ssrFixStacktrace(error);
+          }
+        },
+      },
     };
 
     const handler = createRequestHandler(manifest);

@@ -63,7 +63,7 @@ export async function handleDataRequest(
     if (isResponse(error)) {
       return error;
     } else {
-      return handleHttpError(error, manifest.dev);
+      return handleHttpError(error, url, manifest);
     }
   }
 }

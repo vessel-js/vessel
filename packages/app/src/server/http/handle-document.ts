@@ -1,3 +1,4 @@
+import kleur from 'kleur';
 import {
   createStaticDataScriptTag,
   createStaticLoaderDataMap,
@@ -40,10 +41,17 @@ export async function handleDocumentRequest(
   try {
     return await renderDocument(url, request, manifest);
   } catch (err) {
-    console.error(err);
+    const __error = manifest.hooks?.onDocumentRenderError?.(url, err) ?? err;
+
+    console.error(
+      kleur.bold(kleur.red(`\n🚨 Document Render Error: ${url}`)),
+      '\n\n',
+      __error,
+      '\n',
+    );
 
     if (manifest.dev) {
-      const error = coerceToError(err);
+      const error = coerceToError(__error);
       return new Response(error.stack, { status: 500 });
     }
 

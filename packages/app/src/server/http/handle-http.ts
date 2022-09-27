@@ -72,7 +72,7 @@ export async function handleHttpRequest(
     if (isResponse(error)) {
       return error;
     } else {
-      return handleHttpError(error, manifest?.dev ?? true);
+      return handleHttpError(error, url, manifest);
     }
   }
 }

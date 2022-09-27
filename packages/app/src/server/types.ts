@@ -89,6 +89,11 @@ export type ServerManifest = {
     /** Hashed client data asset id to dynamic data loader. */
     loaders: Record<string, () => Promise<{ data: JSONData } | undefined>>;
   };
+  hooks?: {
+    /** Hooks to read and optionally transform any unexpected errors. */
+    onDocumentRenderError?: (url: URL, error: unknown) => unknown;
+    onUnexpectedHttpError?: (url: URL, error: unknown) => unknown;
+  };
 };
 
 /**

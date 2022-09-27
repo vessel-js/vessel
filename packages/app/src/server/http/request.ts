@@ -123,7 +123,7 @@ function createServerFetcher(
 
       if (!route) {
         return Promise.resolve(
-          handleHttpError(error('not found', 404), manifest.dev),
+          handleHttpError(error('not found', 404), url, manifest),
         );
       }
 

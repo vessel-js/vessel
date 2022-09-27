@@ -53,9 +53,7 @@ export function createStaticLoaderFetcher(
       const route = matchRoute(url, httpRoutes);
 
       if (!route) {
-        return Promise.resolve(
-          handleHttpError(httpError('not found', 404), true),
-        );
+        return Promise.resolve(handleHttpError(httpError('not found', 404)));
       }
 
       return handleHttpRequest(url, coerceFetchInput(input, init, url), {

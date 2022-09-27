@@ -95,9 +95,16 @@ export async function loadStaticData(
     searchParams.set('pathname', route.matchedURL.pathname);
 
     const response = await fetch(
-      `${STATIC_DATA_ASSET_BASE_PATH}/${route.id}.json?${searchParams}`,
+      `${STATIC_DATA_ASSET_BASE_PATH}${route.id}.json?${searchParams}`,
       { credentials: 'same-origin', signal },
     );
+
+    if (response.status === 500) {
+      const { message, stack } = await response.json();
+      const error = new Error(message);
+      error.stack = stack;
+      throw error;
+    }
 
     const redirect = response.headers.get('X-Vessel-Redirect');
     if (redirect) return { redirect };
@@ -118,7 +125,7 @@ export async function loadStaticData(
     );
 
     if (response.status >= 400) {
-      throw new HttpError('failed loading static data', response.status);
+      throw new HttpError('static data load fail', response.status);
     }
 
     return { data: await response.json() };

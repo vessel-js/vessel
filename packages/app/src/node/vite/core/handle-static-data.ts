@@ -1,11 +1,14 @@
 import type { ServerResponse } from 'http';
+import kleur from 'kleur';
 import type { App } from 'node/app/App';
+import { logger } from 'node/utils';
 import type { ServerMatchedRoute } from 'server/types';
 import {
   createMatchedRoute,
   type RouteComponentType,
   testRoute,
 } from 'shared/routing';
+import { coerceToError } from 'shared/utils/error';
 import { isString } from 'shared/utils/unit';
 
 import {
@@ -37,7 +40,7 @@ export async function handleStaticDataRequest({
 
   const route = app.routes
     .toArray()
-    .find((route) => route.dir.route === id && route[type]);
+    .find((route) => route.id === id && route[type]);
 
   if (!route || !testRoute(dataURL, route)) {
     res.setHeader('X-Vessel-Data', 'no');
@@ -55,17 +58,38 @@ export async function handleStaticDataRequest({
   }) as ServerMatchedRoute;
 
   const { staticLoader } = await match[type]!.loader();
-  const output = await callStaticLoader(dataURL, match, fetcher, staticLoader);
 
-  if (output.redirect) {
-    res.setHeader(
-      'X-Vessel-Redirect',
-      isString(output.redirect) ? output.redirect : output.redirect.path,
+  try {
+    const output = await callStaticLoader(
+      dataURL,
+      match,
+      fetcher,
+      staticLoader,
     );
-  }
 
-  res.statusCode = 200;
-  res.setHeader('X-Vessel-Data', 'yes');
-  res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify(output.data ?? {}));
+    if (output.redirect) {
+      res.setHeader(
+        'X-Vessel-Redirect',
+        isString(output.redirect) ? output.redirect : output.redirect.path,
+      );
+    }
+
+    res.statusCode = 200;
+    res.setHeader('X-Vessel-Data', 'yes');
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify(output.data ?? {}));
+  } catch (e) {
+    const error = coerceToError(e);
+
+    logger.error(
+      error.message,
+      [`\n${kleur.bold('URL:')} ${url}`, '', ''].join('\n'),
+      error.stack,
+      '\n',
+    );
+
+    res.statusCode = 500;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ message: error.message, stack: error.stack }));
+  }
 }
