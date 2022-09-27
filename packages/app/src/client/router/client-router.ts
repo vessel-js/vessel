@@ -623,10 +623,10 @@ export class Router {
           }
         }
 
-        route[type] = component;
+        route[type] = { ...component, dataValid: true };
       }
 
-      loadedRoutes.push({ ...route, valid: true });
+      loadedRoutes.push(route);
     }
 
     if (rootError) {
@@ -686,12 +686,14 @@ export class Router {
     const prevMatches = this._fw.matches.get();
     return loadRoutes(
       url,
-      matches.map(
-        (match) =>
-          prevMatches.find(
-            (route) => !route.error && route.valid && route.id === match.id,
-          ) ?? match,
-      ),
+      matches.map((match) => {
+        const existing = prevMatches.find(
+          (route) => !route.error && route.id === match.id,
+        );
+        return existing
+          ? { ...existing, page: existing.page ?? match.page }
+          : match;
+      }),
       signal,
     );
   }

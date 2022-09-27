@@ -68,7 +68,7 @@ export async function loadStaticData(
   const component = route[type];
   if (!component) return;
 
-  if (route.valid) {
+  if (route[type]?.dataValid) {
     const loadedRoute = route as ClientLoadedRoute;
     return { data: loadedRoute[type]!.staticData };
   }
@@ -173,7 +173,7 @@ export async function loadServerData(
     }
   }
 
-  if (route.valid) {
+  if (route[type]?.dataValid) {
     const loadedRoute = route as ClientLoadedRoute;
     return { data: loadedRoute[type]?.serverData };
   }

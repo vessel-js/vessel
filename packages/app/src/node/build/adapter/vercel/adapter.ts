@@ -13,8 +13,6 @@ import { type BuildAdapterFactory } from '../build-adapter';
 import { createStaticBuildAdapter } from '../static/adapter';
 import { trailingSlash } from './trailing-slash';
 
-const outputRoot = '.vercel/output';
-
 const defaultFunctionsConfig = {
   runtime: 'nodejs16.x',
   handler: 'index.js',
@@ -35,9 +33,8 @@ export function createVercelBuildAdapter(
   return async (app, bundles, build) => {
     const vercelDirs = {
       root: createDirectory(app.dirs.root.resolve('.vercel')),
-      output: createDirectory(app.dirs.root.resolve(outputRoot)),
-      static: createDirectory(app.dirs.root.resolve(`${outputRoot}/static`)),
-      fns: createDirectory(app.dirs.root.resolve(`${outputRoot}/functions`)),
+      output: createDirectory(app.dirs.root.resolve('.vercel/output')),
+      static: createDirectory(app.dirs.root.resolve(`.vercel/output/static`)),
     };
 
     const trailingSlashes = app.config.routes.trailingSlash;

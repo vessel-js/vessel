@@ -48,6 +48,10 @@ export type LoadableRouteComponent<Module extends RouteModule = RouteModule> = {
    * `serverLoader`. In dev mode it will attempt a fetch regardless.
    */
   readonly canFetch?: boolean;
+  /**
+   * Used client-side to determine whether the data is still valid.
+   */
+  dataValid?: boolean;
 };
 
 export type RouteComponentType = 'page' | 'layout' | 'errorBoundary';
@@ -80,6 +84,10 @@ export type LoadedRouteData = {
 export type LoadedRouteComponent<Module extends RouteModule = RouteModule> =
   LoadableRouteComponent<Module> & {
     readonly module: Module;
+    /**
+     * Used client-side to determine whether the data is still valid.
+     */
+    dataValid?: boolean;
   } & LoadedRouteData;
 
 export type LoadedRoute<
@@ -93,10 +101,6 @@ export type LoadedRoute<
      * Any unexpected error that was thrown during rendering or data loading.
      */
     error?: Error;
-    /**
-     * Whether route data is still valid. If set to `false`, the next fetch will reload data.
-     */
-    valid?: boolean;
   };
 
 export type RouteParams = {

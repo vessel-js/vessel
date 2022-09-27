@@ -29,7 +29,6 @@ export type ClientLoadableRoute = LoadableRoute<ClientModule>;
 export type ClientMatchedRoute<Params extends RouteParams = RouteParams> =
   MatchedRoute<ClientModule, Params> & {
     error?: LoadedRoute['error'];
-    valid?: boolean;
   };
 
 export type ClientLoadedRoute<Params extends RouteParams = RouteParams> =
