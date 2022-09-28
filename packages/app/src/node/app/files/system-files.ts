@@ -1,7 +1,7 @@
 import { createFilter } from '@rollup/pluginutils';
 import { globbySync } from 'globby';
-import { comparePathDepth, normalizePath, sortedInsert } from 'node/utils';
-import path from 'node:path';
+import { comparePathDepth, sortedInsert } from 'node/utils';
+import * as path from 'pathe';
 import { isString } from 'shared/utils/unit';
 
 import type { App } from '../App';
@@ -81,7 +81,7 @@ export abstract class SystemFiles<T extends SystemFileMeta>
       absolute: true,
       cwd: this._app.dirs.app.path,
     })
-      .map(normalizePath)
+      .map((filePath) => path.normalize(filePath))
       .filter(this._filter);
   }
 
@@ -158,12 +158,12 @@ export abstract class SystemFiles<T extends SystemFileMeta>
 
   protected _createFile(filePath: string): SystemFileMeta {
     const rootPath = this._getRootPath(filePath);
-    const rootDir = path.posix.dirname(rootPath);
+    const rootDir = path.dirname(rootPath);
     const routePath = this._getRoutePath(filePath);
-    const routeDir = path.posix.dirname(routePath);
+    const routeDir = path.dirname(routePath);
     const pathname = routeDir === '.' ? '/' : `/${routeDir}`;
     const ext = this._ext(rootPath);
-    const reset = path.posix.basename(rootPath).includes('.reset.');
+    const reset = path.basename(rootPath).includes('.reset.');
     return {
       path: {
         absolute: filePath,
@@ -172,7 +172,7 @@ export abstract class SystemFiles<T extends SystemFileMeta>
         pathname,
       },
       dir: {
-        absolute: path.posix.dirname(filePath),
+        absolute: path.dirname(filePath),
         root: rootDir === '.' ? '' : rootDir,
         route: routeDir === '.' ? '' : routeDir,
       },
@@ -182,11 +182,7 @@ export abstract class SystemFiles<T extends SystemFileMeta>
   }
 
   protected _ext(filePath: string) {
-    return path.posix.extname(filePath);
-  }
-
-  protected _normalizePath(filePath: string) {
-    return normalizePath(filePath);
+    return path.extname(filePath);
   }
 
   protected _addFile(file: T) {

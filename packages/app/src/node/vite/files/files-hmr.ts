@@ -1,6 +1,6 @@
 import type { App } from 'node/app/App';
 import type { RouteFile } from 'node/app/files';
-import { normalizePath } from 'node/utils';
+import * as path from 'pathe';
 import type { ViteDevServer } from 'vite';
 
 import { clearMarkdownCache } from '../../markdoc';
@@ -46,8 +46,8 @@ export function handleFilesHMR(app: App) {
     eventName: string,
     handler: (path: string) => Promise<void | null | { reload?: boolean }>,
   ) {
-    server.watcher.on(eventName, async (path) => {
-      const filePath = normalizePath(path);
+    server.watcher.on(eventName, async (p) => {
+      const filePath = path.normalize(p);
 
       if (!test(filePath)) return;
 

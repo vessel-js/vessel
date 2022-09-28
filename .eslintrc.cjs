@@ -39,6 +39,7 @@ module.exports = {
     // Typescript handles these.
     'no-undef': 'off',
     'import/no-unresolved': 'off',
+    'import/no-named-as-default-member': 'off',
   },
   settings: {
     'import/parsers': {

@@ -1,7 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import fs from 'node:fs/promises';
-import os from 'node:os';
-import path from 'node:path';
+import * as path from 'pathe';
 
 export type SystemDirectory = {
   path: string;
@@ -23,15 +22,12 @@ export type SystemDirectory = {
 };
 
 export function createSystemDirectory(...segments: string[]): SystemDirectory {
-  const dirname = normalizePath(path.posix.resolve(...segments));
+  const dirname = path.resolve(...segments);
 
-  const resolve = (...args: string[]) =>
-    args.length === 1 && path.posix.isAbsolute(normalizePath(args[0]))
-      ? normalizePath(args[0])
-      : normalizePath(path.posix.resolve(dirname, ...args));
+  const resolve = (...args: string[]) => path.resolve(dirname, ...args);
 
   const relative = (...args: string[]) =>
-    normalizePath(path.relative(dirname, path.posix.join(...args)));
+    path.relative(dirname, path.join(...args));
 
   const exists = (filePath: string) => existsSync(resolve(filePath));
 
@@ -48,7 +44,7 @@ export function createSystemDirectory(...segments: string[]): SystemDirectory {
     if (!overwrite && exists(filePath)) return;
 
     const file = resolve(filePath);
-    const dir = path.posix.dirname(file);
+    const dir = path.dirname(file);
 
     if (!existsSync(dir)) {
       await fs.mkdir(dir, { recursive: true });
@@ -80,8 +76,8 @@ export function createSystemDirectory(...segments: string[]): SystemDirectory {
       const files = await fs.readdir(srcPath);
       await fs.mkdir(dest, { recursive: true });
       for (const file of files) {
-        const srcFile = path.posix.resolve(srcPath, file);
-        const destFile = path.posix.resolve(dest, file);
+        const srcFile = path.resolve(srcPath, file);
+        const destFile = path.resolve(dest, file);
         await copy(srcFile, destFile);
       }
     } else {
@@ -110,9 +106,4 @@ export function createSystemDirectory(...segments: string[]): SystemDirectory {
     rimraf,
     isDirEmpty,
   };
-}
-
-export const isWindows = os.platform() === 'win32';
-export function normalizePath(id: string): string {
-  return path.posix.normalize(isWindows ? id.replace(/\\/g, '/') : id);
 }

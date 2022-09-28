@@ -3,9 +3,11 @@ import { defineConfig } from 'tsup';
 
 import { base, copyFiles } from '../app/tsup.config';
 
-watch('src/client/**/*.svelte').on('all', async () => {
-  await copyFiles('**/*.svelte');
-});
+if (process.env.DEV) {
+  watch('src/client/**/*.svelte').on('all', async () => {
+    await copyFiles('**/*.svelte');
+  });
+}
 
 export default defineConfig([
   {

@@ -1,6 +1,6 @@
 import type { App } from 'node/app/App';
 import { clearMarkdownCache } from 'node/markdoc';
-import { normalizePath } from 'node/utils';
+import * as path from 'pathe';
 
 export function handleMarkdownHMR(app: App) {
   const schema = app.markdoc;
@@ -43,8 +43,8 @@ export function handleMarkdownHMR(app: App) {
     eventName: string,
     handler: (path: string) => Promise<void | null | { reload?: boolean }>,
   ) {
-    app.vite.server!.watcher.on(eventName, async (path) => {
-      const filePath = normalizePath(path);
+    app.vite.server!.watcher.on(eventName, async (p) => {
+      const filePath = path.normalize(p);
 
       if (!test(filePath)) return;
 

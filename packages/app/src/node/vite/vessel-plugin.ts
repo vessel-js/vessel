@@ -3,7 +3,7 @@ import type { AppConfig } from 'node/app/config';
 import { createAppFactory } from 'node/app/create/app-factory';
 import { build, createServerBundle, resolveBuildConfig } from 'node/build';
 import { rimraf } from 'node/utils';
-import path from 'node:path';
+import * as path from 'pathe';
 import type { OutputBundle } from 'rollup';
 import { installPolyfills } from 'server/polyfills';
 import {
@@ -48,8 +48,8 @@ export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
           server: {
             fs: {
               allow: [
-                path.posix.dirname(app.config.entry.client),
-                path.posix.dirname(app.config.entry.server),
+                path.dirname(app.config.entry.client),
+                path.dirname(app.config.entry.server),
                 app.dirs.cwd.path,
                 app.dirs.root.path,
                 app.dirs.app.path,

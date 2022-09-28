@@ -1,7 +1,7 @@
 import type { App } from 'node/app/App';
 import { handleIncomingMessage } from 'node/http';
 import fs from 'node:fs';
-import path from 'node:path';
+import * as path from 'pathe';
 import { createRequestHandler } from 'server/http';
 import { initManifestURLPatterns } from 'server/http/handle-request';
 import { installPolyfills } from 'server/polyfills';

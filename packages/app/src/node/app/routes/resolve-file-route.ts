@@ -1,4 +1,4 @@
-import path from 'node:path';
+import * as path from 'pathe';
 import { calcRoutePathScore, type Route } from 'shared/routing';
 import { isFunction } from 'shared/utils/unit';
 import { endslash, slash } from 'shared/utils/url';
@@ -55,7 +55,7 @@ export function resolveRouteFromFilePath(
   matchers: RouteMatcherConfig = [],
   isDocument = true,
 ): Route {
-  const basename = path.posix.basename(routePath);
+  const basename = path.basename(routePath);
   const orderMatch = basename.match(PAGE_ORDER_RE)?.[1];
   const order = orderMatch ? Number(orderMatch) : undefined;
   const { pathname, dynamic, score } = resolveRouteInfoFromFilePath(
@@ -112,9 +112,7 @@ export function resolveStaticRouteFromFilePath(
   routesDir: string,
   filePath: string,
 ) {
-  const routePath = endslash(
-    path.posix.dirname(path.posix.relative(routesDir, filePath)),
-  );
+  const routePath = endslash(path.dirname(path.relative(routesDir, filePath)));
 
   const url = new URL(
     stripRouteMeta(routePath).toLowerCase(),

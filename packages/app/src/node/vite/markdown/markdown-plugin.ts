@@ -10,7 +10,7 @@ import {
   parseMarkdown,
   type ParseMarkdownResult,
 } from 'node/markdoc';
-import { normalizePath } from 'node/utils';
+import * as path from 'pathe';
 import type { MarkdownMeta } from 'shared/markdown';
 import type { ViteDevServer } from 'vite';
 
@@ -108,7 +108,7 @@ export function markdownPlugin(): VesselPlugin {
     },
     transform(content, id) {
       if (filter(id)) {
-        const { output } = parse(normalizePath(id), content);
+        const { output } = parse(path.normalize(id), content);
         return output;
       }
 

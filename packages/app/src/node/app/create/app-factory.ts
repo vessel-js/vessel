@@ -1,7 +1,8 @@
 import kleur from 'kleur';
 import { MarkdocSchema } from 'node/markdoc/markdoc-schema';
-import { logger, normalizePath, trimExt } from 'node/utils';
+import { logger, trimExt } from 'node/utils';
 import type { VesselPlugin } from 'node/vite/Plugin';
+import * as path from 'pathe';
 import { installURLPattern } from 'shared/polyfills';
 import {
   type ConfigEnv,
@@ -99,8 +100,8 @@ export const createAppFactory = async (
         );
       }
 
-      app.config.entry.client = normalizePath(app.config.entry.client);
-      app.config.entry.server = normalizePath(app.config.entry.server);
+      app.config.entry.client = path.normalize(app.config.entry.client);
+      app.config.entry.server = path.normalize(app.config.entry.server);
 
       for (const plugin of plugins) {
         await plugin.vessel?.configureApp?.($app);

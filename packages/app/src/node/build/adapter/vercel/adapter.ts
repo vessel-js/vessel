@@ -5,8 +5,8 @@ import { createDirectory } from 'node/app/create/app-dirs';
 import { copyDir, LoggerIcon, mkdirp, rimraf } from 'node/utils';
 import fs from 'node:fs';
 import { writeFile } from 'node:fs/promises';
-import path from 'node:path';
 import ora from 'ora';
+import * as path from 'pathe';
 import { endslash, isLinkExternal, noendslash } from 'shared/utils/url';
 
 import { type BuildAdapterFactory } from '../build-adapter';
@@ -191,12 +191,12 @@ async function bundleEdge(
   });
 
   await writeFile(
-    path.posix.resolve(outdir, 'package.json'),
+    path.resolve(outdir, 'package.json'),
     JSON.stringify({ type: 'module' }),
   );
 
   await writeFile(
-    path.posix.resolve(outdir, '.vc-config.json'),
+    path.resolve(outdir, '.vc-config.json'),
     JSON.stringify({ ...defaultEdgeConfig, ...config }, null, 2),
   );
 

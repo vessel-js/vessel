@@ -37,21 +37,21 @@
   },
   "scripts": {
     "build": "rimraf dist && tsup",
-    "dev": "pnpm run build --watch"
+    "dev": "DEV=true pnpm run build --watch"
   },
   "peerDependencies": {
     "@sveltejs/vite-plugin-svelte": "^1.0.0",
-    "svelte": "^3.40.0",
-    "@vessel-js/app": "0.1.0"
+    "@vessel-js/app": "0.1.0",
+    "svelte": "^3.40.0"
   },
   "devDependencies": {
     "@types/node": "^16.0.0",
+    "@vessel-js/app": "workspace:*",
     "fast-glob": "^3.2.11",
     "svelte": "^3.40.0",
     "tsup": "^6.2.3",
     "typescript": "^4.7.4",
-    "vite": "^3.0.0",
-    "@vessel-js/app": "workspace:*"
+    "vite": "^3.0.0"
   },
   "engines": {
     "node": ">=16"
@@ -74,5 +74,8 @@
     "vercel",
     "vite",
     "vessel"
-  ]
+  ],
+  "dependencies": {
+    "pathe": "^0.3.8"
+  }
 }

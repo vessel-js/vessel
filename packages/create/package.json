@@ -37,7 +37,8 @@
   "dependencies": {
     "enquirer": "^2.3.6",
     "kleur": "^4.1.4",
-    "minimist": "^1.2.5"
+    "minimist": "^1.2.5",
+    "pathe": "^0.3.8"
   },
   "devDependencies": {
     "@types/node": "^16.0.0",

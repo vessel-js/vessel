@@ -1,6 +1,5 @@
-import { normalizePath } from 'node/utils';
 import fs from 'node:fs';
-import path from 'node:path';
+import * as path from 'pathe';
 import { searchForWorkspaceRoot } from 'vite';
 
 import type { AppDirectories, Directory } from '../App';
@@ -35,13 +34,10 @@ export function createAppDirectories(
 }
 
 export function createDirectory(dirname: string): Directory {
-  const resolve = (...args: string[]) =>
-    args.length === 1 && path.posix.isAbsolute(normalizePath(args[0]))
-      ? normalizePath(args[0])
-      : normalizePath(path.posix.resolve(dirname, ...args));
+  const resolve = (...args: string[]) => path.resolve(dirname, ...args);
 
   const relative = (...args: string[]) =>
-    normalizePath(path.posix.relative(dirname, path.posix.join(...args)));
+    path.relative(dirname, path.join(...args));
 
   const read = (filePath: string) =>
     fs.readFileSync(resolve(filePath), 'utf-8');
@@ -50,7 +46,7 @@ export function createDirectory(dirname: string): Directory {
     fs.writeFileSync(resolve(filePath), data);
 
   return {
-    path: dirname,
+    path: path.normalize(dirname),
     resolve,
     relative,
     read,

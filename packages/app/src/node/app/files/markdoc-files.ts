@@ -1,5 +1,5 @@
 import kleur from 'kleur';
-import path from 'node:path';
+import * as path from 'pathe';
 import { toPascalCase } from 'shared/utils/string';
 
 import type { App } from '../App';
@@ -31,12 +31,12 @@ export class MarkdocFiles extends SystemFiles<MarkdocFile> {
   async add(filePath: string) {
     const file = this._createFile(filePath);
 
-    const owningDir = path.posix.dirname(
+    const owningDir = path.dirname(
       file.path.root.replace(STRIP_MARKDOC_DIR_RE, '/root.md'),
     );
 
-    const name = path.posix
-      .basename(file.path.route, path.posix.extname(file.path.route))
+    const name = path
+      .basename(file.path.route, path.extname(file.path.route))
       .replace('@node', '')
       .replace('@inline', '');
 

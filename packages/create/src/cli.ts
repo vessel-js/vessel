@@ -1,7 +1,7 @@
 import kleur from 'kleur';
 import minimist from 'minimist';
 import { existsSync } from 'node:fs';
-import path from 'node:path';
+import * as path from 'pathe';
 
 import { eslintAddon } from './addons/eslint';
 import { lintStagedAddon } from './addons/lint-staged';
@@ -9,7 +9,6 @@ import { prettierAddon } from './addons/prettier';
 import { tailwindAddon } from './addons/tailwind';
 import { typescriptAddon } from './addons/typescript';
 import { Builder } from './Builder';
-import { normalizePath } from './Directory';
 import { toValidPackageName } from './Package';
 import { setupPrompt } from './prompts';
 import { removeTrailingSlash, toTitleCase } from './utils/str';
@@ -30,7 +29,7 @@ export async function run() {
     return;
   }
 
-  const targetDir = normalizePath(path.resolve(process.cwd(), targetDirArg));
+  const targetDir = path.resolve(process.cwd(), targetDirArg);
   const link =
     typeof argv.link === 'string' ? removeTrailingSlash(argv.link) : undefined;
 

@@ -1,9 +1,9 @@
 import kleur from 'kleur';
-import { type App, ensureDir, LoggerIcon, normalizePath } from 'node';
+import { type App, ensureDir, LoggerIcon } from 'node';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
-import path from 'node:path';
 import ora from 'ora';
+import * as path from 'pathe';
 import { STATIC_DATA_ASSET_BASE_PATH } from 'shared/data';
 import { escapeHTML } from 'shared/utils/html';
 import { isString } from 'shared/utils/unit';
@@ -124,9 +124,9 @@ export async function writeFiles(
 
   await Promise.all(
     Array.from(files.keys()).map(async (filename) => {
-      const filePath = normalizePath(resolveFilePath(filename));
+      const filePath = resolveFilePath(filename);
       const content = files.get(filename)!;
-      await ensureDir(path.posix.dirname(filePath));
+      await ensureDir(path.dirname(filePath));
       await fsp.writeFile(filePath, content);
     }),
   );

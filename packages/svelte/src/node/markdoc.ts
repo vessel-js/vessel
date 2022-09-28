@@ -1,4 +1,3 @@
-import path from 'node:path';
 import {
   escapeHTML,
   Markdoc,
@@ -11,6 +10,7 @@ import {
   renderMarkdocToHTML,
   toPascalCase,
 } from '@vessel-js/app/node';
+import * as path from 'pathe';
 
 export const svelteMarkdocTags: MarkdocConfig['tags'] = {
   head: {
@@ -123,13 +123,8 @@ export const transformTreeNode: MarkdocTreeNodeTransformer = ({
 
 function resolveImg(tag: MarkdocTag, stuff: MarkdocTreeWalkStuff) {
   const src = tag.attributes.src;
-
-  const name = `${toPascalCase(
-    path.posix.basename(src, path.posix.extname(src)),
-  )}Image`;
-
+  const name = `${toPascalCase(path.basename(src, path.extname(src)))}Image`;
   stuff.imports.add(`import ${name} from "${src}";`);
-
   tag.attributes.src = markObj(name);
 }
 
@@ -144,13 +139,8 @@ function resolveSvelteHead(tag: MarkdocTag, stuff: MarkdocTreeWalkStuff) {
 
 function resoleSvelteComponent(tag: MarkdocTag, stuff: MarkdocTreeWalkStuff) {
   const { file: filePath } = tag.attributes;
-
-  const cname = toPascalCase(
-    path.posix.basename(filePath, path.posix.extname(filePath)),
-  );
-
+  const cname = toPascalCase(path.basename(filePath, path.extname(filePath)));
   stuff.imports.add(`import ${cname} from "${filePath}";`);
-
   tag.name = cname;
   delete tag.attributes.file;
 }

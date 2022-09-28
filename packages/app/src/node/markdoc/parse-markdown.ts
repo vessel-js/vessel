@@ -7,7 +7,7 @@ import LRUCache from 'lru-cache';
 import { resolveStaticRouteFromFilePath, type RouteFile } from 'node';
 import type { App } from 'node/app/App';
 import fs from 'node:fs';
-import path from 'node:path';
+import * as path from 'pathe';
 import type {
   MarkdownFrontmatter,
   MarkdownHeading,
@@ -326,8 +326,8 @@ function resolveLinks(tag: Tag, stuff: MarkdocTreeWalkStuff) {
     const rawHash = internalLinkMatch?.[2] ?? '';
 
     const absolutePath = rawPath?.startsWith('/')
-      ? path.posix.resolve(stuff.appDir, '.' + rawPath)
-      : path.posix.resolve(path.posix.dirname(stuff.filePath), rawPath);
+      ? path.resolve(stuff.appDir, '.' + rawPath)
+      : path.resolve(path.dirname(stuff.filePath), rawPath);
 
     const route = resolveStaticRouteFromFilePath(stuff.appDir, absolutePath);
 

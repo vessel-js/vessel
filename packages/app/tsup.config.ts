@@ -1,6 +1,6 @@
 import globby from 'fast-glob';
 import fs from 'node:fs/promises';
-import path from 'node:path';
+import * as path from 'pathe';
 import { defineConfig, type Options } from 'tsup';
 
 export function base(extend?: { external?: (string | RegExp)[] }): Options {

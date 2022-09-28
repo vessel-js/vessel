@@ -1,11 +1,7 @@
-import {
-  normalizePath,
-  type VesselPlugins,
-  VM_PREFIX,
-} from '@vessel-js/app/node';
+import { type VesselPlugins, VM_PREFIX } from '@vessel-js/app/node';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
-import path from 'node:path';
+import * as path from 'pathe';
 
 import { renderMarkdoc, svelteMarkdocTags, transformTreeNode } from './markdoc';
 
@@ -17,7 +13,7 @@ export function sveltePlugin(): VesselPlugins {
   const require = createRequire(import.meta.url);
 
   function resolveAppId() {
-    const appFile = normalizePath(path.resolve(appDir, '+app.svelte'));
+    const appFile = path.resolve(appDir, '+app.svelte');
     return fs.existsSync(appFile)
       ? { id: appFile }
       : { id: require.resolve('@vessel-js/svelte/+app.svelte') };

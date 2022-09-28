@@ -1,6 +1,6 @@
 import { createAutoBuildAdapter } from 'node/build/adapter';
-import { normalizePath, resolveRelativePath } from 'node/utils';
-import path from 'node:path';
+import { resolveRelativePath } from 'node/utils';
+import * as path from 'pathe';
 import { isArray } from 'shared/utils/unit';
 
 import type { ResolvedBuildConfig } from '.';
@@ -23,7 +23,7 @@ export function resolveAppConfig(
     sitemap,
   }: AppConfig,
 ): ResolvedAppConfig {
-  const _cwd = normalizePath(process.cwd());
+  const _cwd = path.normalize(process.cwd());
   const _root = resolveRelativePath(_cwd, root);
   const _app = resolveRelativePath(_root, dirs.app ?? 'app');
   const _public = resolveRelativePath(_app, dirs.public ?? 'public');
@@ -34,10 +34,8 @@ export function resolveAppConfig(
   };
 
   const __client: ResolvedClientConfig = {
-    // Most likely set later by a plugin.
-    app: client.app
-      ? path.posix.relative(_root, normalizePath(client.app))
-      : '',
+    // Set later by a plugin.
+    app: client.app ? path.relative(_root, client.app) : '',
   };
 
   const pageExts = `md,svelte,vue,jsx,tsx`;

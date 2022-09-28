@@ -1,6 +1,6 @@
 import { createFilter } from '@rollup/pluginutils';
 import { comparePathDepth, sortedInsert } from 'node/utils';
-import path from 'node:path';
+import * as path from 'pathe';
 import {
   getRouteComponentTypes,
   type RouteComponentType,
@@ -139,12 +139,12 @@ export class RouteFiles extends SystemFiles<RouteFile> {
   }
 
   findDir(filePath: string): RouteDir | undefined {
-    const routeDir = path.posix.dirname(this._getRoutePath(filePath));
+    const routeDir = path.dirname(this._getRoutePath(filePath));
     return this._dirs.find((dir) => dir.path.route === routeDir);
   }
 
   getDirBranch(filePath: string) {
-    const routeDir = path.posix.dirname(this._getRoutePath(filePath));
+    const routeDir = path.dirname(this._getRoutePath(filePath));
     return this._dirs.filter((dir) => routeDir.startsWith(dir.path.route));
   }
 
