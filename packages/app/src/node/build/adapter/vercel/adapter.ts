@@ -38,7 +38,12 @@ export function createVercelBuildAdapter(
     };
 
     const trailingSlashes = app.config.routes.trailingSlash;
-    const staticAdapter = await createStaticBuildAdapter()(app, bundles, build);
+
+    const staticAdapter = await createStaticBuildAdapter({ output: false })(
+      app,
+      bundles,
+      build,
+    );
 
     return {
       name: 'vercel',

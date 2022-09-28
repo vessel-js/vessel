@@ -7,20 +7,20 @@ import {
   writeFiles,
 } from 'node/build/build-utils';
 import { buildAllSitemaps } from 'node/build/sitemap';
-import { logger, LoggerIcon } from 'node/utils';
+import { copyDir, logger, LoggerIcon } from 'node/utils';
 import ora from 'ora';
 import { createDocumentResourceLinkTags } from 'server';
 
 import { type BuildAdapterFactory } from '../build-adapter';
 
 export type StaticBuildAdapterConfig = {
-  // no-ops
+  /** Whether to write the output to the `<build>` directory. */
+  output?: boolean;
 };
 
-export function createStaticBuildAdapter(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  options: StaticBuildAdapterConfig = {},
-): BuildAdapterFactory {
+export function createStaticBuildAdapter({
+  output = true,
+}: StaticBuildAdapterConfig = {}): BuildAdapterFactory {
   return (app, bundles, build) => {
     logger.info(kleur.bold(`vessel@${app.version}`));
 
@@ -188,6 +188,10 @@ export function createStaticBuildAdapter(
           (count) => formatWritingFilesTitle('static data', 'file', count),
           (count) => formatCommittedFilesTitle('static data', 'file', count),
         );
+
+        if (output) {
+          copyDir(app.dirs.client.path, app.dirs.build.path);
+        }
       },
     };
   };
