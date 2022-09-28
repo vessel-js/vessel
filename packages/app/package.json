@@ -52,6 +52,7 @@
     "esbuild": "^0.15.9",
     "globby": "^13.1.1",
     "gray-matter": "^4.0.3",
+    "gzip-size": "^7.0.0",
     "hast-util-to-html": "^8.0.3",
     "js-yaml": "^4.1.0",
     "lru-cache": "^6.0.0",
@@ -60,6 +61,7 @@
     "ora": "^6.0.0",
     "pathe": "^0.3.8",
     "pkg-up": "^2.0.0",
+    "pretty-bytes": "^6.0.0",
     "set-cookie-parser": "^2.5.1",
     "undici": "^5.10.0",
     "urlpattern-polyfill": "^5.0.0"
@@ -81,6 +83,7 @@
     "@types/node": "^16.0.0",
     "@types/react": "^18.0.21",
     "@wooorm/starry-night": "^1.0.0",
+    "cli-table3": "^0.6.3",
     "fast-glob": "^3.2.11",
     "kleur": "^4.1.4",
     "rollup": "^2.58.0",

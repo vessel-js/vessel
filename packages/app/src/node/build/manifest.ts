@@ -1,6 +1,5 @@
 import type { App } from 'node/app/App';
 import { AppRoute, toRoute } from 'node/app/routes';
-import { HTTP_METHODS } from 'server/http';
 import type { ServerLoadableRoute } from 'server/types';
 import {
   getRouteComponentTypes,
@@ -10,6 +9,7 @@ import { stripImportQuotesFromJson } from 'shared/utils/json';
 import { noendslash } from 'shared/utils/url';
 
 import type { BuildBundles, BuildData } from './build-data';
+import { resolveHttpMethods } from './chunks';
 
 export function buildServerManifests(
   app: App,
@@ -165,13 +165,11 @@ function createManifestInit(
       }),
       http: httpRoutes.map((appRoute) => {
         const { fileName } = build.server.chunks.get(appRoute.id)!.http!;
-        const chunk = build.server.chunks.get(appRoute.id)!.http!;
-        const methods = chunk.exports.filter((id) => HTTP_METHODS.has(id));
         return {
           ...toRoute(appRoute),
           pattern: undefined,
           loader: `() => import('../${fileName}')`,
-          methods,
+          methods: resolveHttpMethods(appRoute, build),
         };
       }),
     },

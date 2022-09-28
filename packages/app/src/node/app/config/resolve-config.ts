@@ -53,8 +53,7 @@ export function resolveAppConfig(
       (route) => route.replace(/\[\.\.\.(.*?)\]/g, ':$1+'),
       (route) => route.replace(/\[(.*?)\]/g, ':$1'),
     ],
-    log: routes.log ?? 'tree',
-    logLevel: routes.logLevel ?? 'info',
+    log: routes.log ?? 'table',
     pages: {
       include: [`**/+page.{${pageExts}}`, `**/page.{${pageExts}}`],
       exclude: [],

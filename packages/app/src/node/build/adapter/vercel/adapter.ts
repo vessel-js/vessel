@@ -43,6 +43,9 @@ export function createVercelBuildAdapter(
     return {
       name: 'vercel',
       async write() {
+        rimraf(vercelDirs.output.path);
+        mkdirp(vercelDirs.output.path);
+
         await staticAdapter.write?.();
 
         const serverRoutes = app.routes
@@ -54,9 +57,6 @@ export function createVercelBuildAdapter(
         }
 
         console.log(kleur.magenta('\n+ vercel\n'));
-
-        rimraf(vercelDirs.output.path);
-        mkdirp(vercelDirs.output.path);
 
         copyDir(app.dirs.client.path, vercelDirs.static.path);
 

@@ -1,9 +1,137 @@
+// eslint-disable-next-line import/no-named-as-default
+import Table from 'cli-table3';
+import { gzipSizeSync } from 'gzip-size';
 import kleur from 'kleur';
 import type { App, AppRoute, RoutesLoggerInput } from 'node';
-import { LoggerIcon } from 'node/utils';
-import { noendslash, noslash } from 'shared/utils/url';
+import { comparePathDepth, LoggerIcon } from 'node/utils';
+import prettyBytes from 'pretty-bytes';
+import type { OutputChunk } from 'rollup';
+import { noslash, slash } from 'shared/utils/url';
 
-import type { BuildData } from './build-data';
+import type { BuildBundles, BuildData } from './build-data';
+import { resolveHttpMethods } from './chunks';
+
+type RouteType = 'static' | 'server' | 'api' | 'redirect' | 'invalid';
+
+const METHOD_COLOR = {
+  ANY: kleur.white,
+  GET: kleur.green,
+  POST: kleur.magenta,
+  PUT: kleur.cyan,
+  PATCH: kleur.yellow,
+  DELETE: kleur.red,
+};
+
+const TYPE_COLOR = {
+  STATIC: kleur.dim,
+  SERVER: kleur.magenta,
+  EDGE: kleur.cyan,
+  API: kleur.white,
+  REDIRECT: kleur.yellow,
+  INVALID: kleur.red,
+};
+
+export function logRoutesTable({ build, bundles }: RoutesLoggerInput) {
+  console.log(kleur.magenta('\n+ routes\n'));
+
+  const routes = new Map<
+    string,
+    {
+      type: RouteType;
+      edge?: boolean;
+      route?: AppRoute;
+      redirect?: { to: string; status: number };
+    }
+  >();
+
+  for (const [link, route] of build.links) {
+    routes.set(slash(link), { type: 'static', route });
+  }
+
+  for (const [link, info] of build.badLinks) {
+    if (info.route) {
+      routes.set(slash(link), { type: 'invalid', route: info.route });
+    }
+  }
+
+  for (const route of build.server.routes) {
+    routes.set(slash(route.id), { type: 'server', route });
+  }
+
+  for (const [link, redirect] of build.static.redirects) {
+    routes.set(slash(link), {
+      type: 'redirect',
+      redirect: {
+        to: redirect.to,
+        status: redirect.status,
+      },
+    });
+  }
+
+  const headings = ['METHOD', 'URI', 'TYPE', 'SIZE'];
+
+  const hasEdgeRoutes = build.edge.routes.size > 0;
+  if (hasEdgeRoutes) headings.push('EDGE');
+
+  const table = new Table({
+    head: headings.map((title) => kleur.bold(title)),
+    wordWrap: true,
+    colAligns: ['center', 'left', 'center', 'center', 'center'],
+    style: { compact: true },
+  });
+
+  const links = Array.from(routes.keys())
+    .sort(naturalCompare)
+    .sort(comparePathDepth);
+
+  const httpLinks: string[] = [];
+  for (const route of build.server.endpoints) {
+    const id = slash(route.id);
+    routes.set(id, { type: 'api', route });
+    httpLinks.push(id);
+  }
+
+  links.push(...httpLinks.sort(naturalCompare).sort(comparePathDepth));
+
+  for (const id of links) {
+    const { type, route, redirect } = routes.get(id)!;
+
+    const uri = id === '/' ? id : noslash(id);
+    const edge = route && build.edge.routes.has(route.id);
+    const methods =
+      route && type === 'api' ? resolveHttpMethods(route, build) : ['GET'];
+    const size =
+      route && type !== 'api' ? computeRouteSize(route, build, bundles) : ``;
+
+    const typeColor = TYPE_COLOR[type.toUpperCase()];
+    const typeTitle = redirect ? `${redirect.status}` : type.toLowerCase();
+
+    for (const method of methods) {
+      const methodColor = METHOD_COLOR[method];
+
+      const row = [
+        kleur.bold(methodColor(method)),
+        uri.replace(/(\[.*?\])/g, (g) => kleur.bold(kleur.yellow(g))),
+        typeColor(typeTitle),
+        typeof size === 'number' ? prettySize(size) : '',
+      ];
+
+      if (hasEdgeRoutes) row.push(edge ? '✅' : '');
+
+      table.push(row);
+    }
+  }
+
+  console.log(table.toString());
+}
+
+export function logRoutes(app: App, build: BuildData, bundles: BuildBundles) {
+  const style = app.config.routes.log;
+  if (style !== 'none') {
+    const logger = style === 'table' ? logRoutesTable : style;
+    logger({ build, bundles });
+  }
+}
 
 export function logBadLinks(badLinks: BuildData['badLinks']) {
   if (badLinks.size === 0) return;
@@ -23,272 +151,102 @@ export function logBadLinks(badLinks: BuildData['badLinks']) {
   console.log(logs.join('\n'));
 }
 
-export function logRoutesList({ level, ...build }: RoutesLoggerInput) {
-  const logs: string[] = [];
+export function computeRouteSize(
+  route: AppRoute,
+  build: BuildData,
+  bundles: BuildBundles,
+) {
+  const chunks: OutputChunk[] = [];
 
-  if (level === 'info') {
-    logs.push('', `📄 ${kleur.bold(kleur.underline('STATIC PAGES'))}`, '');
-    for (const link of build.links.keys()) {
-      const page = build.links.get(link)!;
-      const route = page.pattern.pathname
-        .replace('{/}?{index}?{.html}?', '')
-        .slice(1);
-      const pathname = link.slice(1, -1);
-      const pattern = pathname !== route ? kleur.dim(` (${route})`) : '';
-      logs.push(
-        `- ${kleur.cyan(
-          link.length === 1 ? 'index.html' : `${pathname}/index${'.html'}`,
-        )}${pattern}`,
+  const entries = [
+    ...build.resources.entry,
+    ...build.resources.app,
+    ...(build.resources.routes[route.id] ?? []),
+  ];
+
+  const seen = new Set<number>();
+
+  for (const entry of entries) {
+    if (entry >= 0 && !seen.has(entry)) {
+      const resource = build.resources.all[entry];
+      const fileName = resource.href.slice(1);
+      const chunk = bundles.client.chunks.find(
+        (chunk) => chunk.fileName === fileName,
       );
+      if (chunk) chunks.push(chunk);
+      seen.add(entry);
     }
   }
 
-  if (level === 'info' && build.server.routes.size > 0) {
-    const serverPages: string[] = [];
-    const edgePages: string[] = [];
-
-    for (const route of Array.from(build.server.routes).reverse()) {
-      const logs = build.edge.routes.has(route.id) ? edgePages : serverPages;
-      logs.push(`- ${kleur.cyan(route.dir.route)}`);
-    }
-
-    if (serverPages.length > 0) {
-      logs.push(
-        '',
-        `⚙️  ${kleur.bold(kleur.underline('SERVER PAGES'))}`,
-        '',
-        ...serverPages,
-      );
-    }
-
-    if (edgePages.length > 0) {
-      logs.push(
-        '',
-        `⚡  ${kleur.bold(kleur.underline('EDGE PAGES'))}`,
-        '',
-        ...edgePages,
-      );
-    }
+  let size = 0;
+  for (const chunk of chunks) {
+    size += gzipSizeSync(chunk.code);
   }
 
-  if (level === 'info' && build.server.endpoints.size > 0) {
-    const serverEndpoints: string[] = [];
-    const edgeEndpoints: string[] = [];
-
-    for (const route of Array.from(build.server.endpoints).reverse()) {
-      const logs = build.edge.routes.has(route.id)
-        ? edgeEndpoints
-        : serverEndpoints;
-
-      logs.push(`- ${kleur.cyan(route.dir.route)}`);
-    }
-
-    if (serverEndpoints.length > 0) {
-      logs.push(
-        '',
-        `⚙️  ${kleur.bold(kleur.underline('SERVER ENDPOINTS'))}`,
-        '',
-        ...serverEndpoints,
-      );
-    }
-
-    if (edgeEndpoints.length > 0) {
-      logs.push(
-        '',
-        `⚡  ${kleur.bold(kleur.underline('EDGE ENDPOINTS'))}`,
-        '',
-        ...edgeEndpoints,
-      );
-    }
-  }
-
-  if (/(info|warn)/.test(level) && build.static.redirects.size > 0) {
-    logs.push('', `➡️  ${kleur.bold(kleur.underline('STATIC REDIRECTS'))}`, '');
-    for (const link of build.static.redirects.keys()) {
-      const redirect = build.static.redirects.get(link)!;
-      logs.push(
-        `- ${kleur.yellow(link)} -> ${kleur.yellow(redirect.to)} (${
-          redirect.status
-        })`,
-      );
-    }
-  }
-
-  if (/(info|warn|error)/.test(level) && build.badLinks.size > 0) {
-    logs.push('', `🛑 ${kleur.bold(kleur.underline('NOT FOUND'))}`, '');
-    for (const link of build.badLinks.keys()) {
-      logs.push(`- ${kleur.red(link)} (404)`);
-    }
-  }
-
-  if (logs.length > 0) {
-    console.log(logs.join('\n'));
-    console.log();
-  }
+  return size;
 }
 
-export function logRoutesTree({ level, ...build }: RoutesLoggerInput) {
-  type Tree = {
-    name: string;
-    path: Tree[];
-    info?: string;
-    route?: boolean;
-    badLink?: boolean;
-    icon?: string;
-    static?: boolean;
-    redirect?: {
-      path: string;
-      status: number;
-    };
-  };
+// Taken from Next.js
+const prettySize = (size: number): string => {
+  const _size = prettyBytes(size);
+  // green for 0-130kb
+  if (size < 130 * 1000) return kleur.green(_size);
+  // yellow for 130-170kb
+  if (size < 170 * 1000) return kleur.yellow(_size);
+  // red for >= 170kb
+  return kleur.bold(kleur.red(_size));
+};
 
-  const node = (name: string): Tree => ({
-    name,
-    path: [],
-  });
+// From: https://github.com/litejs/natural-compare-lite
+function naturalCompare(a: string, b: string) {
+  let i,
+    codeA,
+    codeB = 1,
+    posA = 0,
+    posB = 0;
 
-  const tree = node('/');
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz';
 
-  const warnOnly = level === 'warn';
-  const errorOnly = level === 'error';
-  const redirectLinks = new Set(build.static.redirects.keys());
-
-  const serverPages = new Map<string, AppRoute>();
-  for (const route of build.server.routes) {
-    serverPages.set(route.page!.path.pathname, route);
+  function getCode(str: any, pos?: any, code?: any) {
+    if (code) {
+      for (i = pos; (code = getCode(str, i)), code < 76 && code > 65; ) ++i;
+      return +str.slice(pos - 1, i);
+    }
+    code = alphabet && alphabet.indexOf(str.charAt(pos));
+    return code > -1
+      ? code + 76
+      : ((code = str.charCodeAt(pos) || 0), code < 45 || code > 127)
+      ? code
+      : code < 46
+      ? 65 // -
+      : code < 48
+      ? code - 1
+      : code < 58
+      ? code + 18 // 0-9
+      : code < 65
+      ? code - 11
+      : code < 91
+      ? code + 11 // A-Z
+      : code < 97
+      ? code - 37
+      : code < 123
+      ? code + 5 // a-z
+      : code - 63;
   }
 
-  const httpEndpoints = new Map<string, AppRoute>();
-  for (const route of build.server.endpoints) {
-    httpEndpoints.set(route.http!.path.pathname, route);
-  }
+  if ((a += '') != (b += ''))
+    for (; codeB; ) {
+      codeA = getCode(a, posA++);
+      codeB = getCode(b, posB++);
 
-  const filteredLinks = errorOnly
-    ? build.badLinks.keys()
-    : warnOnly
-    ? new Set([...build.badLinks.keys(), ...redirectLinks])
-    : new Set([
-        ...build.badLinks.keys(),
-        ...redirectLinks,
-        ...build.links.keys(),
-        ...serverPages.keys(),
-        ...httpEndpoints.keys(),
-      ]);
-
-  for (const link of filteredLinks) {
-    if (link === '/') continue;
-
-    const segments = noendslash(noslash(link)).split('/');
-
-    let current = tree;
-    for (const segment of segments) {
-      let nextDir = current.path.find((dir) => dir.name === segment);
-
-      if (!nextDir) {
-        nextDir = node(segment);
-        current.path.push(nextDir);
+      if (codeA < 76 && codeB < 76 && codeA > 66 && codeB > 66) {
+        codeA = getCode(a, posA, posA);
+        codeB = getCode(b, posB, (posA = i));
+        posB = i;
       }
 
-      current = nextDir;
+      if (codeA != codeB) return codeA < codeB ? -1 : 1;
     }
 
-    if (build.badLinks.has(link)) {
-      current.badLink = true;
-    } else if (build.static.redirects.has(link)) {
-      const redirect = build.static.redirects.get(link)!;
-      current.redirect = {
-        path: redirect.to === '/' ? '/' : redirect.to.slice(1, -1),
-        status: redirect.status,
-      };
-    } else {
-      current.route = true;
-      if (build.links.has(link)) {
-        current.icon = '📄';
-        current.static = true;
-      } else if (httpEndpoints.has(link)) {
-        current.info = kleur.magenta('+http');
-        const routeId = httpEndpoints.get(link)!.id;
-        if (build.edge.routes.has(routeId)) current.icon = '⚡';
-      } else if (serverPages.has(link)) {
-        const routeId = serverPages.get(link)!.id;
-        if (build.edge.routes.has(routeId)) current.icon = '⚡';
-      }
-    }
-  }
-
-  const PRINT_SYMBOLS = {
-    BRANCH: '├── ',
-    EMPTY: '',
-    INDENT: '    ',
-    LAST_BRANCH: '└── ',
-    VERTICAL: '│   ',
-  };
-
-  const print = (tree: Tree, depth: number, precedingSymbols: string) => {
-    const lines: string[] = [];
-
-    for (const [index, dir] of tree.path.entries()) {
-      const line = [precedingSymbols];
-      const isLast = index === tree.path.length - 1 && dir.path.length === 0;
-
-      const name = dir.badLink
-        ? `${kleur.red(dir.name)} ${kleur.red(kleur.bold('(404)'))}`
-        : dir.redirect
-        ? kleur.yellow(
-            `${dir.name} -> ${dir.redirect.path} (${dir.redirect.status})`,
-          )
-        : `${kleur[dir.static ? 'cyan' : dir.route ? 'magenta' : 'white'](
-            dir.name,
-          )}${kleur.dim(dir.info ?? '')}`;
-
-      line.push(isLast ? PRINT_SYMBOLS.LAST_BRANCH : PRINT_SYMBOLS.BRANCH);
-      line.push(kleur.bold(`${dir.icon ? `${dir.icon}` : ''}${name}`));
-      lines.push(line.join(''));
-
-      const dirLines = print(
-        dir,
-        depth + 1,
-        precedingSymbols +
-          (depth >= 1
-            ? isLast
-              ? PRINT_SYMBOLS.INDENT
-              : PRINT_SYMBOLS.VERTICAL
-            : PRINT_SYMBOLS.EMPTY),
-      );
-
-      lines.push(...dirLines);
-    }
-
-    return lines;
-  };
-
-  if (tree.path.length > 0) {
-    if (level === 'info') {
-      console.log(`\n${kleur.bold(kleur.underline('ROUTES'))}`, '');
-    }
-
-    console.log(
-      kleur.bold(
-        build.links.has('/') ? kleur.cyan('\n📄/') : kleur.magenta('/'),
-      ),
-    );
-    console.log(print(tree, 1, '').join('\n'));
-  }
-}
-
-export function logRoutes(app: App, build: BuildData) {
-  const style = app.config.routes.log;
-  if (style !== 'none') {
-    const logger =
-      style === 'list'
-        ? logRoutesList
-        : style === 'tree'
-        ? logRoutesTree
-        : style;
-
-    logger({
-      level: app.config.routes.logLevel,
-      ...build,
-    });
-  }
+  return 0;
 }

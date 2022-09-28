@@ -1,4 +1,4 @@
-import type { BuildData } from 'node/build';
+import type { BuildBundles, BuildData } from 'node/build';
 
 export type ResolvedRoutesConfig = {
   /**
@@ -38,16 +38,6 @@ export type ResolvedRoutesConfig = {
    * @defaultValue `tree`
    */
   log: RoutesLogStyle;
-  /**
-   * The route logging level is used by the logger to determine how much detail to include.
-   *
-   * - `info` - Logs all routes, redirects, and not found pages.
-   * - `warn` - Only logs redirects and not found pages.
-   * - `error` - Only logs not found pages.
-   *
-   * @defaultValue `warn`
-   */
-  logLevel: RoutesLogLevel;
   /**
    * Page routing configuration object.
    */
@@ -100,18 +90,13 @@ export type ResolvedRoutesConfig = {
   };
 };
 
-export type RoutesLogLevel = 'info' | 'warn' | 'error';
-
-export type RoutesLogStyle = 'none' | 'list' | 'tree' | CustomRoutesLogger;
+export type RoutesLogStyle = 'none' | 'table' | CustomRoutesLogger;
 
 export type CustomRoutesLogger = (
   input: RoutesLoggerInput,
 ) => void | Promise<void>;
 
-export type RoutesLoggerInput = {
-  /** Desired route logging level. */
-  level: RoutesLogLevel;
-} & BuildData;
+export type RoutesLoggerInput = { build: BuildData; bundles: BuildBundles };
 
 export type RouteMatcher = string | RegExp | null | undefined | void;
 

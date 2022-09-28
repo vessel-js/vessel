@@ -64,11 +64,13 @@ importers:
       '@types/node': ^16.0.0
       '@types/react': ^18.0.21
       '@wooorm/starry-night': ^1.0.0
+      cli-table3: ^0.6.3
       cookie: ^0.5.0
       esbuild: ^0.15.9
       fast-glob: ^3.2.11
       globby: ^13.1.1
       gray-matter: ^4.0.3
+      gzip-size: ^7.0.0
       hast-util-to-html: ^8.0.3
       js-yaml: ^4.1.0
       kleur: ^4.1.4
@@ -78,6 +80,7 @@ importers:
       ora: ^6.0.0
       pathe: ^0.3.8
       pkg-up: ^2.0.0
+      pretty-bytes: ^6.0.0
       rollup: ^2.58.0
       set-cookie-parser: ^2.5.1
       shiki: ^0.10.1
@@ -96,6 +99,7 @@ importers:
       esbuild: 0.15.9
       globby: 13.1.2
       gray-matter: 4.0.3
+      gzip-size: 7.0.0
       hast-util-to-html: 8.0.3
       js-yaml: 4.1.0
       lru-cache: 6.0.0
@@ -104,6 +108,7 @@ importers:
       ora: 6.1.2
       pathe: 0.3.8
       pkg-up: 2.0.0
+      pretty-bytes: 6.0.0
       set-cookie-parser: 2.5.1
       undici: 5.10.0
       urlpattern-polyfill: 5.0.9
@@ -111,6 +116,7 @@ importers:
       '@types/node': 16.11.59
       '@types/react': 18.0.21
       '@wooorm/starry-night': 1.3.0
+      cli-table3: 0.6.3
       fast-glob: 3.2.12
       kleur: 4.1.5
       rollup: 2.79.1
@@ -189,6 +195,13 @@ packages:
       chalk: 2.4.2
       js-tokens: 4.0.0
     dev: true
+
+  /@colors/colors/1.5.0:
+    resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
+    engines: {node: '>=0.1.90'}
+    requiresBuild: true
+    dev: true
+    optional: true
 
   /@commitlint/cli/13.2.1:
     resolution: {integrity: sha512-JGzYk2ay5JkRS5w+FLQzr0u/Kih52ds4HPpa3vnwVOQN8Q+S1VYr8Nk/6kRm6uNYsAcC1nejtuDxRdLcLh/9TA==}
@@ -930,6 +943,15 @@ packages:
     engines: {node: '>=6'}
     dev: false
 
+  /cli-table3/0.6.3:
+    resolution: {integrity: sha512-w5Jac5SykAeZJKntOxJCrm63Eg5/4dhMWIcuTbo9rpE+brgaSZo0RuNJZeOyMgsUdhDeojvgyQLmjI+K50ZGyg==}
+    engines: {node: 10.* || >= 12.*}
+    dependencies:
+      string-width: 4.2.3
+    optionalDependencies:
+      '@colors/colors': 1.5.0
+    dev: true
+
   /cli-truncate/2.1.0:
     resolution: {integrity: sha512-n8fOixwDD6b/ObinzTrp1ZKFzbgvKZvuz/TvejnLn1aQfC6r52XEx85FmuC+3HI+JM7coBRXUvNqEU2PHVrHpg==}
     engines: {node: '>=8'}
@@ -1333,6 +1355,10 @@ packages:
     dependencies:
       is-obj: 2.0.0
     dev: true
+
+  /duplexer/0.1.2:
+    resolution: {integrity: sha512-jtD6YG370ZCIi/9GTaJKQxWTZD045+4R4hTk/x1UyoqadyJ9x9CgSi1RlVDQF8U2sxLLSnFkCaMihqljHIWgMg==}
+    dev: false
 
   /emoji-regex/8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
@@ -2141,6 +2167,13 @@ packages:
       kind-of: 6.0.3
       section-matter: 1.0.0
       strip-bom-string: 1.0.0
+    dev: false
+
+  /gzip-size/7.0.0:
+    resolution: {integrity: sha512-O1Ld7Dr+nqPnmGpdhzLmMTQ4vAsD+rHwMm1NLUmoUFFymBOMKxCCrtDxqdBRYXdeEPEi3SyoR4TizJLQrnKBNA==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+    dependencies:
+      duplexer: 0.1.2
     dev: false
 
   /handlebars/4.7.7:
@@ -3154,6 +3187,11 @@ packages:
     engines: {node: '>=10.13.0'}
     hasBin: true
     dev: true
+
+  /pretty-bytes/6.0.0:
+    resolution: {integrity: sha512-6UqkYefdogmzqAZWzJ7laYeJnaXDy2/J+ZqiiMtS7t7OfpXWTlaeGMwX8U6EFvPV/YWWEKRkS8hKS4k60WHTOg==}
+    engines: {node: ^14.13.1 || >=16.0.0}
+    dev: false
 
   /process-nextick-args/2.0.1:
     resolution: {integrity: sha512-3ouUOpQhtgrbOa17J7+uxOTpITYWaGP7/AhoR3+A+/1e9skrzelGi/dXzEYyvbxubEF6Wn2ypscTKiKJFFn1ag==}
