@@ -1,4 +1,4 @@
-import type { Builder } from '../Builder';
+import type { Builder } from '../builder';
 
 export async function typescriptAddon(builder: Builder) {
   if (!builder.hasAddon('typescript')) return;

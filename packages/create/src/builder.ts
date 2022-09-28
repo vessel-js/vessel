@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import * as path from 'pathe';
 
-import { createSystemDirectory, type SystemDirectory } from './Directory';
-import { PackageJsonBuilder } from './Package';
+import { createSystemDirectory, type SystemDirectory } from './directory';
+import { PackageJsonBuilder } from './package';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

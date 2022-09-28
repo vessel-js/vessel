@@ -5,7 +5,7 @@ import {
   BuilderAddon,
   JS_FRAMEWORKS,
   JSFramework,
-} from './Builder';
+} from './builder';
 
 export function overwriteDirectoryPrompt(
   name?: string,

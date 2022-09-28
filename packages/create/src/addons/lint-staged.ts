@@ -1,4 +1,4 @@
-import type { Builder } from '../Builder.js';
+import type { Builder } from '../builder.js';
 import { resolveLintExtensions } from './eslint.js';
 
 export async function lintStagedAddon(builder: Builder) {

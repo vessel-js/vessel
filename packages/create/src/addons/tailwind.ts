@@ -1,4 +1,4 @@
-import type { Builder } from '../Builder';
+import type { Builder } from '../builder';
 
 export async function tailwindAddon(builder: Builder) {
   if (!builder.hasAddon('tailwind')) return;

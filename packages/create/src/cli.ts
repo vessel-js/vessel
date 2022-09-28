@@ -8,8 +8,8 @@ import { lintStagedAddon } from './addons/lint-staged';
 import { prettierAddon } from './addons/prettier';
 import { tailwindAddon } from './addons/tailwind';
 import { typescriptAddon } from './addons/typescript';
-import { Builder } from './Builder';
-import { toValidPackageName } from './Package';
+import { Builder } from './builder';
+import { toValidPackageName } from './package';
 import { setupPrompt } from './prompts';
 import { removeTrailingSlash, toTitleCase } from './utils/str';
 
