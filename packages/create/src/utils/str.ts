@@ -1,14 +1,9 @@
-// @ts-check
-
-export const removeTrailingSlash = (str) => str.replace(/\/$/, '');
+export const removeTrailingSlash = (str: string) => str.replace(/\/$/, '');
 
 const WORD_SEPARATORS =
   /[\s\u2000-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,\-./:;<=>?@[\]^_`{|}~]+/;
 
-/**
- * @param {string} str
- */
-export function toTitleCase(str) {
+export function toTitleCase(str: string) {
   const words = str.split(WORD_SEPARATORS);
   const len = words.length;
   const mappedWords = new Array(len);

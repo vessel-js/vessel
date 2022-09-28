@@ -119,13 +119,22 @@ importers:
 
   packages/create:
     specifiers:
+      '@types/node': ^16.0.0
       enquirer: ^2.3.6
+      fast-glob: ^3.2.11
       kleur: ^4.1.4
       minimist: ^1.2.5
+      tsup: ^6.2.3
+      typescript: ^4.7.4
     dependencies:
       enquirer: 2.3.6
       kleur: 4.1.5
       minimist: 1.2.6
+    devDependencies:
+      '@types/node': 16.11.59
+      fast-glob: 3.2.12
+      tsup: 6.2.3_typescript@4.8.3
+      typescript: 4.8.3
 
   packages/svelte:
     specifiers:

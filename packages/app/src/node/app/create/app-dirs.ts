@@ -38,10 +38,10 @@ export function createDirectory(dirname: string): Directory {
   const resolve = (...args: string[]) =>
     args.length === 1 && path.posix.isAbsolute(normalizePath(args[0]))
       ? normalizePath(args[0])
-      : path.posix.resolve(dirname, ...args.map(normalizePath));
+      : normalizePath(path.posix.resolve(dirname, ...args));
 
   const relative = (...args: string[]) =>
-    path.posix.relative(dirname, path.posix.join(...args.map(normalizePath)));
+    normalizePath(path.posix.relative(dirname, path.posix.join(...args)));
 
   const read = (filePath: string) =>
     fs.readFileSync(resolve(filePath), 'utf-8');

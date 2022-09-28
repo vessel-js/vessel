@@ -1,18 +1,13 @@
-// @ts-check
+import type { Builder } from '../Builder';
 
-/**
- * @param {import('../ProjectBuilder').ProjectBuilder} builder
- */
-export function addPrettierFeature(builder) {
-  if (!builder.hasFeature('prettier')) return;
+export async function prettierAddon(builder: Builder) {
+  if (!builder.hasAddon('prettier')) return;
 
-  builder.pkg.addDep('npm-run-all', '^4.0.0', { dev: true });
-  builder.pkg.addDep('prettier', '^2.0.0', { dev: true });
+  builder.pkg.addDevDep('npm-run-all', '^4.0.0');
+  builder.pkg.addDevDep('prettier', '^2.0.0');
 
-  if (builder.hasFeature('typescript')) {
-    builder.pkg.addDep('prettier-plugin-tailwindcss', '^0.1.7', {
-      dev: true,
-    });
+  if (builder.hasAddon('typescript')) {
+    builder.pkg.addDevDep('prettier-plugin-tailwindcss', '^0.1.7');
   }
 
   builder.pkg.addScript('lint', 'run-s lint:*');
@@ -31,7 +26,7 @@ export function addPrettierFeature(builder) {
     trailingComma: 'all',
   };
 
-  builder.dirs.dest.root.writeFile(
+  await builder.dirs.target.write(
     '.prettierrc',
     JSON.stringify(config, null, 2),
   );
