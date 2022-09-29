@@ -25,13 +25,13 @@ import type {
 } from './types';
 
 const cache = new LRUCache<string, ParseMarkdownResult>({ max: 1024 });
-const cacheK = new LRUCache<string, string>({ max: 1024 });
+const cacheK = new LRUCache<string, Set<string>>({ max: 1024 });
 
 export function clearMarkdownCache(file?: string) {
   if (!file) {
     cache.reset();
   } else {
-    cache.del(cacheK.get(file) ?? '');
+    for (const key of cacheK.get(file) ?? []) cache.del(key);
   }
 }
 
@@ -128,7 +128,10 @@ export function parseMarkdown(
   };
 
   cache.set(cacheKey, result);
-  cacheK.set(filePath, cacheKey);
+
+  if (!cacheK.has(filePath)) cacheK.set(filePath, new Set());
+  cacheK.get(filePath)!.add(cacheKey);
+
   return result;
 }
 

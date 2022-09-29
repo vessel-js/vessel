@@ -1,0 +1,83 @@
+{
+  "name": "@vessel-js/vue",
+  "version": "0.1.0",
+  "type": "module",
+  "types": "index.d.ts",
+  "sideEffects": false,
+  "license": "MIT",
+  "contributors": [
+    "Rahim Alwer <rahim.alwer@gmail.com>"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vessel-js/vessel.git",
+    "directory": "packages/vue"
+  },
+  "bugs": {
+    "url": "https://github.com/vessel-js/vessel/issues"
+  },
+  "files": [
+    "dist/",
+    "index.d.ts",
+    "node.d.ts",
+    "globals.d.ts"
+  ],
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./dist/client/index.js"
+    },
+    "./head": {
+      "types": "./head.d.ts",
+      "default": "./dist/client/head.js"
+    },
+    "./node": {
+      "types": "./node.d.ts",
+      "default": "./dist/node/index.js"
+    },
+    "./*": "./dist/client/*",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "rimraf dist && tsup",
+    "dev": "DEV=true pnpm run build --watch"
+  },
+  "dependencies": {
+    "pathe": "^0.3.8"
+  },
+  "peerDependencies": {
+    "@vessel-js/app": "0.1.0",
+    "vue": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^16.0.0",
+    "@vessel-js/app": "workspace:*",
+    "fast-glob": "^3.2.11",
+    "tsup": "^6.2.3",
+    "typescript": "^4.7.4",
+    "vite": "^3.0.0",
+    "vue": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "app",
+    "docs",
+    "edge",
+    "esm",
+    "fast",
+    "lightweight",
+    "modern",
+    "nextjs",
+    "ssg",
+    "ssr",
+    "vercel",
+    "vessel",
+    "vite",
+    "vue"
+  ]
+}

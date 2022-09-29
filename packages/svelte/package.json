@@ -39,8 +39,10 @@
     "build": "rimraf dist && tsup",
     "dev": "DEV=true pnpm run build --watch"
   },
+  "dependencies": {
+    "pathe": "^0.3.8"
+  },
   "peerDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^1.0.0",
     "@vessel-js/app": "0.1.0",
     "svelte": "^3.40.0"
   },
@@ -72,10 +74,7 @@
     "ssr",
     "svelte",
     "vercel",
-    "vite",
-    "vessel"
-  ],
-  "dependencies": {
-    "pathe": "^0.3.8"
-  }
+    "vessel",
+    "vite"
+  ]
 }

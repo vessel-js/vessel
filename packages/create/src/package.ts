@@ -1,4 +1,4 @@
-import type { SystemDirectory } from './_directory';
+import type { SystemDirectory } from './directory';
 import { sortObjectKeys } from './utils/obj';
 
 export type NodePackageManager = 'npm' | 'pnpm' | 'yarn';

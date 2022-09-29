@@ -9,7 +9,7 @@ import {
   type SystemFilesOptions,
 } from './system-files';
 
-const STRIP_MARKDOC_DIR_RE = /\/\.markdoc\/.+/;
+export const STRIP_MARKDOC_DIR_RE = /\/\.markdoc\/.+/;
 
 export type MarkdocFile = SystemFileMeta & {
   type: 'node' | 'tag';
@@ -64,9 +64,7 @@ export class MarkdocFiles extends SystemFiles<MarkdocFile> {
       owningDir,
     };
 
-    this._files.push(node);
     this._addFile(node);
-
     return node;
   }
 
@@ -79,15 +77,16 @@ export class MarkdocFiles extends SystemFiles<MarkdocFile> {
   }
 
   isAnyNode(filePath: string) {
-    return filePath.includes('@markdoc') && this._filter(filePath);
+    return filePath.includes('.markdoc') && this._filter(filePath);
   }
 
   getOwnedNodes(ownerFilePath: string, type: '*' | 'node' | 'tag') {
-    return Array.from(this._files).filter(
-      (node) =>
-        (type === '*' || node.type === type) &&
-        this.isSameBranch(node, ownerFilePath),
-    );
+    const root = path.dirname(this._getRootPath(ownerFilePath));
+    return Array.from(this._files).filter((node) => {
+      return (
+        (type === '*' || node.type === type) && root.startsWith(node.owningDir)
+      );
+    });
   }
 }
 

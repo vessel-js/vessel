@@ -33,7 +33,9 @@ export const matches: RouteMatchesStore = toStore(getRouteMatches);
 export type MarkdownStore = Readable<MarkdownMeta | undefined>;
 export const markdown: MarkdownStore = toStore(getMarkdown);
 
-export type FrontmatterStore = Readable<MarkdownFrontmatter>;
+export type FrontmatterStore<
+  T extends MarkdownFrontmatter = MarkdownFrontmatter,
+> = Readable<T>;
 export const frontmatter: FrontmatterStore = toStore(getFrontmatter);
 
 export type StaticDataStore<T extends LoadedStaticData = LoadedStaticData> =

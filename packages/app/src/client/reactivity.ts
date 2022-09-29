@@ -2,8 +2,8 @@ export type Unsubscribe = () => void;
 
 export type Reactive<T> = {
   get(): T;
-  set(newValue: T): void;
   subscribe(onUpdate: (value: T) => void): Unsubscribe;
+  set(newValue: T): void;
 };
 
 export type ReactiveFactory = {

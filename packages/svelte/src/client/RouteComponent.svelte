@@ -23,7 +23,7 @@
   $: serverError.set(component?.serverLoadError);
 </script>
 
-{#if component?.module?.default}
+{#if component}
   {#if !leaf}
     <svelte:component this={component.module.default}>
       <slot />

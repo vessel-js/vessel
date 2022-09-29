@@ -114,6 +114,7 @@ export function createStaticBuildAdapter({
             .join('\n    ');
 
           const bodyTags = [
+            render.ssr.body ?? '',
             redirectsScriptTag,
             dataHashScriptTag,
             createStaticDataScriptTag(render.data, build),
@@ -123,10 +124,24 @@ export function createStaticBuildAdapter({
             .filter((t) => t.length > 0)
             .join('\n    ');
 
-          const pageHtml = build.template
+          let pageHtml = build.template
             .replace(`<!--@vessel/head-->`, headTags)
             .replace('<!--@vessel/body-->', bodyTags)
             .replace(`<!--@vessel/app-->`, render.ssr.html);
+
+          if (render.ssr.htmlAttrs) {
+            pageHtml = pageHtml.replace(
+              /<html(.*?)>/,
+              `<html${render.ssr.htmlAttrs}>`,
+            );
+          }
+
+          if (render.ssr.bodyAttrs) {
+            pageHtml = pageHtml.replace(
+              /<body(.*?)>/,
+              `<body${render.ssr.bodyAttrs}>`,
+            );
+          }
 
           htmlFiles.set(render.filename, pageHtml);
         }

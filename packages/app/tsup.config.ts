@@ -13,7 +13,7 @@ export function base(extend?: { external?: (string | RegExp)[] }): Options {
     outDir: 'dist',
     esbuildOptions(opts) {
       if (opts.platform === 'browser') opts.mangleProps = /^_/;
-      opts.chunkNames = 'chunks/[name]-[hash].js';
+      opts.chunkNames = 'chunks/[name]-[hash]';
     },
   };
 }
@@ -21,7 +21,10 @@ export function base(extend?: { external?: (string | RegExp)[] }): Options {
 export default defineConfig([
   {
     ...base(),
-    entry: { client: 'src/client/index.ts' },
+    entry: {
+      client: 'src/client/index.ts',
+      head: 'src/client/head/index.ts',
+    },
     target: 'esnext',
     platform: 'browser',
   },

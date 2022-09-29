@@ -81,7 +81,8 @@ export const createAppFactory = async (
       }
 
       if (!$app.config.entry.client || !$app.config.entry.server) {
-        const frameworkPlugins = ['@vessel-js/svelte']
+        const frameworkPlugins = ['svelte', 'vue', 'preact', 'react', 'solid']
+          .map((fw) => `@vessel-js/${fw}`)
           .map((fw) => kleur.cyan(`- npm i ${fw}`))
           .join('\n');
 

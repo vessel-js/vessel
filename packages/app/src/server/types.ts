@@ -49,6 +49,9 @@ export type ServerRenderResult = {
   head?: string;
   css?: string;
   html: string;
+  body?: string;
+  bodyAttrs?: string;
+  htmlAttrs?: string;
 };
 
 // ---------------------------------------------------------------------------------------

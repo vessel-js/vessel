@@ -20,6 +20,10 @@ import { markdownPlugin } from './markdown/markdown-plugin';
 const clientPackages = [
   '@vessel-js/app',
   '@vessel-js/svelte',
+  '@vessel-js/vue',
+  '@vessel-js/preact',
+  '@vessel-js/react',
+  '@vessel-js/solid',
   'urlpattern-polyfill/urlpattern',
 ];
 

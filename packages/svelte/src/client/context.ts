@@ -3,6 +3,7 @@ import {
   isMarkdownModule,
   type LoadedServerData,
   type LoadedStaticData,
+  MarkdownFrontmatter,
   type Navigation,
   type Reactive,
   type Router,
@@ -53,7 +54,9 @@ export function getMarkdown(): MarkdownStore {
 }
 
 const FRONTMATTER_KEY = Symbol();
-export function getFrontmatter(): FrontmatterStore {
+export function getFrontmatter<
+  T extends MarkdownFrontmatter = MarkdownFrontmatter,
+>(): FrontmatterStore<T> {
   return getContext(FRONTMATTER_KEY);
 }
 

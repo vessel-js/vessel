@@ -1,28 +1,39 @@
 import type { App } from 'node/app/App';
+import { STRIP_MARKDOC_DIR_RE } from 'node/app/files';
 import { clearMarkdownCache } from 'node/markdoc';
 import * as path from 'pathe';
 
 export function handleMarkdownHMR(app: App) {
   const schema = app.markdoc;
   const files = app.files.markdoc;
-  const isNode = (filePath) => files.isAnyNode(filePath);
+  const isMarkdownNode = (filePath) => files.isAnyNode(filePath);
 
-  onFileEvent(isNode, 'add', async (filePath) => {
+  onFileEvent(isMarkdownNode, 'add', async (filePath) => {
     files.add(filePath);
+
+    const owningDir = filePath.replace(STRIP_MARKDOC_DIR_RE, '');
 
     if (app.files.routes.isLayoutFile(filePath)) {
       for (const pageFile of app.files.routes.toArray('page')) {
-        if (files.isSameBranch(filePath, pageFile.path.absolute)) {
+        if (pageFile.path.absolute.startsWith(owningDir)) {
           clearMarkdownCache(pageFile.path.absolute);
           invalidateFile(pageFile.path.absolute);
         }
       }
     }
 
+    for (const route of app.routes.filterHasType('page')) {
+      if (route.page!.path.absolute.startsWith(owningDir)) {
+        const pageFilePath = route.page!.path.absolute;
+        clearMarkdownCache(pageFilePath);
+        invalidateFile(pageFilePath);
+      }
+    }
+
     return { reload: true };
   });
 
-  onFileEvent(isNode, 'unlink', async (filePath) => {
+  onFileEvent(isMarkdownNode, 'unlink', async (filePath) => {
     files.remove(filePath);
 
     const hmrFiles = schema.hmrFiles.get(filePath);
@@ -57,8 +68,8 @@ export function handleMarkdownHMR(app: App) {
   }
 
   function invalidateFile(filePath: string) {
-    app.vite
-      .server!.moduleGraph.getModulesByFile(filePath)
-      ?.forEach((mod) => app.vite.server!.moduleGraph.invalidateModule(mod));
+    app.vite.server!.moduleGraph.getModulesByFile(filePath)?.forEach((mod) => {
+      return app.vite.server!.moduleGraph.invalidateModule(mod);
+    });
   }
 }

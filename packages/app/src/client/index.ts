@@ -1,4 +1,5 @@
 export * from './init';
+export * from './reactivity';
 export * from './router';
 export * from './utils';
 export * from 'shared/http/errors';

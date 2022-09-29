@@ -25,6 +25,9 @@ export function sveltePlugin(): VesselPlugins {
       enforce: 'pre',
       config() {
         return {
+          optimizeDeps: {
+            include: ['svelte'],
+          },
           resolve: {
             alias: {
               [VIRTUAL_APP_ID]: `/${VIRTUAL_APP_ID}`,

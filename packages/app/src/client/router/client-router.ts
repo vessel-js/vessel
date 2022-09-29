@@ -26,6 +26,7 @@ import { coerceToError } from 'shared/utils/error';
 import { isFunction, isString } from 'shared/utils/unit';
 import { isLinkExternal } from 'shared/utils/url';
 
+import type { Reactive } from '../reactivity';
 import { removeSSRStyles } from '../utils';
 import {
   createSimpleComparator,
@@ -34,7 +35,6 @@ import {
 } from './comparators';
 import { listen } from './listen';
 import { checkForLoadedRedirect, loadRoutes } from './load-route';
-import type { Reactive } from './reactivity';
 import {
   createSimpleScrollDelegate,
   type ScrollDelegate,
@@ -599,9 +599,7 @@ export class Router {
                   `Route ID: ${route.id}`,
                   `Component Type: ${type}`,
                   `Data Type: ${dataKey}`,
-                  `\nError: ${error.message}${
-                    error.stack ? `\n\n${error.stack}` : ''
-                  }`,
+                  `${error.stack ? `\n${error.stack}` : ''}`,
                 ].join('\n'),
               );
             }

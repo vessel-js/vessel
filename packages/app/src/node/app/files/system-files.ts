@@ -88,10 +88,10 @@ export abstract class SystemFiles<T extends SystemFileMeta>
   abstract add(filePath: string): void;
 
   remove(filePath: string) {
-    if (!this.has(filePath)) return -1;
     const index = this.findIndex(filePath);
+    if (index === -1) return -1;
     const file = this._files[index];
-    this._files.splice(index, 1);
+    this._files = this._files.filter((file) => file.path.absolute !== filePath);
     for (const callback of this._onRemove) callback(file, index);
     return index;
   }
@@ -105,8 +105,7 @@ export abstract class SystemFiles<T extends SystemFileMeta>
   }
 
   findIndex(filePath: string) {
-    const file = this.find(filePath);
-    return this._files.findIndex((n) => n === file);
+    return this._files.findIndex((file) => file.path.absolute === filePath);
   }
 
   has(filePath: string) {
@@ -186,9 +185,12 @@ export abstract class SystemFiles<T extends SystemFileMeta>
   }
 
   protected _addFile(file: T) {
+    if (this.has(file.path.absolute)) return;
+
     sortedInsert(this._files, file, (a, b) =>
       comparePathDepth(a.path.root, b.path.root),
     );
+
     for (const callback of this._onAdd) callback(file);
   }
 

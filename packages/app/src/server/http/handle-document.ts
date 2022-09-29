@@ -253,6 +253,7 @@ async function renderDocument(
     .join('\n    ');
 
   const bodyTags = [
+    ssr.body ?? '',
     dataHashScriptTag,
     staticDataScriptTag,
     serverDataScriptTag,
@@ -262,10 +263,18 @@ async function renderDocument(
     .filter((t) => t.length > 0)
     .join('\n    ');
 
-  const html = manifest.document.template
+  let html = manifest.document.template
     .replace('<!--@vessel/head-->', headTags)
     .replace('<!--@vessel/body-->', bodyTags)
     .replace(`<!--@vessel/app-->`, ssr.html);
+
+  if (ssr.htmlAttrs) {
+    html = html.replace(/<html(.*?)>/, `<html${ssr.htmlAttrs}>`);
+  }
+
+  if (ssr.bodyAttrs) {
+    html = html.replace(/<body(.*?)>/, `<body${ssr.bodyAttrs}>`);
+  }
 
   const response = new Response(html, {
     headers: {

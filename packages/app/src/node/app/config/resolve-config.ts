@@ -77,7 +77,7 @@ export function resolveAppConfig(
   };
 
   const __markdown: ResolvedMarkdownConfig = {
-    include: markdown.include ?? /\.md($|\?)/,
+    include: markdown.include ?? /\.md$/,
     exclude: markdown.exclude ?? [],
     markdoc: markdown.markdoc ?? {},
     highlighter: false,
