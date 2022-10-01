@@ -38,10 +38,24 @@ export function vuePlugin(): VesselPlugins {
           optimizeDeps: {
             include: ['vue', 'vue/server-renderer'],
           },
+          ssr: {
+            noExternal: /./,
+          },
           resolve: {
-            alias: {
-              [VIRTUAL_APP_ID]: `/${VIRTUAL_APP_ID}`,
-            },
+            alias: [
+              {
+                find: VIRTUAL_APP_ID,
+                replacement: `/${VIRTUAL_APP_ID}`,
+              },
+              {
+                find: '@vue/runtime-dom',
+                replacement: '@vue/runtime-dom/dist/runtime-dom.cjs',
+              },
+              {
+                find: '@vue/runtime-core',
+                replacement: '@vue/runtime-core/dist/runtime-core.cjs',
+              },
+            ],
             dedupe: ['vue'],
           },
         };
