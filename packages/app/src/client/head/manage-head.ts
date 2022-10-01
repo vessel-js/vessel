@@ -16,7 +16,7 @@ import type {
   HeadTagRenderDuplicate,
   HeadTagRenderLocation,
   HeadTagRenderPriority,
-} from './types/head-tags';
+} from './types/head-config';
 import { HEAD_ATTRS_KEY, updateHead } from './update-head';
 
 const acceptedHeadFields: Set<HeadConfigKeys> = new Set([

@@ -1,8 +1,9 @@
 <script>
   import './global.css';
 
-  import { RouterOutlet } from '@vessel-js/svelte';
+  import { RouteAnnouncer, RouterOutlet } from '@vessel-js/svelte';
 </script>
 
+<RouteAnnouncer />
 <RouterOutlet />
 

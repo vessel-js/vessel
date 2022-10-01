@@ -7,5 +7,6 @@ export {
   getServerError,
   getStaticData,
 } from './context';
+export { default as RouteAnnouncer } from './RouteAnnouncer.svelte';
 export { default as RouterOutlet } from './RouterOutlet.svelte';
 export * from './stores';
