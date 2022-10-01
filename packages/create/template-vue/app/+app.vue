@@ -1,9 +1,10 @@
 <script setup>
 import './global.css';
 
-import { RouterOutlet } from '@vessel-js/vue';
+import { RouteAnnouncer, RouterOutlet } from '@vessel-js/vue';
 </script>
 
 <template>
+  <RouteAnnouncer />
   <RouterOutlet />
 </template>

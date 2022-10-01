@@ -33,7 +33,27 @@ export function vuePlugin(): VesselPlugins {
     {
       name: '@vessel/vue',
       enforce: 'pre',
-      config() {
+      config(_, env) {
+        const alias: { find: string; replacement: string }[] = [
+          {
+            find: VIRTUAL_APP_ID,
+            replacement: `/${VIRTUAL_APP_ID}`,
+          },
+        ];
+
+        if (env.command === 'build') {
+          alias.push(
+            {
+              find: '@vue/runtime-dom',
+              replacement: '@vue/runtime-dom/dist/runtime-dom.cjs.js',
+            },
+            {
+              find: '@vue/runtime-core',
+              replacement: '@vue/runtime-core/dist/runtime-core.cjs.js',
+            },
+          );
+        }
+
         return {
           optimizeDeps: {
             include: ['vue', 'vue/server-renderer'],
@@ -42,20 +62,7 @@ export function vuePlugin(): VesselPlugins {
             noExternal: /./,
           },
           resolve: {
-            alias: [
-              {
-                find: VIRTUAL_APP_ID,
-                replacement: `/${VIRTUAL_APP_ID}`,
-              },
-              {
-                find: '@vue/runtime-dom',
-                replacement: '@vue/runtime-dom/dist/runtime-dom.cjs',
-              },
-              {
-                find: '@vue/runtime-core',
-                replacement: '@vue/runtime-core/dist/runtime-core.cjs',
-              },
-            ],
+            alias,
             dedupe: ['vue'],
           },
         };
