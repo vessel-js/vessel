@@ -1,7 +1,8 @@
 import type { App } from 'node/app/App';
-import { AppRoute, toRoute } from 'node/app/routes';
+import { type AppRoute, toRoute } from 'node/app/routes';
 import type { ServerLoadableRoute } from 'server/types';
 import {
+  compareRoutes,
   getRouteComponentTypes,
   type RouteComponentType,
 } from 'shared/routing';
@@ -98,24 +99,26 @@ function createManifestInit(
   const loaders = {};
 
   // We need to not only include the given routes but their layout branches.
-  const allRoutes = new Set<AppRoute>();
+  const seen = new Set<string>();
+  const routes: AppRoute[] = [];
 
   if (hasAppRoutes) {
-    for (const route of app.routes) {
-      for (const parent of app.routes.getBranch(route)) {
-        if (parent.layout || parent.errorBoundary) {
-          allRoutes.add({ ...parent, page: undefined });
+    for (const route of appRoutes) {
+      for (const child of app.routes.getBranch(route)) {
+        if (!seen.has(child.id)) {
+          routes.push(child);
+          seen.add(child.id);
         }
       }
-
-      allRoutes.add(route);
     }
+
+    routes.sort(compareRoutes);
   }
 
   if (hasAppRoutes) {
     const dataIds = new Set<string>();
 
-    for (const route of allRoutes) {
+    for (const route of routes) {
       const ids = build.static.routeData.get(route.id);
       if (ids) for (const id of ids) dataIds.add(id);
     }
@@ -126,13 +129,13 @@ function createManifestInit(
       if (hashedId) {
         serverHashRecord[id] = hashedId;
         clientHashRecord[hashedId] = contentHash;
-        loaders[hashedId] = `() => import('../_data/${contentHash}.js')`;
+        loaders[hashedId] = `() => import('../.data/${contentHash}.js')`;
       }
     }
   }
 
   const routeResources = {};
-  for (const route of allRoutes) {
+  for (const route of routes) {
     const resources = build.resources.routes[route.id];
     if (resources) routeResources[route.id] = resources;
   }
@@ -147,7 +150,7 @@ function createManifestInit(
         : { all: [], entry: [], app: [], routes: {} },
     },
     routes: {
-      app: Array.from(allRoutes).map((appRoute) => {
+      app: Array.from(routes).map((appRoute) => {
         const route: SerializableAppRoute = toRoute(appRoute);
         const chunks = build.server.chunks.get(route.id)!;
         const serverLoaders = build.server.loaders.get(route.id);

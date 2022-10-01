@@ -411,7 +411,7 @@ export async function build(
           `Committed ${kleur.underline(seen.size)} server data files`,
       });
 
-      const dataDir = app.dirs.server.resolve('_data');
+      const dataDir = app.dirs.server.resolve('.data');
       mkdirp(dataDir);
 
       await dataSpinner(async () => {
@@ -437,7 +437,7 @@ export async function build(
       successTitle: `Committed ${manifestCount} server manifests`,
     });
 
-    const manifestsDir = app.dirs.server.resolve('_manifests');
+    const manifestsDir = app.dirs.server.resolve('.manifests');
     mkdirp(manifestsDir);
 
     await manifestSpinner(async () => {

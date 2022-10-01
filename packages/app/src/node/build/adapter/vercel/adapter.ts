@@ -167,7 +167,7 @@ async function bundleEdge(
   spinner.start(kleur.bold(`Bundling edge functions...`));
 
   app.dirs.server.write(
-    '_manifests/vercel.edge.js',
+    '.manifests/vercel.edge.js',
     [
       'import manifest from "./edge.js";',
       'import { createRequestHandler } from "@vessel-js/app/server";',
@@ -180,7 +180,7 @@ async function bundleEdge(
   // eslint-disable-next-line import/no-named-as-default-member
   await esbuild.build({
     entryPoints: {
-      index: app.dirs.server.resolve('_manifests/vercel.edge.js'),
+      index: app.dirs.server.resolve('.manifests/vercel.edge.js'),
     },
     outdir,
     target: 'es2020',
@@ -220,7 +220,7 @@ async function bundleNode(
   spinner.start(kleur.bold(`Bundling node functions...`));
 
   app.dirs.server.write(
-    '_manifests/vercel.node.js',
+    '.manifests/vercel.node.js',
     [
       'import manifest from "./node.js";',
       'import { createIncomingMessageHandler } from "@vessel-js/app/node/http.js";',
@@ -228,7 +228,7 @@ async function bundleNode(
     ].join('\n'),
   );
 
-  const entry = app.dirs.server.resolve('_manifests/vercel.node.js');
+  const entry = app.dirs.server.resolve('.manifests/vercel.node.js');
   const outdir = outputDir.resolve('functions/node.func');
 
   // eslint-disable-next-line import/no-named-as-default-member
