@@ -30,7 +30,13 @@ export function renderMarkdocToHTML(
   node: RenderableTreeNodes,
   config: RenderMarkdocConfig = {},
 ): string {
-  if (typeof node === 'string') return node;
+  if (
+    typeof node === 'string' ||
+    typeof node === 'boolean' ||
+    typeof node === 'number'
+  ) {
+    return node;
+  }
 
   if (Array.isArray(node))
     return node.map((n) => renderMarkdocToHTML(n, config)).join('');
