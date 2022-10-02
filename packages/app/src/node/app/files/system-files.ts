@@ -125,10 +125,16 @@ export abstract class SystemFiles<T extends SystemFileMeta>
 
   onAdd(callback: (file: T) => void) {
     this._onAdd.add(callback);
+    return () => {
+      this._onAdd.delete(callback);
+    };
   }
 
   onRemove(callback: (file: T, index: number) => void) {
     this._onRemove.add(callback);
+    return () => {
+      this._onRemove.delete(callback);
+    };
   }
 
   isSameBranch(file: string | T, childFilePath: string) {

@@ -6,6 +6,7 @@ import { prettyJsonStr, stripImportQuotesFromJson } from 'shared/utils/json';
 import { virtualModuleRequestPath } from '../alias';
 import type { VesselPlugin } from '../Plugin';
 import { handleFilesHMR } from './files-hmr';
+import { watchRoutesTypes } from './watch-routes-types';
 
 export function filesPlugin(): VesselPlugin {
   let app: App;
@@ -18,6 +19,7 @@ export function filesPlugin(): VesselPlugin {
         app = _app;
         await app.files.init(app);
         await app.routes.init(app);
+        await watchRoutesTypes(app);
       },
     },
     async configureServer(server) {

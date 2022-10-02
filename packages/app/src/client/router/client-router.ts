@@ -318,7 +318,7 @@ export class Router {
    * instance (`new URL(...)`).
    */
   async go(
-    path: string | URL,
+    path: VesselRoutes[keyof VesselRoutes] | URL,
     {
       scroll,
       replace = false,
@@ -383,7 +383,7 @@ export class Router {
   ): Promise<void> {
     if (!this._listening) {
       const startingURL = this.normalizeURL(new URL(location.href));
-      await this.go(startingURL.href, { replace: true });
+      await this.go(startingURL.href as any, { replace: true });
       const target = document.getElementById('app')!;
       await mount(target);
       removeSSRStyles();

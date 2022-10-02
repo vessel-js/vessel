@@ -30,6 +30,8 @@ export class AppRoutes implements Iterable<AppRoute> {
   protected _routesDir!: string;
   protected _matchers!: RouteMatcherConfig;
   protected _routes: AppRoute[] = [];
+  protected _onAdd = new Set<(route: AppRoute) => void>();
+  protected _onRemove = new Set<(route: AppRoute) => void>();
 
   get size() {
     return this._routes.length;
@@ -72,14 +74,23 @@ export class AppRoutes implements Iterable<AppRoute> {
     if (!existingRoute) {
       sortedInsert(this._routes, route, (a, b) => b.score - a.score);
     }
+
+    for (const callback of this._onAdd) {
+      callback(existingRoute ?? route);
+    }
   }
 
   remove(file: RouteFile) {
     const route = this.find(file);
     if (route) {
       delete route[file.type];
+
       if (!getRouteFileTypes().some((type) => route[type])) {
         this._routes = this._routes.filter((g) => route !== g);
+      }
+
+      for (const callback of this._onRemove) {
+        callback(route);
       }
     }
   }
@@ -118,6 +129,20 @@ export class AppRoutes implements Iterable<AppRoute> {
 
   toArray() {
     return [...this._routes];
+  }
+
+  onAdd(callback: (route: AppRoute) => void) {
+    this._onAdd.add(callback);
+    return () => {
+      this._onAdd.delete(callback);
+    };
+  }
+
+  onRemove(callback: (route: AppRoute) => void) {
+    this._onRemove.add(callback);
+    return () => {
+      this._onRemove.delete(callback);
+    };
   }
 
   [Symbol.iterator]() {

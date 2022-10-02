@@ -11,3 +11,9 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+interface VesselRoutes {
+  // <-- AUTOGEN_ROUTES_START -->
+  1: '/';
+  // <-- AUTOGEN_ROUTES_END -->
+}
