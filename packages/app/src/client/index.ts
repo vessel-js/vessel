@@ -7,6 +7,7 @@ export * from 'shared/markdown';
 export {
   type LoadedServerData,
   type LoadedStaticData,
+  type RouteParams,
 } from 'shared/routing/types';
 
 export type AppConfig = {

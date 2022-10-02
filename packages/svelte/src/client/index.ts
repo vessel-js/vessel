@@ -2,6 +2,9 @@ export * from '../shared';
 export { default as App } from './+app.svelte';
 export {
   getFrontmatter,
+  getRoute,
+  getRouteMatches,
+  getRouteParams,
   getRouter,
   getServerData,
   getServerError,

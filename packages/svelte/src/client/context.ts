@@ -3,9 +3,10 @@ import {
   isMarkdownModule,
   type LoadedServerData,
   type LoadedStaticData,
-  MarkdownFrontmatter,
+  type MarkdownFrontmatter,
   type Navigation,
   type Reactive,
+  type RouteParams,
   type Router,
 } from '@vessel-js/app';
 import { getContext } from 'svelte';
@@ -22,6 +23,7 @@ import type {
   MarkdownStore,
   NavigationStore,
   RouteMatchesStore,
+  RouteParamsStore,
   RouteStore,
   ServerDataStore,
   ServerErrorStore,
@@ -36,6 +38,13 @@ export function getRouter(): Router {
 const ROUTE_KEY = Symbol();
 export function getRoute(): RouteStore {
   return getContext(ROUTE_KEY);
+}
+
+export const ROUTE_PARAMS_KEY = Symbol();
+export function getRouteParams<
+  T extends RouteParams = RouteParams,
+>(): RouteParamsStore<T> {
+  return getContext(ROUTE_PARAMS_KEY);
 }
 
 const ROUTE_MATCHES_KEY = Symbol();

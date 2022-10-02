@@ -1,4 +1,8 @@
 <script>
+  import { setContext } from 'svelte';
+  import { writable } from 'svelte/store';
+
+  import { ROUTE_PARAMS_KEY } from './context';
   import RouteComponent from './RouteComponent.svelte';
   import RouteErrorBoundary from './ErrorBoundary';
 
@@ -6,6 +10,10 @@
   export let depth;
 
   $: match = matches[depth];
+
+  const routeParams = writable();
+  setContext(ROUTE_PARAMS_KEY, routeParams);
+  $: routeParams.set(match.params);
 </script>
 
 <RouteComponent component={match.layout}>

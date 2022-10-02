@@ -7,6 +7,7 @@ import type {
   MarkdownFrontmatter,
   MarkdownMeta,
   Navigation,
+  RouteParams,
 } from '@vessel-js/app';
 import type { Readable } from 'svelte/store';
 
@@ -16,16 +17,20 @@ import {
   getNavigation,
   getRoute,
   getRouteMatches,
+  getRouteParams,
   getServerData,
   getServerError,
   getStaticData,
-} from '../context';
+} from './context';
 
 export type NavigationStore = Readable<Navigation>;
 export const navigation: NavigationStore = toStore(getNavigation);
 
 export type RouteStore = Readable<ClientLoadedRoute>;
 export const route: RouteStore = toStore(getRoute);
+
+export type RouteParamsStore<T extends RouteParams = RouteParams> = Readable<T>;
+export const params: RouteParamsStore = toStore(getRouteParams);
 
 export type RouteMatchesStore = Readable<ClientLoadedRoute[]>;
 export const matches: RouteMatchesStore = toStore(getRouteMatches);

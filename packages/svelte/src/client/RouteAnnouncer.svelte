@@ -4,6 +4,7 @@
    */
 
   import { onMount } from 'svelte';
+
   import { getRoute } from './context';
 
   let title = null;
