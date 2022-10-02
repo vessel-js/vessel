@@ -1,18 +1,21 @@
 import { defineComponent, h, onMounted, ref, watchEffect } from 'vue';
 
+import { getRoute } from './context';
+
 export default defineComponent({
   name: 'RouteAnnouncer',
   setup() {
     const title = ref<string>();
     const mounted = ref(false);
     const navigated = ref(false);
+    const route = getRoute();
 
     onMounted(() => {
       mounted.value = true;
     });
 
     watchEffect(() => {
-      if (mounted.value) {
+      if (mounted.value && route.value) {
         navigated.value = true;
         title.value = document.title || 'untitled page';
       }
