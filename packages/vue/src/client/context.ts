@@ -9,6 +9,7 @@ import {
   type MarkdownMeta,
   type Navigation,
   type Reactive,
+  type RouteParams,
   type Router,
 } from '@vessel-js/app';
 import { createHeadManager } from '@vessel-js/app/head';
@@ -30,6 +31,7 @@ import {
   NAVIGATION_KEY,
   ROUTE_KEY,
   ROUTE_MATCHES_KEY,
+  ROUTE_PARAMS_KEY,
   ROUTER_KEY,
   SERVER_DATA_KEY,
   SERVER_ERROR_KEY,
@@ -48,6 +50,15 @@ export function getRoute(): RouteRef {
 export type RouteMatchesRef = Readonly<Ref<ClientLoadedRoute[]>>;
 export function getRouteMatches(): RouteMatchesRef {
   return inject(ROUTE_MATCHES_KEY)!;
+}
+
+export type RouteParamsRef<T extends RouteParams = RouteParams> = Readonly<
+  Ref<T>
+>;
+export function getRouteParams<
+  T extends RouteParams = RouteParams,
+>(): RouteParamsRef<T> {
+  return inject(ROUTE_PARAMS_KEY)!;
 }
 
 export type NavigationRef = Readonly<Ref<Navigation>>;
