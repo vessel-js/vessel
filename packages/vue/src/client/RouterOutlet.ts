@@ -1,13 +1,13 @@
 import { defineComponent, h } from 'vue';
 
-import { useRouteMatches } from './context';
+import { getRouteMatches } from './context';
 import RouteComponent from './RouteComponent';
 import RouteErrorBoundary from './RouteErrorBoundary';
 
 export default defineComponent({
   name: 'RouterOutlet',
   setup() {
-    const matches = useRouteMatches();
+    const matches = getRouteMatches();
 
     function renderSegment(depth: number) {
       const match = matches.value[depth];

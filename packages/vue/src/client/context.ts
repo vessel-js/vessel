@@ -36,34 +36,34 @@ import {
   STATIC_DATA_KEY,
 } from './context-keys';
 
-export function useRouter(): Router {
+export function getRouter(): Router {
   return inject(ROUTER_KEY)!;
 }
 
 export type RouteRef = Readonly<Ref<ClientLoadedRoute>>;
-export function useRoute(): RouteRef {
+export function getRoute(): RouteRef {
   return inject(ROUTE_KEY)!;
 }
 
 export type RouteMatchesRef = Readonly<Ref<ClientLoadedRoute[]>>;
-export function useRouteMatches(): RouteMatchesRef {
+export function getRouteMatches(): RouteMatchesRef {
   return inject(ROUTE_MATCHES_KEY)!;
 }
 
 export type NavigationRef = Readonly<Ref<Navigation>>;
-export function useNavigation(): NavigationRef {
+export function getNavigation(): NavigationRef {
   return inject(NAVIGATION_KEY)!;
 }
 
 export type MarkdownRef = ComputedRef<MarkdownMeta | undefined>;
-export function useMarkdown(): MarkdownRef {
+export function getMarkdown(): MarkdownRef {
   return inject(MARKDOWN_KEY)!;
 }
 
 export type FrontmatterRef<
   T extends MarkdownFrontmatter = MarkdownFrontmatter,
 > = ComputedRef<T>;
-export function useFrontmatter<
+export function getFrontmatter<
   T extends MarkdownFrontmatter = MarkdownFrontmatter,
 >(): FrontmatterRef<T> {
   return inject(FRONTMATTER_KEY)!;
@@ -71,7 +71,7 @@ export function useFrontmatter<
 
 export type StaticDataRef<T extends LoadedStaticData = LoadedStaticData> =
   Readonly<Ref<T>>;
-export function useStaticData<
+export function getStaticData<
   T extends LoadedStaticData = LoadedStaticData,
 >(): StaticDataRef<T> {
   return inject(STATIC_DATA_KEY)!;
@@ -79,7 +79,7 @@ export function useStaticData<
 
 export type ServerDataRef<T extends LoadedServerData = LoadedServerData> =
   Readonly<Ref<T>>;
-export function useServerData<
+export function getServerData<
   T extends LoadedServerData = LoadedServerData,
 >(): ServerDataRef<T> {
   return inject(SERVER_DATA_KEY)!;
@@ -88,7 +88,7 @@ export function useServerData<
 export type ServerErrorRef<T extends HttpErrorData = HttpErrorData> = Readonly<
   Ref<HttpError<T>>
 >;
-export function useServerError<
+export function getServerError<
   T extends HttpErrorData = HttpErrorData,
 >(): ServerErrorRef<T> {
   return inject(SERVER_ERROR_KEY)!;
