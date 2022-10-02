@@ -418,6 +418,11 @@ export class Router {
   }
 
   async navigate(url: URL, nav: NavigationOptions) {
+    if (this.listening && url.href === location.href) {
+      nav.blocked?.();
+      return;
+    }
+
     const token = (navigationToken = {});
     nav.state = nav.state ?? {};
     nav.redirects = nav.redirects ?? [];
@@ -499,6 +504,11 @@ export class Router {
 
     const matches = this.matchAll(url);
     const match = matches[0];
+
+    if (this.listening && match?.id === this._fw.route.get()?.id) {
+      cancel();
+      return;
+    }
 
     if (!match?.page) {
       cancel();
