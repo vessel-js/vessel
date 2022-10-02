@@ -89,7 +89,7 @@ export function listen(router: Router) {
 
     router.navigate(url, {
       scroll: !a.hasAttribute('data-noscroll') ? () => scrollPosition() : null,
-      replace: url.href === location.href,
+      replace: url.href === location.href || a.hasAttribute('data-replace'),
       keepfocus: false,
       canHandle: () => event.preventDefault(),
       blocked: () => event.preventDefault(),
