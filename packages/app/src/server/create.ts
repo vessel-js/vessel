@@ -1,13 +1,15 @@
 import type { JSONData, RequestParams } from './http';
-import type { MaybeStaticLoaderOutput, StaticLoaderInput } from './types';
+import type { ServerLoader, StaticLoader } from './types';
 
 export function createStaticLoader<
   Params extends RequestParams = RequestParams,
   Data extends JSONData = JSONData,
->(
-  loader: (
-    input: StaticLoaderInput<Params>,
-  ) => MaybeStaticLoaderOutput<Data> | Promise<MaybeStaticLoaderOutput<Data>>,
-) {
+>(loader: StaticLoader<Params, Data>) {
+  return loader;
+}
+
+export function createServerLoader<
+  Params extends RequestParams = RequestParams,
+>(loader: ServerLoader<Params>) {
   return loader;
 }

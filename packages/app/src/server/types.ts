@@ -162,7 +162,7 @@ export type ServerRedirect = {
 // Static Loader
 // ---------------------------------------------------------------------------------------
 
-export type StaticLoaderInput<Params extends RequestParams = RequestParams> =
+export type StaticLoaderEvent<Params extends RequestParams = RequestParams> =
   Readonly<{
     pathname: string;
     route: Route;
@@ -182,14 +182,14 @@ export type StaticLoaderCacheMap = Map<
 >;
 
 export type StaticLoaderCacheKeyBuilder = (
-  input: StaticLoaderInput,
+  event: StaticLoaderEvent,
 ) => StaticLoaderCacheKey | Promise<StaticLoaderCacheKey>;
 
 export type StaticLoader<
   Params extends RequestParams = RequestParams,
   Data extends JSONData = JSONData,
 > = (
-  input: StaticLoaderInput<Params>,
+  event: StaticLoaderEvent<Params>,
 ) => MaybeStaticLoaderOutput<Data> | Promise<MaybeStaticLoaderOutput<Data>>;
 
 export type StaticLoaderOutput<Data = JSONData> = {

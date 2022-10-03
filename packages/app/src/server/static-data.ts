@@ -6,14 +6,14 @@ import type {
   ServerFetcher,
   ServerLoadedRoute,
   StaticLoaderDataMap,
-  StaticLoaderInput,
+  StaticLoaderEvent,
 } from './types';
 
 export function createStaticLoaderInput(
   url: URL,
   route: MatchedRoute,
   fetcher: ServerFetcher,
-): StaticLoaderInput {
+): StaticLoaderEvent {
   return {
     pathname: url.pathname,
     route,
