@@ -13,10 +13,21 @@ export type VesselResponseMetadata = {
 
 export function createVesselResponse(
   url: URL,
-  response: Response & Partial<VesselResponseMetadata>,
+  response: Response,
+  init?: Partial<VesselResponseMetadata>,
 ): VesselResponse {
+  if (init?.headers) {
+    appendResponseHeaders(response, init.headers);
+  }
+
   if (!('cookies' in response)) {
-    const cookies = new Cookies({ url, headers: response.headers });
+    const cookies =
+      init?.cookies ??
+      new Cookies({
+        url,
+        headers: response.headers,
+      });
+
     Object.defineProperty(response, 'cookies', {
       enumerable: true,
       get() {
@@ -28,18 +39,9 @@ export function createVesselResponse(
   return response as VesselResponse;
 }
 
-export function attachResponseMetadata(
-  response: Response,
-  metadata: Partial<VesselResponseMetadata>,
-) {
-  if (metadata.headers) {
-    for (const [key, value] of metadata.headers) {
-      response.headers.append(key, value);
-    }
-  }
-
-  if (metadata.cookies) {
-    metadata.cookies.serialize(response.headers);
+export function appendResponseHeaders(response: Response, headers: Headers) {
+  for (const [key, value] of headers) {
+    response.headers.append(key, value);
   }
 }
 

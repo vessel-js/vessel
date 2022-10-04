@@ -4,12 +4,8 @@ import type {
   ServerRequestHandlerOutput,
 } from 'server/types';
 
-import { type FetchMiddleware } from './middleware';
-import {
-  createVesselRequest,
-  type RequestParams,
-  type VesselRequest,
-} from './request';
+import { type FetchMiddleware, withMiddleware } from './middleware';
+import { type RequestParams, type VesselRequest } from './request';
 import { createVesselResponse, resolveResponseData } from './response';
 
 export type FetcherInit = {
@@ -65,7 +61,12 @@ export function createFetcher<
         }
       }
 
-      const response = await callFetch(request, init?.middleware);
+      const response = await withMiddleware(
+        request,
+        vesselFetch,
+        init?.middleware,
+      );
+
       if (!response.ok) throw response;
 
       const data = await resolveResponseData<any>(response);
@@ -96,21 +97,10 @@ export function coerceFetchInput(
       );
 }
 
-export async function callFetch(
-  request: Request,
-  middlewares: FetchMiddleware[] = [],
-) {
-  let chain = async (request: VesselRequest) => {
-    const fetchRequest = new Request(request.URL, request);
-    request.cookies.serialize(fetchRequest.headers);
-    return createVesselResponse(request.URL, await fetch(fetchRequest));
-  };
-
-  for (let i = middlewares.length - 1; i >= 0; i--) {
-    chain = async (request) => middlewares[i](request, chain);
-  }
-
-  return chain(createVesselRequest(request));
+export async function vesselFetch(request: VesselRequest) {
+  const fetchRequest = new Request(request.URL, request);
+  request.cookies.attach(fetchRequest.headers);
+  return createVesselResponse(request.URL, await fetch(fetchRequest));
 }
 
 // From: https://github.com/whatwg/fetch/issues/905#issuecomment-491970649

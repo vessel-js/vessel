@@ -1,9 +1,10 @@
 import type { ServerManifest } from 'server/types';
 import {
-  attachResponseMetadata,
   clientRedirect,
+  createVesselResponse,
   HttpError,
   isRedirectResponse,
+  withMiddleware,
 } from 'shared/http';
 import { matchRoute } from 'shared/routing';
 import type { RouteComponentType } from 'shared/routing/types';
@@ -44,18 +45,24 @@ export async function handleDataRequest(
       return response;
     }
 
-    const event = createServerRequestEvent({
-      url,
+    const response = await withMiddleware(
       request,
-      params: match.params,
-      manifest,
-    });
+      async (request) => {
+        const event = createServerRequestEvent({
+          url,
+          request,
+          params: match.params,
+          manifest,
+        });
+        const output = await serverLoader(event);
+        const response = coerceServerRequestHandlerOutput(output);
+        response.headers.set('X-Vessel-Data', 'yes');
+        return createVesselResponse(request.URL, response, event.response);
+      },
+      serverLoader.middleware,
+    );
 
-    const output = await serverLoader(event);
-
-    const response = coerceServerRequestHandlerOutput(output);
-    attachResponseMetadata(response, event.response);
-    response.headers.set('X-Vessel-Data', 'yes');
+    response.cookies.attach(response.headers);
     return response;
   } catch (error) {
     if (isRedirectResponse(error)) {

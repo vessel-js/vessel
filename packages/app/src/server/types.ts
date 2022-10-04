@@ -1,4 +1,5 @@
 import type {
+  FetchMiddleware,
   JSONData,
   JSONResponse,
   RequestParams,
@@ -180,10 +181,13 @@ export type ServerRequestEvent<Params extends RequestParams = RequestParams> = {
 // Server Request Handler
 // ---------------------------------------------------------------------------------------
 
-export type ServerRequestHandler<
+export interface ServerRequestHandler<
   Params extends RequestParams = RequestParams,
   Output extends ServerRequestHandlerOutput = Response,
-> = (event: ServerRequestEvent<Params>) => Output | Promise<Output>;
+> {
+  (event: ServerRequestEvent<Params>): Output | Promise<Output>;
+  middleware?: FetchMiddleware[];
+}
 
 export type ServerRequestHandlerOutput<Data extends JSONData = JSONData> =
   | string
@@ -254,10 +258,13 @@ export type MaybeStaticLoaderOutput<Data = JSONData> =
 // Server Loader
 // ---------------------------------------------------------------------------------------
 
-export type ServerLoader<
+export interface ServerLoader<
   Params extends RequestParams = RequestParams,
   Output extends ServerLoaderOutput = Response,
-> = (event: ServerRequestEvent<Params>) => Output | Promise<Output>;
+> {
+  (event: ServerRequestEvent<Params>): Output | Promise<Output>;
+  middleware?: FetchMiddleware[];
+}
 
 export type ServerLoaderOutput<Data extends JSONData = JSONData> =
   ServerRequestHandlerOutput<Data>;

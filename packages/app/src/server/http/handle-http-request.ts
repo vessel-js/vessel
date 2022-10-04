@@ -4,13 +4,14 @@ import type {
   ServerRequestHandlerOutput,
 } from 'server/types';
 import {
-  attachResponseMetadata,
+  createVesselResponse,
   getAllowedMethods,
   httpError,
   HttpMethod,
   isRedirectResponse,
   isResponse,
   json,
+  withMiddleware,
 } from 'shared/http';
 import { isString } from 'shared/utils/unit';
 
@@ -59,15 +60,23 @@ export async function handleHttpRequest(
       });
     }
 
-    const event = createServerRequestEvent({
-      url,
-      params: route.params,
+    const response = await withMiddleware(
       request,
-      manifest,
-    });
+      async (request) => {
+        const event = createServerRequestEvent({
+          url,
+          params: route.params,
+          request,
+          manifest,
+        });
+        const output = await handler(event);
+        const response = coerceServerRequestHandlerOutput(output);
+        return createVesselResponse(request.URL, response, event.response);
+      },
+      handler.middleware,
+    );
 
-    const response = coerceServerRequestHandlerOutput(await handler(event));
-    attachResponseMetadata(response, event.response);
+    response.cookies.attach(response.headers);
     return response;
   } catch (error) {
     if (isRedirectResponse(error)) {

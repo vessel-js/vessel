@@ -71,7 +71,7 @@ export class Cookies implements Iterable<[string, Cookie]> {
     this._cookies.clear();
   }
 
-  serialize(headers: Headers) {
+  attach(headers: Headers) {
     for (const newCookie of this._cookies.values()) {
       const { name, value, options } = newCookie;
       headers.append('set-cookie', serialize(name, value, options));

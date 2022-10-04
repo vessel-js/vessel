@@ -9,7 +9,7 @@ import type {
 } from 'server/types';
 import { resolveStaticDataAssetId } from 'shared/data';
 import {
-  attachResponseMetadata,
+  appendResponseHeaders,
   Cookies,
   HttpError,
   isClientRedirectResponse,
@@ -293,7 +293,8 @@ async function renderDocument(
     },
   });
 
-  attachResponseMetadata(response, { headers, cookies });
+  appendResponseHeaders(response, headers);
+  cookies.attach(response.headers);
   return response;
 }
 
