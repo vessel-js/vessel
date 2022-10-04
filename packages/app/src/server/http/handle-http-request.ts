@@ -1,19 +1,13 @@
-import type {
-  ServerManifest,
-  ServerMatchedHttpRoute,
-  ServerRequestHandlerOutput,
-} from 'server/types';
+import type { ServerManifest, ServerMatchedHttpRoute } from 'server/types';
 import {
+  coerceAnyResponse,
   createVesselResponse,
-  getAllowedMethods,
   httpError,
-  HttpMethod,
+  type HttpMethod,
   isRedirectResponse,
-  isResponse,
-  json,
+  resolveHandlerHttpMethod,
   withMiddleware,
 } from 'shared/http';
-import { isString } from 'shared/utils/unit';
 
 import { handleHttpError } from './handle-http-error';
 import { createServerRequestEvent } from './server-request-event';
@@ -25,6 +19,13 @@ export async function handleHttpRequest(
   manifest?: ServerManifest,
 ): Promise<Response> {
   try {
+    if (
+      !url.pathname.startsWith('/__rpc') &&
+      !route.pattern.test({ pathname: url.pathname })
+    ) {
+      throw httpError('route not found', 404);
+    }
+
     const methodOverride =
       request.method === 'POST'
         ? (await request.formData()).get('_method')
@@ -34,31 +35,31 @@ export async function handleHttpRequest(
       typeof methodOverride === 'string' ? methodOverride : request.method
     ) as HttpMethod;
 
-    if (route.methods && !route.methods.includes(method)) {
-      throw httpError('not found', 404);
-    }
+    const handlerId = url.searchParams.get('rpc_handler_id') ?? method;
+    const handlerMethod = resolveHandlerHttpMethod(handlerId);
 
-    if (!route.pattern.test({ pathname: url.pathname })) {
-      throw httpError('not found', 404);
-    }
-
-    const mod = await route.loader();
-
-    let handler = mod[method];
-
-    if (!handler && method === 'HEAD') handler = mod.GET;
-    if (!handler) handler = mod.ANY;
-
-    if (!handler) {
+    if (
+      !handlerMethod ||
+      (route.methods && !route.methods.includes(handlerMethod))
+    ) {
       throw httpError(`${method} method not allowed`, {
         status: 405,
         headers: {
           // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/405
           // "The server must generate an Allow header field in a 405 status code response"
-          allow: getAllowedMethods(mod).join(', '),
+          allow: route.methods
+            ? route.methods.join(', ')
+            : getAllowedHttpMethods(await route.loader()).join(', '),
         },
       });
     }
+
+    const mod = await route.loader();
+
+    let handler = mod[handlerId];
+    if (!handler && handlerId === 'HEAD') handler = mod.GET;
+    if (!handler) handler = mod.ANY;
+    if (!handler) throw httpError('route not found', 404);
 
     const response = await withMiddleware(
       request,
@@ -69,8 +70,8 @@ export async function handleHttpRequest(
           request,
           manifest,
         });
-        const output = await handler(event);
-        const response = coerceServerRequestHandlerOutput(output);
+        const anyResponse = await handler(event);
+        const response = coerceAnyResponse(anyResponse);
         return createVesselResponse(request.URL, response, event.response);
       },
       handler.middleware,
@@ -87,12 +88,15 @@ export async function handleHttpRequest(
   }
 }
 
-export function coerceServerRequestHandlerOutput(
-  output: ServerRequestHandlerOutput,
-): Response {
-  return isResponse(output)
-    ? output
-    : isString(output)
-    ? new Response(output)
-    : json(output ?? {});
+export function getAllowedHttpMethods(mod: Record<string, unknown>) {
+  const allowed: string[] = [];
+
+  for (const id of Object.keys(mod)) {
+    const method = resolveHandlerHttpMethod(id);
+    if (method) allowed.push(method);
+  }
+
+  if (mod.GET || mod.HEAD) allowed.push('HEAD');
+
+  return allowed;
 }

@@ -16,6 +16,7 @@ import { configureDevServer } from './core/dev-server';
 import { configurePreviewServer } from './core/preview-server';
 import { filesPlugin } from './files/files-plugin';
 import { markdownPlugin } from './markdown/markdown-plugin';
+import { rpcPlugin } from './rpc-plugin';
 
 const clientPackages = [
   '@vessel-js/app',
@@ -165,6 +166,7 @@ export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
         }
       },
     },
+    rpcPlugin(),
     markdownPlugin(),
     filesPlugin(),
   ];

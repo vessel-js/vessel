@@ -6,7 +6,7 @@ import { logger } from 'node/utils';
 import { handleHttpError, handleHttpRequest } from 'server';
 import { createStaticLoaderInput } from 'server/static-data';
 import type {
-  MaybeStaticLoaderOutput,
+  MaybeStaticLoaderResponse,
   ServerFetcher,
   ServerHttpModule,
   ServerLoadedRoute,
@@ -15,7 +15,7 @@ import type {
   StaticLoader,
   StaticLoaderCacheKeyBuilder,
   StaticLoaderCacheMap,
-  StaticLoaderOutput,
+  StaticLoaderResponse,
 } from 'server/types';
 import { ALL_HTTP_METHODS, coerceFetchInput, httpError } from 'shared/http';
 import {
@@ -48,7 +48,9 @@ export function createStaticLoaderFetcher(
       const route = matchRoute(url, httpRoutes);
 
       if (!route) {
-        return Promise.resolve(handleHttpError(httpError('not found', 404)));
+        return Promise.resolve(
+          handleHttpError(httpError('route not found', 404)),
+        );
       }
 
       return handleHttpRequest(url, coerceFetchInput(input, init, url), {
@@ -78,7 +80,7 @@ const getStaticDataKey = (
   route: Route & RouteMatch,
   type: RouteComponentType,
 ) => route.id + type + url.pathname;
-const staticData = new Map<string, MaybeStaticLoaderOutput>();
+const staticData = new Map<string, MaybeStaticLoaderResponse>();
 
 export async function loadStaticRoute(
   app: App,
@@ -197,7 +199,7 @@ export async function callStaticLoader(
   route: Route & RouteMatch,
   fetcher: ServerFetcher,
   staticLoader?: StaticLoader,
-): Promise<StaticLoaderOutput> {
+): Promise<StaticLoaderResponse> {
   const id = route.id;
   const input = createStaticLoaderInput(url, route, fetcher);
 
@@ -215,33 +217,33 @@ export async function callStaticLoader(
     }
   }
 
-  const output = await staticLoader(input);
+  const response = await staticLoader(input);
 
   const isDataValid =
-    !output ||
-    (typeof output === 'object' &&
-      (!output.data || typeof output.data === 'object'));
+    !response ||
+    (typeof response === 'object' &&
+      (!response.data || typeof response.data === 'object'));
 
-  if (isDataValid && isFunction(output?.cache)) {
-    const cacheKey = await output!.cache(input);
+  if (isDataValid && isFunction(response?.cache)) {
+    const cacheKey = await response!.cache(input);
 
     if (cacheKey) {
       const cache = loaderCache.get(id) ?? new Map();
-      cache.set(cacheKey, output);
+      cache.set(cacheKey, response);
       loaderCache.set(id, cache);
     }
 
-    cacheKeyBuilder.set(id, output!.cache);
+    cacheKeyBuilder.set(id, response!.cache);
   }
 
   if (!isDataValid) {
     if (!warned.has(id)) {
       logger.warn(
-        'Received invalid data from loader (expected object).',
+        'Received invalid response from static loader (expected object).',
         [
           `\n${kleur.bold('File:')} ${route.id}`,
-          `${kleur.bold('Output Type:')} ${typeof output}`,
-          `${kleur.bold('Data Type:')} ${typeof output?.data}`,
+          `${kleur.bold('Response Type:')} ${typeof response}`,
+          `${kleur.bold('Data Type:')} ${typeof response?.data}`,
         ].join('\n'),
         '\n',
       );
@@ -252,13 +254,13 @@ export async function callStaticLoader(
     return {};
   }
 
-  if (output?.cache && !isFunction(output.cache)) {
+  if (response?.cache && !isFunction(response.cache)) {
     if (!warned.has(id)) {
       logger.warn(
         'Received invalid cache builder from loader (expected function).',
         [
           `\n${kleur.bold('File:')} ${route.id}`,
-          `${kleur.bold('Cache Type:')} ${typeof output.cache}`,
+          `${kleur.bold('Cache Type:')} ${typeof response.cache}`,
         ].join('\n'),
         '\n',
       );
@@ -268,5 +270,5 @@ export async function callStaticLoader(
   }
 
   warned.delete(id);
-  return output ?? {};
+  return response ?? {};
 }

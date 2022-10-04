@@ -1,52 +1,40 @@
 import type {
-  InferServerRequestHandlerData,
+  InferServerHandlerData,
+  InferServerHandlerParams,
   ServerRequestHandler,
-  ServerRequestHandlerOutput,
 } from 'server/types';
 
 import { type FetchMiddleware, withMiddleware } from './middleware';
 import { type RequestParams, type VesselRequest } from './request';
 import { createVesselResponse, resolveResponseData } from './response';
 
-export type FetcherInit<Params extends RequestParams = RequestParams> =
-  RequestInit & {
-    params?: Params;
-    searchParams?: URLSearchParams;
-    onLoading?: (isLoading: boolean) => void;
-    onError?: (error: unknown) => void;
-  };
+export type FetcherInit<Params = RequestParams> = RequestInit & {
+  params?: Params;
+  searchParams?: URLSearchParams;
+  onLoading?: (isLoading: boolean) => void;
+  onError?: (error: unknown) => void;
+};
 
-export type Fetcher<
-  Params extends RequestParams = RequestParams,
-  ServerOutput extends ServerRequestHandlerOutput = any,
-> = (
-  init?: FetcherInit<Params>,
-) => Promise<InferServerRequestHandlerData<ServerOutput>>;
-
-export type CreateFetcherInput<
-  Params extends RequestParams = RequestParams,
-  ServerOutput extends ServerRequestHandlerOutput = any,
-> = string | Request | URL | ServerRequestHandler<Params, ServerOutput>;
+export type Fetcher<RPC = unknown> = (
+  init?: FetcherInit<InferServerHandlerParams<RPC>>,
+) => Promise<InferServerHandlerData<RPC>>;
 
 export type CreateFetcherInit = {
   middleware?: FetchMiddleware[];
 };
 
-export function createFetcher<
-  Params extends RequestParams = RequestParams,
-  ServerOutput extends ServerRequestHandlerOutput = Response,
->(
-  input: CreateFetcherInput<Params, ServerOutput>,
+export function createFetcher<RPC extends ServerRequestHandler>(
+  input: string | Request | URL | RPC,
   init?: CreateFetcherInit,
-): Fetcher<Params, ServerOutput> {
-  if (typeof input === 'function') {
-    throw new Error('[vessel] fetcher RPC call was not transformed');
-  }
-
+): Fetcher<RPC> {
   if (import.meta.env.SSR) {
     return () => {
       throw new Error('[vessel] fetcher was called server-side');
     };
+  }
+
+  if (typeof input === 'function') {
+    throw new Error('[vessel] fetcher RPC call was not transformed');
   }
 
   return async (fetchInit) => {
@@ -57,8 +45,8 @@ export function createFetcher<
 
       // Array = transformed server RPC call [method: string, path: string]
       const request = Array.isArray(input)
-        ? new Request(new URL(input[1], baseURL), {
-            method: input[0],
+        ? new Request(new URL(input[0], baseURL), {
+            method: input[1],
             ...fetchInit,
           })
         : coerceFetchInput(input, fetchInit, baseURL);
@@ -73,7 +61,10 @@ export function createFetcher<
 
       if (fetchInit?.params) {
         for (const key of Object.keys(fetchInit.params)) {
-          url.searchParams.append('_params', `${key}=${fetchInit.params[key]}`);
+          url.searchParams.append(
+            'rpc_params',
+            `${key}=${fetchInit.params[key]}`,
+          );
         }
       }
 

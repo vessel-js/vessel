@@ -179,7 +179,7 @@ export async function loadServerData(
   }
 
   const dataURL = new URL(route.matchedURL.href);
-  dataURL.searchParams.set('_data', '');
+  dataURL.searchParams.set('__data', '');
   dataURL.searchParams.set('route_id', route.id);
   dataURL.searchParams.set('route_type', type);
 

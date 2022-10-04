@@ -5,7 +5,7 @@ import { handleIncomingMessage } from 'node/http';
 import { createRequestHandler } from 'server/http';
 import type { ServerEntryModule, ServerManifest } from 'server/types';
 import { resolveStaticDataAssetId } from 'shared/data';
-import { ALL_HTTP_METHODS, type JSONData } from 'shared/http';
+import { type JSONData } from 'shared/http';
 import { getRouteComponentTypes, matchRoute } from 'shared/routing';
 import { coerceToError } from 'shared/utils/error';
 import type { Connect, ModuleNode, ViteDevServer } from 'vite';
@@ -91,8 +91,6 @@ export async function handleDevRequest({
         http: app.routes.filterHasType('http').map((route) => ({
           ...route,
           loader: route.http!.viteLoader,
-          // Just use all in dev and let it fail.
-          methods: ALL_HTTP_METHODS,
         })),
       },
       document: {

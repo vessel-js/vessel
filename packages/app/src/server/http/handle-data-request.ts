@@ -1,6 +1,7 @@
 import type { ServerManifest } from 'server/types';
 import {
   clientRedirect,
+  coerceAnyResponse,
   createVesselResponse,
   HttpError,
   isRedirectResponse,
@@ -10,7 +11,6 @@ import { matchRoute } from 'shared/routing';
 import type { RouteComponentType } from 'shared/routing/types';
 
 import { handleHttpError } from './handle-http-error';
-import { coerceServerRequestHandlerOutput } from './handle-http-request';
 import { createServerRequestEvent } from './server-request-event';
 
 export async function handleDataRequest(
@@ -27,13 +27,13 @@ export async function handleDataRequest(
     );
 
     if (!route) {
-      throw new HttpError('not found', 404);
+      throw new HttpError('data not found', 404);
     }
 
     const match = matchRoute(url, [route]);
 
     if (!match) {
-      throw new HttpError('not found', 404);
+      throw new HttpError('data not found', 404);
     }
 
     const mod = await match[routeType]!.loader();
@@ -54,8 +54,8 @@ export async function handleDataRequest(
           params: match.params,
           manifest,
         });
-        const output = await serverLoader(event);
-        const response = coerceServerRequestHandlerOutput(output);
+        const anyResponse = await serverLoader(event);
+        const response = coerceAnyResponse(anyResponse);
         response.headers.set('X-Vessel-Data', 'yes');
         return createVesselResponse(request.URL, response, event.response);
       },

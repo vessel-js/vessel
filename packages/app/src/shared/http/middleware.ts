@@ -1,9 +1,10 @@
 import { createVesselRequest, type VesselRequest } from './request';
+import { type VesselRequestHandler } from './request-handler';
 import { type VesselResponse } from './response';
 
 export type FetchMiddleware = (
   request: VesselRequest,
-  next: (request: VesselRequest) => Promise<VesselResponse>,
+  next: VesselRequestHandler,
 ) => VesselResponse | Promise<VesselResponse>;
 
 export type MaybeFetchMiddleware = FetchMiddleware | undefined | null | false;
@@ -24,7 +25,7 @@ export function composeFetchMiddleware(
 
 export async function withMiddleware(
   request: Request,
-  handler: (request: VesselRequest) => Promise<VesselResponse>,
+  handler: VesselRequestHandler,
   middlewares: FetchMiddleware[] = [],
 ) {
   let chain = handler;

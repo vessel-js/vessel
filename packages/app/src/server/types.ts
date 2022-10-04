@@ -1,4 +1,5 @@
 import type {
+  AnyResponse,
   FetchMiddleware,
   JSONData,
   JSONResponse,
@@ -144,7 +145,7 @@ export type ServerHttpModule = {
 
 export type ServerLoadableHttpRoute = Route & {
   readonly loader: () => Promise<ServerHttpModule>;
-  readonly methods: string[];
+  readonly methods?: string[];
 };
 
 export type ServerMatchedHttpRoute = ServerLoadableHttpRoute & RouteMatch;
@@ -183,25 +184,24 @@ export type ServerRequestEvent<Params extends RequestParams = RequestParams> = {
 
 export interface ServerRequestHandler<
   Params extends RequestParams = RequestParams,
-  Output extends ServerRequestHandlerOutput = Response,
+  Response extends AnyResponse = AnyResponse,
 > {
-  (event: ServerRequestEvent<Params>): Output | Promise<Output>;
+  (event: ServerRequestEvent<Params>): Response | Promise<Response>;
   middleware?: FetchMiddleware[];
 }
 
-export type ServerRequestHandlerOutput<Data extends JSONData = JSONData> =
-  | string
-  | Data
-  | Response
-  | JSONResponse<Data>;
+export type InferServerHandlerParams<Handler> =
+  Handler extends ServerRequestHandler<infer T> ? T : RequestParams;
 
-export type InferServerRequestHandlerData<
-  Output extends ServerRequestHandlerOutput,
-> = Output extends Response
-  ? Output extends JSONResponse<infer Data>
-    ? Data
-    : unknown
-  : Output;
+export type InferServerHandlerData<Handler> =
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  Handler extends ServerRequestHandler<{}, infer T>
+    ? T extends Response
+      ? T extends JSONResponse<infer Data>
+        ? Data
+        : unknown
+      : T
+    : unknown;
 
 // ---------------------------------------------------------------------------------------
 // Static Loader
@@ -223,7 +223,7 @@ export type StaticLoaderCacheKey = unknown;
 
 export type StaticLoaderCacheMap = Map<
   StaticLoaderCacheKey,
-  StaticLoaderOutput
+  StaticLoaderResponse
 >;
 
 export type StaticLoaderCacheKeyBuilder = (
@@ -235,9 +235,9 @@ export type StaticLoader<
   Data extends JSONData = JSONData,
 > = (
   event: StaticLoaderEvent<Params>,
-) => MaybeStaticLoaderOutput<Data> | Promise<MaybeStaticLoaderOutput<Data>>;
+) => MaybeStaticLoaderResponse<Data> | Promise<MaybeStaticLoaderResponse<Data>>;
 
-export type StaticLoaderOutput<Data = JSONData> = {
+export type StaticLoaderResponse<Data = JSONData> = {
   data?: Data;
   readonly redirect?: string | { path: string; status?: number };
   readonly cache?: StaticLoaderCacheKeyBuilder;
@@ -248,11 +248,11 @@ export type ServerFetcher = (
   init?: RequestInit,
 ) => Promise<Response>;
 
-export type MaybeStaticLoaderOutput<Data = JSONData> =
+export type MaybeStaticLoaderResponse<Data = JSONData> =
   | void
   | undefined
   | null
-  | StaticLoaderOutput<Data>;
+  | StaticLoaderResponse<Data>;
 
 // ---------------------------------------------------------------------------------------
 // Server Loader
@@ -260,14 +260,11 @@ export type MaybeStaticLoaderOutput<Data = JSONData> =
 
 export interface ServerLoader<
   Params extends RequestParams = RequestParams,
-  Output extends ServerLoaderOutput = Response,
+  Response extends AnyResponse = AnyResponse,
 > {
-  (event: ServerRequestEvent<Params>): Output | Promise<Output>;
+  (event: ServerRequestEvent<Params>): Response | Promise<Response>;
   middleware?: FetchMiddleware[];
 }
-
-export type ServerLoaderOutput<Data extends JSONData = JSONData> =
-  ServerRequestHandlerOutput<Data>;
 
 // ---------------------------------------------------------------------------------------
 // Server Action
@@ -275,5 +272,5 @@ export type ServerLoaderOutput<Data extends JSONData = JSONData> =
 
 export type ServerAction<
   Params extends RequestParams = RequestParams,
-  Output extends ServerLoaderOutput = ServerLoaderOutput,
-> = (event: ServerRequestEvent<Params>) => Output | Promise<Output>;
+  Response extends AnyResponse = AnyResponse,
+> = (event: ServerRequestEvent<Params>) => Response | Promise<Response>;

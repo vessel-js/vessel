@@ -3,18 +3,19 @@ import type {
   DocumentResource,
   DocumentResourceEntry,
   ServerLoadedRoute,
-  ServerLoaderOutput,
   ServerManifest,
   ServerMatchedRoute,
 } from 'server/types';
 import { resolveStaticDataAssetId } from 'shared/data';
 import {
+  type AnyResponse,
   appendResponseHeaders,
   Cookies,
   HttpError,
   isClientRedirectResponse,
   isHttpError,
   isRedirectResponse,
+  isResponse,
   resolveResponseData,
 } from 'shared/http';
 import {
@@ -332,7 +333,7 @@ async function loadServerData({
     manifest,
   });
 
-  let output: ServerLoaderOutput;
+  let output: AnyResponse;
 
   try {
     output = await serverLoader(event);
@@ -348,9 +349,11 @@ async function loadServerData({
 
   if (isRedirectResponse(output)) {
     return { redirect: output };
+  } else if (isResponse(output)) {
+    return { data: await resolveResponseData(output) };
   }
 
-  return { data: await resolveResponseData(output) };
+  return { data: output };
 }
 
 export function createServerRouter() {

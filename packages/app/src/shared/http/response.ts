@@ -1,6 +1,8 @@
 /**
- * Adapted from: https://github.com/remix-run/remix/blob/main/packages/remix-server-runtime
+ * Few functions adapted from: https://github.com/remix-run/remix/blob/main/packages/remix-server-runtime
  */
+
+import { isString } from 'shared/utils/unit';
 
 import { Cookies } from './cookies';
 
@@ -133,4 +135,18 @@ export async function resolveResponseData<Data = unknown>(
   return contentType && /\bapplication\/json\b/.test(contentType)
     ? response.json()
     : response.text();
+}
+
+export type AnyResponse<Data extends JSONData = JSONData> =
+  | string
+  | Data
+  | Response
+  | JSONResponse<Data>;
+
+export function coerceAnyResponse(response: AnyResponse): Response {
+  return isResponse(response)
+    ? response
+    : isString(response)
+    ? new Response(response)
+    : json(response ?? {});
 }

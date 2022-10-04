@@ -68,7 +68,7 @@ export function createServerFetcher(
 
       if (!route) {
         return Promise.resolve(
-          handleHttpError(httpError('not found', 404), url, manifest),
+          handleHttpError(httpError('route not found', 404), url, manifest),
         );
       }
 

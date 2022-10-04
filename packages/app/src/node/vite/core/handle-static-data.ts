@@ -60,24 +60,26 @@ export async function handleStaticDataRequest({
   const { staticLoader } = await match[type]!.loader();
 
   try {
-    const output = await callStaticLoader(
+    const response = await callStaticLoader(
       dataURL,
       match,
       fetcher,
       staticLoader,
     );
 
-    if (output.redirect) {
+    if (response.redirect) {
       res.setHeader(
         'X-Vessel-Redirect',
-        isString(output.redirect) ? output.redirect : output.redirect.path,
+        isString(response.redirect)
+          ? response.redirect
+          : response.redirect.path,
       );
     }
 
     res.statusCode = 200;
     res.setHeader('X-Vessel-Data', 'yes');
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(output.data ?? {}));
+    res.end(JSON.stringify(response.data ?? {}));
   } catch (e) {
     const error = coerceToError(e);
 

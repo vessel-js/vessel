@@ -1,11 +1,17 @@
 import type { ServerManifest } from 'server/types';
-import { redirect, type RequestHandler } from 'shared/http';
+import {
+  HTML_DOCUMENT_HTTP_METHOD,
+  json,
+  redirect,
+  type RequestHandler,
+} from 'shared/http';
 import { matchRoute } from 'shared/routing';
 import { noendslash } from 'shared/utils/url';
 
 import { handleDataRequest } from './handle-data-request';
 import { handleDocumentRequest } from './handle-document-request';
 import { handleHttpRequest } from './handle-http-request';
+import { handleRPCRequest } from './handle-rpc-request';
 
 export function createRequestHandler(manifest: ServerManifest): RequestHandler {
   if (!manifest.dev) {
@@ -20,16 +26,26 @@ export function createRequestHandler(manifest: ServerManifest): RequestHandler {
 
     let response: Response;
 
-    const httpRoute = matchRoute(url, manifest.routes.http);
-    if (httpRoute) {
-      response = await handleHttpRequest(url, request, httpRoute, manifest);
-    } else if (url.searchParams.has('_data')) {
+    const method = request.method;
+    const accepts = request.headers.get('Accept');
+    const acceptsHTML = accepts && /\btext\/html\b/.test(accepts);
+
+    if (url.pathname.startsWith('/__rpc')) {
+      response = await handleRPCRequest(url, request, manifest);
+    } else if (url.searchParams.has('__data')) {
       response = await handleDataRequest(url, request, manifest);
-    } else {
+    } else if (acceptsHTML && HTML_DOCUMENT_HTTP_METHOD.has(method)) {
       response = await handleDocumentRequest(url, request, manifest);
+    } else {
+      const route = matchRoute(url, manifest.routes.http);
+      if (route) {
+        response = await handleHttpRequest(url, request, route, manifest);
+      } else {
+        response = json({ error: { message: 'route not found' } }, 404);
+      }
     }
 
-    if (request.method === 'HEAD') {
+    if (method === 'HEAD') {
       return new Response(null, {
         headers: response.headers,
         status: response.status,

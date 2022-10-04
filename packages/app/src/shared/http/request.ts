@@ -1,5 +1,9 @@
 import { Cookies } from './cookies';
 
+export type RequestParams = {
+  [param: string]: string | undefined;
+};
+
 export type VesselRequest = Request & VesselRequestMetadata;
 
 export type VesselRequestMetadata = {
@@ -37,35 +41,4 @@ export function createVesselRequest(
   }
 
   return request as VesselRequest;
-}
-
-export type RequestParams = {
-  [param: string]: string | undefined;
-};
-
-export type RequestHandler = (request: Request) => Response | Promise<Response>;
-
-export type HttpMethod = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-
-export const HTTP_METHODS: Set<string> = new Set([
-  'ANY',
-  'GET',
-  'POST',
-  'PUT',
-  'PATCH',
-  'DELETE',
-]);
-
-export const ALL_HTTP_METHODS = Array.from(HTTP_METHODS);
-
-export function getAllowedMethods(mod: Record<string, unknown>) {
-  const allowed: string[] = [];
-
-  for (const method of HTTP_METHODS) {
-    if (method in mod) allowed.push(method);
-  }
-
-  if (mod.GET || mod.HEAD) allowed.push('HEAD');
-
-  return allowed;
 }

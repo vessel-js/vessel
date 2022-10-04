@@ -7,18 +7,19 @@ import type {
   OutputBundle,
   OutputChunk,
 } from 'rollup';
-import { ALL_HTTP_METHODS, HTTP_METHODS } from 'shared/http';
+import { ALL_HTTP_METHODS, resolveHandlerHttpMethod } from 'shared/http';
 import { type RouteComponentType } from 'shared/routing';
 
 import type { BuildData } from './build-data';
 
-export function resolveHttpMethods(httpRoute: AppRoute, build: BuildData) {
+export function resolveHttpChunkMethods(httpRoute: AppRoute, build: BuildData) {
   const methods =
     build.server.chunks
       .get(httpRoute.id)
-      ?.http?.exports.filter((id) => HTTP_METHODS.has(id)) ?? [];
+      ?.http?.exports?.map((id) => resolveHandlerHttpMethod(id))
+      .filter((handler) => typeof handler === 'string') ?? [];
 
-  // Done this way so it's sorted.
+  // Done this way so it's sorted and deduped.
   return ALL_HTTP_METHODS.filter((method) => methods.includes(method));
 }
 

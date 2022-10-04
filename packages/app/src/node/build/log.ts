@@ -9,7 +9,7 @@ import type { OutputChunk } from 'rollup';
 import { noslash, slash } from 'shared/utils/url';
 
 import type { BuildBundles, BuildData } from './build-data';
-import { resolveHttpMethods } from './chunks';
+import { resolveHttpChunkMethods } from './chunks';
 
 type RouteType = 'static' | 'server' | 'api' | 'redirect' | 'invalid';
 
@@ -99,7 +99,7 @@ export function logRoutesTable({ build, bundles }: RoutesLoggerInput) {
     const uri = id === '/' ? id : noslash(id);
     const edge = route && build.edge.routes.has(route.id);
     const methods =
-      route && type === 'api' ? resolveHttpMethods(route, build) : ['GET'];
+      route && type === 'api' ? resolveHttpChunkMethods(route, build) : ['GET'];
     const size =
       route && type !== 'api' ? computeRouteSize(route, build, bundles) : ``;
 

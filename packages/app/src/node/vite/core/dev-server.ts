@@ -32,6 +32,7 @@ export function configureDevServer(app: App, server: ViteDevServer) {
       }
 
       if (
+        url.pathname.startsWith('/__rpc') ||
         findRoute(url, app.routes.filterHasType('page')) ||
         findRoute(url, app.routes.filterHasType('http'))
       ) {

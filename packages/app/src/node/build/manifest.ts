@@ -10,7 +10,7 @@ import { stripImportQuotesFromJson } from 'shared/utils/json';
 import { noendslash } from 'shared/utils/url';
 
 import type { BuildBundles, BuildData } from './build-data';
-import { resolveHttpMethods } from './chunks';
+import { resolveHttpChunkMethods } from './chunks';
 
 export function buildServerManifests(
   app: App,
@@ -172,7 +172,7 @@ function createManifestInit(
           ...toRoute(appRoute),
           pattern: undefined,
           loader: `() => import('../${fileName}')`,
-          methods: resolveHttpMethods(appRoute, build),
+          methods: resolveHttpChunkMethods(appRoute, build),
         };
       }),
     },

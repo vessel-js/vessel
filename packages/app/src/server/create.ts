@@ -1,12 +1,11 @@
-import type { FetchMiddleware, JSONData, RequestParams } from 'shared/http';
-
 import type {
-  ServerLoader,
-  ServerLoaderOutput,
-  ServerRequestHandler,
-  ServerRequestHandlerOutput,
-  StaticLoader,
-} from './types';
+  AnyResponse,
+  FetchMiddleware,
+  JSONData,
+  RequestParams,
+} from 'shared/http';
+
+import type { ServerLoader, ServerRequestHandler, StaticLoader } from './types';
 
 export function createStaticLoader<
   Params extends RequestParams = RequestParams,
@@ -17,9 +16,9 @@ export function createStaticLoader<
 
 export function createServerLoader<
   Params extends RequestParams = RequestParams,
-  Output extends ServerLoaderOutput = Response,
+  Response extends AnyResponse = AnyResponse,
 >(
-  loader: ServerLoader<Params, Output>,
+  loader: ServerLoader<Params, Response>,
   init?: { middleware?: FetchMiddleware[] },
 ) {
   loader.middleware = init?.middleware;
@@ -28,9 +27,9 @@ export function createServerLoader<
 
 export function createServerRequestHandler<
   Params extends RequestParams = RequestParams,
-  Output extends ServerRequestHandlerOutput = Response,
+  Response extends AnyResponse = AnyResponse,
 >(
-  handler: ServerRequestHandler<Params, Output>,
+  handler: ServerRequestHandler<Params, Response>,
   init?: { middleware?: FetchMiddleware[] },
 ) {
   handler.middleware = init?.middleware;

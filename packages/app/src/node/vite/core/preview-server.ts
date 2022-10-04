@@ -4,7 +4,7 @@ import { installPolyfills } from 'node/polyfills';
 import fs from 'node:fs';
 import * as path from 'pathe';
 import { createRequestHandler } from 'server/http';
-import { initManifestURLPatterns } from 'server/http/create-request-handler';
+import { initManifestURLPatterns } from 'server/http/server-http-entry';
 import type { ServerManifest } from 'server/types';
 import { findRoute } from 'shared/routing';
 import { coerceToError } from 'shared/utils/error';
@@ -65,7 +65,8 @@ export async function configurePreviewServer(
       if (
         manifest &&
         handler &&
-        (findRoute(url, manifest.routes.app) ||
+        (url.pathname.startsWith('/__rpc') ||
+          findRoute(url, manifest.routes.app) ||
           findRoute(url, manifest.routes.http))
       ) {
         return await handleIncomingMessage(base, req, res, handler, (error) => {

@@ -1,5 +1,5 @@
 import kleur from 'kleur';
-import { ServerManifest } from 'server/types';
+import { type ServerManifest } from 'server/types';
 import { isHttpError, json } from 'shared/http';
 import { coerceToError } from 'shared/utils/error';
 

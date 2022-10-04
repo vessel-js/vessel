@@ -1,4 +1,3 @@
-export { createRequestHandler } from './create-request-handler';
 export {
   createDocumentResource,
   createDocumentResourceLinkTags,
@@ -6,3 +5,4 @@ export {
 } from './handle-document-request';
 export { handleHttpError } from './handle-http-error';
 export { handleHttpRequest } from './handle-http-request';
+export { createRequestHandler } from './server-http-entry';

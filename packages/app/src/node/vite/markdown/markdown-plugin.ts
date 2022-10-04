@@ -107,7 +107,7 @@ export function markdownPlugin(): VesselPlugin {
       });
     },
     transform(content, id) {
-      if (filter(id)) {
+      if (filter(path.normalize(id))) {
         const { output } = parse(path.normalize(id), content);
         return output;
       }
