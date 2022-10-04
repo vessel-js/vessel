@@ -8,28 +8,37 @@ import { type FetchMiddleware, withMiddleware } from './middleware';
 import { type RequestParams, type VesselRequest } from './request';
 import { createVesselResponse, resolveResponseData } from './response';
 
-export type FetcherInit = {
-  middleware?: FetchMiddleware[];
-};
+export type FetcherInit<Params extends RequestParams = RequestParams> =
+  RequestInit & {
+    params?: Params;
+    searchParams?: URLSearchParams;
+    onLoading?: (isLoading: boolean) => void;
+    onError?: (error: unknown) => void;
+  };
 
 export type Fetcher<
   Params extends RequestParams = RequestParams,
-  Output extends ServerRequestHandlerOutput = any,
+  ServerOutput extends ServerRequestHandlerOutput = any,
 > = (
-  init?: RequestInit & {
-    params?: Params;
-    onLoading?: (isLoading: boolean) => void;
-    onError?: (error: unknown) => void;
-  },
-) => Promise<InferServerRequestHandlerData<Output>>;
+  init?: FetcherInit<Params>,
+) => Promise<InferServerRequestHandlerData<ServerOutput>>;
+
+export type CreateFetcherInput<
+  Params extends RequestParams = RequestParams,
+  ServerOutput extends ServerRequestHandlerOutput = any,
+> = string | Request | URL | ServerRequestHandler<Params, ServerOutput>;
+
+export type CreateFetcherInit = {
+  middleware?: FetchMiddleware[];
+};
 
 export function createFetcher<
   Params extends RequestParams = RequestParams,
-  Output extends ServerRequestHandlerOutput = Response,
+  ServerOutput extends ServerRequestHandlerOutput = Response,
 >(
-  input: RequestInfo | URL | ServerRequestHandler<Params, Output>,
-  init?: FetcherInit,
-): Fetcher<Params, Output> {
+  input: CreateFetcherInput<Params, ServerOutput>,
+  init?: CreateFetcherInit,
+): Fetcher<Params, ServerOutput> {
   if (typeof input === 'function') {
     throw new Error('[vessel] fetcher RPC call was not transformed');
   }
@@ -44,25 +53,32 @@ export function createFetcher<
     try {
       fetchInit?.onLoading?.(true);
 
-      const baseUrl = new URL(location.href);
+      const baseURL = new URL(location.origin);
 
       // Array = transformed server RPC call [method: string, path: string]
       const request = Array.isArray(input)
-        ? new Request(new URL(input[1], baseUrl), {
+        ? new Request(new URL(input[1], baseURL), {
             method: input[0],
             ...fetchInit,
           })
-        : coerceFetchInput(input, fetchInit, baseUrl);
+        : coerceFetchInput(input, fetchInit, baseURL);
+
+      const url = new URL(request.url);
+
+      if (fetchInit?.searchParams) {
+        for (const [key, value] of fetchInit.searchParams) {
+          url.searchParams.append(key, value);
+        }
+      }
 
       if (fetchInit?.params) {
-        const url = new URL(request.url);
         for (const key of Object.keys(fetchInit.params)) {
           url.searchParams.append('_params', `${key}=${fetchInit.params[key]}`);
         }
       }
 
       const response = await withMiddleware(
-        request,
+        new Request(url, request),
         vesselFetch,
         init?.middleware,
       );
