@@ -1,4 +1,4 @@
-import { ClientLoadedRoute } from '@vessel-js/app';
+import { type ClientLoadedRoute } from '@vessel-js/app';
 import { computed, defineComponent, h, provide } from 'vue';
 
 import {

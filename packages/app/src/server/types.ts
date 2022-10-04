@@ -1,28 +1,18 @@
 import type {
+  JSONData,
+  JSONResponse,
+  RequestParams,
+  VesselRequest,
+  VesselRequestMetadata,
+  VesselResponseMetadata,
+} from 'shared/http';
+import type {
   LoadableRoute,
   LoadedRoute,
   MatchedRoute,
   Route,
   RouteMatch,
 } from 'shared/routing';
-
-import type {
-  HttpRequestModule,
-  RequestEvent,
-  RequestParams,
-} from './http/request';
-import type { JSONData } from './http/response';
-
-// ---------------------------------------------------------------------------------------
-// Server Module
-// ---------------------------------------------------------------------------------------
-
-export type ServerModule = {
-  [id: string]: unknown;
-  staticLoader?: StaticLoader;
-  serverLoader?: ServerLoader;
-  serverAction?: ServerAction;
-};
 
 // ---------------------------------------------------------------------------------------
 // Server Entry
@@ -128,6 +118,13 @@ export type DocumentResourceEntry = number;
 // Server Route
 // ---------------------------------------------------------------------------------------
 
+export type ServerModule = {
+  [id: string]: unknown;
+  staticLoader?: StaticLoader;
+  serverLoader?: ServerLoader;
+  serverAction?: ServerAction;
+};
+
 export type ServerLoadableRoute = LoadableRoute<ServerModule>;
 
 export type ServerMatchedRoute<Params extends RequestParams = RequestParams> =
@@ -140,23 +137,67 @@ export type ServerLoadedRoute<Params extends RequestParams = RequestParams> =
 // Server HTTP Route
 // ---------------------------------------------------------------------------------------
 
+export type ServerHttpModule = {
+  [id: string]: ServerRequestHandler;
+};
+
 export type ServerLoadableHttpRoute = Route & {
-  readonly loader: () => Promise<HttpRequestModule>;
+  readonly loader: () => Promise<ServerHttpModule>;
   readonly methods: string[];
 };
 
 export type ServerMatchedHttpRoute = ServerLoadableHttpRoute & RouteMatch;
 
 export type ServerLoadedHttpRoute = ServerMatchedHttpRoute & {
-  readonly module: HttpRequestModule;
+  readonly module: ServerHttpModule;
 };
-
-export type ServerRequestHandler = (request: Request) => Promise<Response>;
 
 export type ServerRedirect = {
   readonly path: string;
   readonly status: number;
 };
+
+// ---------------------------------------------------------------------------------------
+// Server Request Event
+// ---------------------------------------------------------------------------------------
+
+export type ServerRequestEventInit<Params extends RequestParams> = {
+  url: URL;
+  params: Params;
+  request: Request & Partial<VesselRequestMetadata>;
+  response?: Partial<VesselResponseMetadata>;
+  manifest?: ServerManifest;
+};
+
+export type ServerRequestEvent<Params extends RequestParams = RequestParams> = {
+  params: Params;
+  request: VesselRequest;
+  response: VesselResponseMetadata;
+  fetcher: ServerFetcher;
+};
+
+// ---------------------------------------------------------------------------------------
+// Server Request Handler
+// ---------------------------------------------------------------------------------------
+
+export type ServerRequestHandler<
+  Params extends RequestParams = RequestParams,
+  Output extends ServerRequestHandlerOutput = Response,
+> = (event: ServerRequestEvent<Params>) => Output | Promise<Output>;
+
+export type ServerRequestHandlerOutput<Data extends JSONData = JSONData> =
+  | string
+  | Data
+  | Response
+  | JSONResponse<Data>;
+
+export type InferServerRequestHandlerData<
+  Output extends ServerRequestHandlerOutput,
+> = Output extends Response
+  ? Output extends JSONResponse<infer Data>
+    ? Data
+    : unknown
+  : Output;
 
 // ---------------------------------------------------------------------------------------
 // Static Loader
@@ -213,16 +254,19 @@ export type MaybeStaticLoaderOutput<Data = JSONData> =
 // Server Loader
 // ---------------------------------------------------------------------------------------
 
-export type ServerLoader<Params extends RequestParams = RequestParams> = (
-  event: RequestEvent<Params>,
-) => ServerLoaderOutput | Promise<ServerLoaderOutput>;
+export type ServerLoader<
+  Params extends RequestParams = RequestParams,
+  Output extends ServerLoaderOutput = Response,
+> = (event: ServerRequestEvent<Params>) => Output | Promise<Output>;
 
-export type ServerLoaderOutput = Response | JSONData;
+export type ServerLoaderOutput<Data extends JSONData = JSONData> =
+  ServerRequestHandlerOutput<Data>;
 
 // ---------------------------------------------------------------------------------------
 // Server Action
 // ---------------------------------------------------------------------------------------
 
-export type ServerAction<Params extends RequestParams = RequestParams> = (
-  event: RequestEvent<Params>,
-) => ServerLoaderOutput | Promise<ServerLoaderOutput>;
+export type ServerAction<
+  Params extends RequestParams = RequestParams,
+  Output extends ServerLoaderOutput = ServerLoaderOutput,
+> = (event: ServerRequestEvent<Params>) => Output | Promise<Output>;

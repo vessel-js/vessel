@@ -1,15 +1,13 @@
-import type { ServerManifest, ServerRequestHandler } from 'server/types';
+import type { ServerManifest } from 'server/types';
+import { redirect, type RequestHandler } from 'shared/http';
 import { matchRoute } from 'shared/routing';
 import { noendslash } from 'shared/utils/url';
 
-import { handleDataRequest } from './handle-data';
-import { handleDocumentRequest } from './handle-document';
-import { handleHttpRequest } from './handle-http';
-import { redirect } from './response';
+import { handleDataRequest } from './handle-data-request';
+import { handleDocumentRequest } from './handle-document-request';
+import { handleHttpRequest } from './handle-http-request';
 
-export function createRequestHandler(
-  manifest: ServerManifest,
-): ServerRequestHandler {
+export function createRequestHandler(manifest: ServerManifest): RequestHandler {
   if (!manifest.dev) {
     initManifestURLPatterns(manifest);
   }

@@ -23,7 +23,7 @@ export type Cookie = {
 
 export type CookiesInit = {
   url: URL;
-  request?: Request;
+  headers?: Headers;
 };
 
 export class Cookies implements Iterable<[string, Cookie]> {
@@ -42,10 +42,10 @@ export class Cookies implements Iterable<[string, Cookie]> {
       return cookie.value;
     }
 
-    const request = this.init.request;
-    if (request) {
+    const headers = this.init.headers;
+    if (headers) {
       const decode = options?.decode || decodeURIComponent;
-      const cookie = parse(request.headers.get('cookie') ?? '', { decode });
+      const cookie = parse(headers.get('cookie') ?? '', { decode });
       return cookie[name];
     }
 

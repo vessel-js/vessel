@@ -3,6 +3,7 @@ import type { App } from 'node/app/App';
 import { createAppEntries } from 'node/app/create/app-factory';
 import { getRouteFileTypes, type RouteFileType } from 'node/app/files';
 import type { AppRoute } from 'node/app/routes';
+import { installPolyfills } from 'node/polyfills';
 import { hash, logger, LoggerIcon, mkdirp, rimraf } from 'node/utils';
 import { createStaticLoaderFetcher, loadStaticRoute } from 'node/vite/core';
 import { getDevServerOrigin } from 'node/vite/core/dev-server';
@@ -11,7 +12,6 @@ import { writeFile } from 'node:fs/promises';
 import ora from 'ora';
 import type { OutputBundle } from 'rollup';
 import { createServerRouter } from 'server/http';
-import { installPolyfills } from 'server/polyfills';
 import { createStaticLoaderDataMap } from 'server/static-data';
 import type { ServerEntryModule } from 'server/types';
 import {

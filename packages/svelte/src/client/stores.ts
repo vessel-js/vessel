@@ -1,14 +1,15 @@
 import type {
   ClientLoadedRoute,
-  HttpError,
-  HttpErrorData,
-  LoadedServerData,
-  LoadedStaticData,
   MarkdownFrontmatter,
   MarkdownMeta,
   Navigation,
-  RouteParams,
 } from '@vessel-js/app';
+import type { HttpError, HttpErrorData } from '@vessel-js/app/http';
+import type {
+  LoadedServerData,
+  LoadedStaticData,
+  RouteParams,
+} from '@vessel-js/app/routing';
 import type { Readable } from 'svelte/store';
 
 import {

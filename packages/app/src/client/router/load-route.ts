@@ -6,7 +6,7 @@ import {
   HttpError,
   isErrorResponse,
   isExpectedErrorResponse,
-  resolveServerResponseData,
+  resolveResponseData,
 } from 'shared/http';
 import {
   getRouteComponentTypes,
@@ -213,7 +213,7 @@ export async function loadServerData(
     throw error;
   }
 
-  return { data: await resolveServerResponseData(response) };
+  return { data: await resolveResponseData(response) };
 }
 
 // Used in production to hash data id.

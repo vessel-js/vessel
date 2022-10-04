@@ -1,6 +1,6 @@
 import { sortedInsert } from 'node/utils';
 import type {
-  HttpRequestModule,
+  ServerHttpModule,
   ServerLoadableRoute,
   ServerModule,
 } from 'server';
@@ -20,7 +20,7 @@ import { resolveRouteFromFilePath } from './resolve-file-route';
 export type AppRoute = Route & { dir: SystemDirPath } & {
   [P in RouteFileType]?: RouteFile & {
     viteLoader: () => Promise<
-      P extends 'http' ? HttpRequestModule : ServerModule
+      P extends 'http' ? ServerHttpModule : ServerModule
     >;
   };
 };

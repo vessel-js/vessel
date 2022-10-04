@@ -22,8 +22,14 @@ export default defineConfig([
   {
     ...base(),
     entry: {
+      // shared
+      http: 'src/shared/http/index.ts',
+      routing: 'src/shared/routing/index.ts',
+      // client
       client: 'src/client/index.ts',
       head: 'src/client/head/index.ts',
+      // server
+      server: 'src/server/index.ts',
     },
     target: 'esnext',
     platform: 'browser',
@@ -31,10 +37,10 @@ export default defineConfig([
   {
     ...base(),
     entry: {
+      // node
       node: 'src/node/index.ts',
       'node/http': 'src/node/http/index.ts',
-      server: 'src/server/index.ts',
-      'server/polyfills': 'src/server/polyfills.ts',
+      'node/polyfills': 'src/node/polyfills.ts',
     },
     target: 'node16',
     platform: 'node',

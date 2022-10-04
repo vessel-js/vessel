@@ -1,14 +1,16 @@
 import {
-  type HttpErrorData,
   isMarkdownModule,
-  type LoadedServerData,
-  type LoadedStaticData,
   type MarkdownFrontmatter,
   type Navigation,
   type Reactive,
-  type RouteParams,
   type Router,
 } from '@vessel-js/app';
+import type { HttpErrorData } from '@vessel-js/app/http';
+import type {
+  LoadedServerData,
+  LoadedStaticData,
+  RouteParams,
+} from '@vessel-js/app/routing';
 import { getContext } from 'svelte';
 import {
   derived,

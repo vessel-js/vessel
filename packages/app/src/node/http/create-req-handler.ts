@@ -1,12 +1,13 @@
 import { handleIncomingMessage } from 'node/http';
+import { installPolyfills } from 'node/polyfills';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { createRequestHandler } from 'server/http/handle-request';
-import { installPolyfills } from 'server/polyfills';
-import type { ServerManifest, ServerRequestHandler } from 'server/types';
+import { createRequestHandler } from 'server/http';
+import type { ServerManifest } from 'server/types';
+import { type RequestHandler } from 'shared/http';
 
 export function createIncomingMessageHandler(manifest: ServerManifest) {
   let installed = false,
-    handler: ServerRequestHandler;
+    handler: RequestHandler;
 
   return async (req: IncomingMessage, res: ServerResponse) => {
     if (!installed) {

@@ -5,7 +5,7 @@
 declare global {
   interface Window {
     __VSL_TRAILING_SLASH__?: boolean;
-    __VSL_STATIC_DATA__: Record<string, string>;
+    __VSL_STATIC_DATA__: Record<string, unknown>;
     __VSL_STATIC_DATA_HASH_MAP__: Record<string, string>;
     __VSL_STATIC_REDIRECTS_MAP__: Record<string, string>;
   }

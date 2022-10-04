@@ -1,5 +1,12 @@
-import type { JSONData, RequestParams } from './http';
-import type { ServerLoader, StaticLoader } from './types';
+import type { JSONData, RequestParams } from 'shared/http';
+
+import type {
+  ServerLoader,
+  ServerLoaderOutput,
+  ServerRequestHandler,
+  ServerRequestHandlerOutput,
+  StaticLoader,
+} from './types';
 
 export function createStaticLoader<
   Params extends RequestParams = RequestParams,
@@ -10,6 +17,14 @@ export function createStaticLoader<
 
 export function createServerLoader<
   Params extends RequestParams = RequestParams,
->(loader: ServerLoader<Params>) {
+  Output extends ServerLoaderOutput = Response,
+>(loader: ServerLoader<Params, Output>) {
   return loader;
+}
+
+export function createServerRequestHandler<
+  Params extends RequestParams = RequestParams,
+  Output extends ServerRequestHandlerOutput = Response,
+>(handler: ServerRequestHandler<Params, Output>) {
+  return handler;
 }

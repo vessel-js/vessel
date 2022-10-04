@@ -3,18 +3,12 @@ import type { App } from 'node/app/App';
 import type { RouteFileType } from 'node/app/files';
 import type { AppRoute } from 'node/app/routes';
 import { logger } from 'node/utils';
-import {
-  ALL_HTTP_METHODS,
-  coerceFetchInput,
-  error as httpError,
-  handleHttpError,
-  handleHttpRequest,
-  type HttpRequestModule,
-} from 'server';
+import { handleHttpError, handleHttpRequest } from 'server';
 import { createStaticLoaderInput } from 'server/static-data';
 import type {
   MaybeStaticLoaderOutput,
   ServerFetcher,
+  ServerHttpModule,
   ServerLoadedRoute,
   ServerModule,
   ServerRedirect,
@@ -23,6 +17,7 @@ import type {
   StaticLoaderCacheMap,
   StaticLoaderOutput,
 } from 'server/types';
+import { ALL_HTTP_METHODS, coerceFetchInput, httpError } from 'shared/http';
 import {
   getRouteComponentTypes,
   matchAllRoutes,
@@ -42,7 +37,7 @@ import { getDevServerOrigin } from './dev-server';
 // ensures requests are able to load HTTP modules so they can respond because there's no server here.
 export function createStaticLoaderFetcher(
   app: App,
-  loader: (route: AppRoute) => Promise<HttpRequestModule>,
+  loader: (route: AppRoute) => Promise<ServerHttpModule>,
 ): ServerFetcher {
   const ssrOrigin = getDevServerOrigin(app);
   const httpRoutes = app.routes.filterHasType('http');

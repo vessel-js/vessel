@@ -1,8 +1,21 @@
-import type { ServerManifest, ServerMatchedHttpRoute } from 'server/types';
+import type {
+  ServerManifest,
+  ServerMatchedHttpRoute,
+  ServerRequestHandlerOutput,
+} from 'server/types';
+import {
+  attachResponseMetadata,
+  getAllowedMethods,
+  httpError,
+  HttpMethod,
+  isRedirectResponse,
+  isResponse,
+  json,
+} from 'shared/http';
+import { isString } from 'shared/utils/unit';
 
-import { error, handleHttpError } from './errors';
-import { createRequestEvent, getAllowedMethods, HttpMethod } from './request';
-import { isResponse } from './response';
+import { handleHttpError } from './handle-http-error';
+import { createServerRequestEvent } from './server-request-event';
 
 export async function handleHttpRequest(
   url: URL,
@@ -21,11 +34,11 @@ export async function handleHttpRequest(
     ) as HttpMethod;
 
     if (route.methods && !route.methods.includes(method)) {
-      throw error('not found', 404);
+      throw httpError('not found', 404);
     }
 
     if (!route.pattern.test({ pathname: url.pathname })) {
-      throw error('not found', 404);
+      throw httpError('not found', 404);
     }
 
     const mod = await route.loader();
@@ -36,7 +49,7 @@ export async function handleHttpRequest(
     if (!handler) handler = mod.ANY;
 
     if (!handler) {
-      throw error(`${method} method not allowed`, {
+      throw httpError(`${method} method not allowed`, {
         status: 405,
         headers: {
           // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/405
@@ -46,33 +59,31 @@ export async function handleHttpRequest(
       });
     }
 
-    const event = createRequestEvent({
-      request,
+    const event = createServerRequestEvent({
       url,
       params: route.params,
+      request,
       manifest,
     });
 
-    const response = await handler(event);
-
-    if (!isResponse(response)) {
-      throw new Error(
-        `[vessel] invalid return value from route handler at ${url.pathname}, should return a \`Response\`.`,
-      );
-    }
-
-    for (const [key, value] of event.headers) {
-      response.headers.append(key, value);
-    }
-
-    event.cookies.serialize(response.headers);
-
+    const response = coerceServerRequestHandlerOutput(await handler(event));
+    attachResponseMetadata(response, event.response);
     return response;
   } catch (error) {
-    if (isResponse(error)) {
+    if (isRedirectResponse(error)) {
       return error;
     } else {
       return handleHttpError(error, url, manifest);
     }
   }
+}
+
+export function coerceServerRequestHandlerOutput(
+  output: ServerRequestHandlerOutput,
+): Response {
+  return isResponse(output)
+    ? output
+    : isString(output)
+    ? new Response(output)
+    : json(output ?? {});
 }

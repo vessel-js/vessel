@@ -1,10 +1,10 @@
 import type { App } from 'node/app/App';
 import { handleIncomingMessage } from 'node/http';
+import { installPolyfills } from 'node/polyfills';
 import fs from 'node:fs';
 import * as path from 'pathe';
 import { createRequestHandler } from 'server/http';
-import { initManifestURLPatterns } from 'server/http/handle-request';
-import { installPolyfills } from 'server/polyfills';
+import { initManifestURLPatterns } from 'server/http/create-request-handler';
 import type { ServerManifest } from 'server/types';
 import { findRoute } from 'shared/routing';
 import { coerceToError } from 'shared/utils/error';

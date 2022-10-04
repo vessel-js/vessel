@@ -7,7 +7,7 @@ import type {
   OutputBundle,
   OutputChunk,
 } from 'rollup';
-import { ALL_HTTP_METHODS, HTTP_METHODS } from 'server/http';
+import { ALL_HTTP_METHODS, HTTP_METHODS } from 'shared/http';
 import { type RouteComponentType } from 'shared/routing';
 
 import type { BuildData } from './build-data';

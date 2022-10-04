@@ -38,7 +38,14 @@
       "types": "./server.d.ts",
       "default": "./dist/server.js"
     },
-    "./server/*": "./dist/server/*",
+    "./routing": {
+      "types": "./routing.d.ts",
+      "default": "./dist/routing.js"
+    },
+    "./http": {
+      "types": "./http.d.ts",
+      "default": "./dist/http.js"
+    },
     "./node/*": "./dist/node/*",
     "./package.json": "./package.json"
   },

@@ -1,7 +1,7 @@
 import { resolveStaticDataAssetId } from 'shared/data';
+import { type JSONData } from 'shared/http';
 import { getRouteComponentTypes, type MatchedRoute } from 'shared/routing';
 
-import type { JSONData } from './http';
 import type {
   ServerFetcher,
   ServerLoadedRoute,

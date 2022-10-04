@@ -6,7 +6,7 @@ export async function handleIncomingMessage(
   base: string,
   req: IncomingMessage,
   res: ServerResponse,
-  handler: (request: Request) => Promise<Response>,
+  handler: (request: Request) => Response | Promise<Response>,
   onInvalidRequestBody?: (error: unknown) => void,
 ) {
   let request!: Request;

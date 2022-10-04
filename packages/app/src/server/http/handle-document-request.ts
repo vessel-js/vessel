@@ -1,8 +1,4 @@
 import kleur from 'kleur';
-import {
-  createStaticDataScriptTag,
-  createStaticLoaderDataMap,
-} from 'server/static-data';
 import type {
   DocumentResource,
   DocumentResourceEntry,
@@ -12,7 +8,15 @@ import type {
   ServerMatchedRoute,
 } from 'server/types';
 import { resolveStaticDataAssetId } from 'shared/data';
-import { HttpError, isHttpError, resolveServerResponseData } from 'shared/http';
+import {
+  attachResponseMetadata,
+  Cookies,
+  HttpError,
+  isClientRedirectResponse,
+  isHttpError,
+  isRedirectResponse,
+  resolveResponseData,
+} from 'shared/http';
 import {
   getRouteComponentDataKeys,
   getRouteComponentTypes,
@@ -29,9 +33,11 @@ import type { Mutable } from 'shared/types';
 import { coerceToError } from 'shared/utils/error';
 import { slash } from 'shared/utils/url';
 
-import { Cookies } from './cookies';
-import { createRequestEvent } from './request';
-import { isRedirectResponse, isResponse } from './response';
+import {
+  createStaticDataScriptTag,
+  createStaticLoaderDataMap,
+} from '../static-data';
+import { createServerRequestEvent } from './server-request-event';
 
 export async function handleDocumentRequest(
   url: URL,
@@ -77,7 +83,7 @@ async function renderDocument(
   const { render } = await manifest.entry();
 
   const headers = new Headers();
-  const cookies = new Cookies({ url });
+  const cookies = new Cookies({ url, headers });
 
   const matches = matchAllRoutes(
     url,
@@ -95,15 +101,13 @@ async function renderDocument(
     },
     async (url, route, type) => {
       if (!manifest.dev && !route[type]!.canFetch) return;
-
       return loadServerData({
         url,
         request,
         route,
         type,
-        headers,
-        cookies,
         manifest,
+        response: { headers, cookies },
       });
     },
   );
@@ -117,10 +121,15 @@ async function renderDocument(
       const result = loadResults[i][type];
       const value = resolveSettledPromiseValue(result?.serverData);
       if (value?.redirect) {
-        return new Response(null, {
-          status: value.redirect.status,
-          headers: { Location: value.redirect.path },
-        });
+        // This won't work yet as client isn't ready so we need to do a network redirect.
+        if (isClientRedirectResponse(value.redirect)) {
+          value.redirect.headers.set(
+            'Location',
+            value.redirect.headers.get('X-Vessel-Redirect')!,
+          );
+        }
+
+        return value.redirect;
       }
     }
   }
@@ -284,27 +293,21 @@ async function renderDocument(
     },
   });
 
-  for (const [key, value] of headers) {
-    response.headers.append(key, value);
-  }
-
-  cookies.serialize(response.headers);
-
+  attachResponseMetadata(response, { headers, cookies });
   return response;
 }
 
 type LoadServerDataInit = {
   url: URL;
   request: Request;
+  response: { headers: Headers; cookies: Cookies };
   route: ServerMatchedRoute;
   type: RouteComponentType;
-  headers: Headers;
-  cookies: Cookies;
   manifest: ServerManifest;
 };
 
 export type LoadServerDataResult = {
-  redirect?: { path: string; status: number };
+  redirect?: Response;
   data?: LoadedServerData;
   error?: HttpError;
 };
@@ -312,21 +315,19 @@ export type LoadServerDataResult = {
 async function loadServerData({
   url,
   request,
+  response,
   route,
   type,
-  headers,
-  cookies,
   manifest,
 }: LoadServerDataInit): Promise<LoadServerDataResult | undefined> {
   const { serverLoader } = await route[type]!.loader();
   if (!serverLoader) return;
 
-  const event = createRequestEvent({
+  const event = createServerRequestEvent({
     url,
     request,
+    response,
     params: route.params,
-    headers,
-    cookies,
     manifest,
   });
 
@@ -335,7 +336,7 @@ async function loadServerData({
   try {
     output = await serverLoader(event);
   } catch (error) {
-    if (isResponse(error)) {
+    if (isRedirectResponse(error)) {
       output = error;
     } else if (isHttpError(error)) {
       return { error };
@@ -344,21 +345,11 @@ async function loadServerData({
     }
   }
 
-  if (isResponse(output)) {
-    if (isRedirectResponse(output)) {
-      return {
-        redirect: {
-          path: output.headers.get('Location')!,
-          status: output.status,
-        },
-      };
-    } else {
-      const data = await resolveServerResponseData(output);
-      return { data };
-    }
+  if (isRedirectResponse(output)) {
+    return { redirect: output };
   }
 
-  return { data: output };
+  return { data: await resolveResponseData(output) };
 }
 
 export function createServerRouter() {
