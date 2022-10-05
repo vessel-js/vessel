@@ -8,25 +8,21 @@ import { type FetchMiddleware, withMiddleware } from './middleware';
 import { type RequestParams, type VesselRequest } from './request';
 import { createVesselResponse, resolveResponseData } from './response';
 
-export type FetcherInit<Params = RequestParams> = RequestInit & {
+export type VesselFetch<RPC = unknown> = (
+  init?: VesselFetchInit<InferServerHandlerParams<RPC>>,
+) => Promise<InferServerHandlerData<RPC>>;
+
+export type VesselFetchInit<Params = RequestParams> = RequestInit & {
   params?: Params;
   searchParams?: URLSearchParams;
   onLoading?: (isLoading: boolean) => void;
   onError?: (error: unknown) => void;
 };
 
-export type Fetcher<RPC = unknown> = (
-  init?: FetcherInit<InferServerHandlerParams<RPC>>,
-) => Promise<InferServerHandlerData<RPC>>;
-
-export type CreateFetcherInit = {
-  middleware?: FetchMiddleware[];
-};
-
-export function createFetcher<RPC extends ServerRequestHandler>(
+export function createFetch<RPC extends ServerRequestHandler>(
   input: string | Request | URL | RPC,
-  init?: CreateFetcherInit,
-): Fetcher<RPC> {
+  init?: { middleware?: FetchMiddleware[] },
+): VesselFetch<RPC> {
   if (import.meta.env.SSR) {
     return () => {
       throw new Error('[vessel] fetcher was called server-side');
@@ -104,7 +100,7 @@ export function coerceFetchInput(
       );
 }
 
-export async function vesselFetch(request: VesselRequest) {
+async function vesselFetch(request: VesselRequest) {
   const fetchRequest = new Request(request.URL, request);
   request.cookies.attach(fetchRequest.headers);
   return createVesselResponse(request.URL, await fetch(fetchRequest));
