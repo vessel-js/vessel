@@ -8,9 +8,9 @@ export type ResolvedRoutesConfig = {
   entries: string[];
   /**
    * Whether trailing slashes on URL paths should be kept or removed. The default behavior is to
-   * keep it.
+   * remove it.
    *
-   * @defaultValue true
+   * @defaultValue false
    */
   trailingSlash: boolean;
   /**

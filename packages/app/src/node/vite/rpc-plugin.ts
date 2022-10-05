@@ -41,7 +41,7 @@ export function rpcPlugin(): VesselPlugin {
         const routeId = app.routes.find(routeFile)!.id;
         const sourceFile = t.createSourceFile(id, code, 99, false);
 
-        const overwriteHandler = (root: t.Node, handlerId: string) => {
+        const addHandler = (root: t.Node, handlerId: string) => {
           const method = resolveHandlerHttpMethod(handlerId);
           if (method) {
             const isNamedHandler = !HTTP_METHODS.has(handlerId);
@@ -64,7 +64,7 @@ export function rpcPlugin(): VesselPlugin {
             if (t.isFunctionDeclaration(node)) {
               const handlerId = node.name?.escapedText;
               if (handlerId && HTTP_METHOD_RE.test(handlerId)) {
-                overwriteHandler(node, handlerId);
+                addHandler(node, handlerId);
               }
             } else {
               const declaration = node.declarationList.declarations[0];
@@ -77,7 +77,7 @@ export function rpcPlugin(): VesselPlugin {
                 const handlerId = (declaration.name as t.Identifier)
                   ?.escapedText;
                 if (handlerId && HTTP_METHOD_RE.test(handlerId)) {
-                  overwriteHandler(node, handlerId);
+                  addHandler(node, handlerId);
                 }
               }
             }
