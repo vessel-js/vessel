@@ -9,14 +9,17 @@ import type {
 import { resolveStaticDataAssetId } from 'shared/data';
 import {
   type AnyResponse,
-  appendResponseHeaders,
   Cookies,
+  createVesselRequest,
+  createVesselResponse,
   HttpError,
   isClientRedirectResponse,
   isHttpError,
   isRedirectResponse,
   isResponse,
   resolveResponseData,
+  type VesselResponse,
+  withMiddleware,
 } from 'shared/http';
 import {
   getRouteComponentDataKeys,
@@ -31,14 +34,16 @@ import {
   stripRouteComponentTypes,
 } from 'shared/routing';
 import type { Mutable } from 'shared/types';
-import { coerceToError } from 'shared/utils/error';
+import { coerceError } from 'shared/utils/error';
 import { slash } from 'shared/utils/url';
 
 import {
   createStaticDataScriptTag,
   createStaticLoaderDataMap,
-} from '../static-data';
-import { createServerRequestEvent } from './server-request-event';
+} from '../../static-data';
+import { resolveMiddleware } from '../middleware';
+import { createServerRequestEvent } from '../request-event';
+import { runErrorHandlers } from './handle-http-error';
 
 export async function handleDocumentRequest(
   url: URL,
@@ -46,11 +51,28 @@ export async function handleDocumentRequest(
   manifest: ServerManifest,
 ): Promise<Response> {
   try {
-    return await renderDocument(url, request, manifest);
-  } catch (e) {
-    manifest.hooks?.onDocumentRenderError?.(url, e);
+    const response = await withMiddleware(
+      request,
+      (request) => renderDocument(request.URL, request, manifest),
+      resolveMiddleware(manifest, [], 'document'),
+    );
 
-    const error = coerceToError(e);
+    if (response.cookies) response.cookies.attach(response.headers);
+    return response;
+  } catch (e) {
+    const vesselRequest = createVesselRequest(request);
+
+    const handled = await runErrorHandlers(
+      vesselRequest,
+      e,
+      manifest.errorHandlers?.document ?? [],
+    );
+
+    if (handled) return handled;
+
+    manifest.devHooks?.onDocumentRenderError?.(vesselRequest, e);
+
+    const error = coerceError(e);
 
     console.error(
       kleur.bold(kleur.red(`\n🚨 Document Render Error`)),
@@ -70,8 +92,6 @@ export async function handleDocumentRequest(
       );
     }
 
-    // TODO: this shouldn't happen but is there a more appropriate course of action?
-    // Maybe a HTML error page the user can provide for this case?
     return new Response('internal server error', { status: 500 });
   }
 }
@@ -80,7 +100,7 @@ async function renderDocument(
   url: URL,
   request: Request,
   manifest: ServerManifest,
-): Promise<Response> {
+): Promise<VesselResponse> {
   const { render } = await manifest.entry();
 
   const headers = new Headers();
@@ -88,7 +108,7 @@ async function renderDocument(
 
   const matches = matchAllRoutes(
     url,
-    manifest.routes.app,
+    manifest.routes.document,
     manifest.trailingSlash,
   );
 
@@ -130,7 +150,7 @@ async function renderDocument(
           );
         }
 
-        return value.redirect;
+        return createVesselResponse(url, value.redirect);
       }
     }
   }
@@ -151,7 +171,7 @@ async function renderDocument(
 
         if (reason) {
           console.error(reason);
-          const error = coerceToError(reason);
+          const error = coerceError(reason);
 
           if (!route.error) {
             route.error = error;
@@ -198,12 +218,35 @@ async function renderDocument(
     loadedRoutes.push(route);
   }
 
-  if (loadedRoutes.length === 0) {
-    loadedRoutes[0] = {
-      id: 'root_error_boundary',
-      url,
-      error: new HttpError('not found', 404),
-    } as any;
+  if (loadedRoutes[0]?.matchedURL.pathname !== url.pathname) {
+    const error = new HttpError('not found', 404);
+
+    const serializeError = (routeId) => {
+      serverData[routeId + '~page'] = {
+        error: {
+          message: error.message,
+          stack: manifest.dev ? error.stack : undefined,
+        },
+      };
+    };
+
+    if (loadedRoutes[0]) {
+      for (let i = loadedRoutes.length - 1; i >= 0; i--) {
+        if (i === 0 || loadedRoutes[i].errorBoundary) {
+          loadedRoutes[i].error = error;
+          serializeError(loadedRoutes[i].id);
+          break;
+        }
+      }
+    } else {
+      const id = 'root_error_boundary';
+      loadedRoutes[0] = {
+        id,
+        error,
+        matchedURL: url,
+      } as any;
+      serializeError(id);
+    }
   }
 
   const route = loadedRoutes[0];
@@ -294,9 +337,7 @@ async function renderDocument(
     },
   });
 
-  appendResponseHeaders(response, headers);
-  cookies.attach(response.headers);
-  return response;
+  return createVesselResponse(url, response, { headers, cookies });
 }
 
 type LoadServerDataInit = {
@@ -328,7 +369,7 @@ async function loadServerData({
   const event = createServerRequestEvent({
     url,
     request,
-    response,
+    pageResponse: response,
     params: route.params,
     manifest,
   });

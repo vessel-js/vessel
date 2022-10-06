@@ -7,6 +7,7 @@ import type {
 import type { ResolvedEntryConfig } from './entry-config';
 import type { MarkdownConfig, ResolvedMarkdownConfig } from './markdown-config';
 import type { ResolvedRoutesConfig, RoutesConfig } from './routes-config';
+import type { ResolvedServerConfig, ServerConfig } from './server-config';
 import type { ResolvedSitemapConfig, SitemapConfig } from './sitemap-config';
 
 export type ResolvedAppConfig = {
@@ -15,6 +16,7 @@ export type ResolvedAppConfig = {
   dirs: ResolvedDirectoriesConfig;
   entry: ResolvedEntryConfig;
   client: ResolvedClientConfig;
+  server: ResolvedServerConfig;
   routes: ResolvedRoutesConfig;
   markdown: ResolvedMarkdownConfig;
   sitemap: ResolvedSitemapConfig[];
@@ -28,6 +30,7 @@ export type AppConfig = Partial<{
   dirs: DirectoriesConfig;
   entry: ResolvedEntryConfig;
   client: ClientConfig;
+  server: ServerConfig;
   routes: RoutesConfig;
   markdown: MarkdownConfig;
   sitemap: SitemapConfig | SitemapConfig[];

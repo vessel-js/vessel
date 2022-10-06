@@ -128,5 +128,11 @@ export function createAppEntries(app: App, { isSSR = false } = {}) {
     entries[`nodes/${name}`] = file.path.absolute;
   }
 
+  if (isSSR || app.config.isSSR) {
+    for (const config of app.files.serverConfigs) {
+      entries[`.server/${config.type}`] = config.path;
+    }
+  }
+
   return entries;
 }

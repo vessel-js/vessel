@@ -2,7 +2,7 @@ export {
   createDocumentResource,
   createDocumentResourceLinkTags,
   createServerRouter,
-} from './handle-document-request';
-export { handleHttpError } from './handle-http-error';
-export { handleHttpRequest } from './handle-http-request';
-export { createRequestHandler } from './server-http-entry';
+} from './handlers/handle-document-request';
+export { handleHttpError } from './handlers/handle-http-error';
+export { handleHttpRequest } from './handlers/handle-http-request';
+export { createRequestHandler } from './handlers/server-http-entry';

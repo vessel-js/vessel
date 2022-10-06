@@ -8,7 +8,7 @@ export type VesselRequest = Request & VesselRequestMetadata;
 
 export type VesselRequestMetadata = {
   URL: URL;
-  cookies: Pick<Cookies, 'get' | 'attach'>;
+  cookies: Cookies;
 };
 
 export function createVesselRequest(

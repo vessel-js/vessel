@@ -164,6 +164,14 @@ export type BuildData = {
      * Route ids and their respective server component chunk file paths (absolute).
      */
     chunkFiles: Map<string, { [P in RouteFileType]?: string }>;
+    /**
+     * Server configuration chunks.
+     */
+    configChunks: {
+      shared?: OutputChunk;
+      node?: OutputChunk;
+      edge?: OutputChunk;
+    };
   };
   edge: {
     /**

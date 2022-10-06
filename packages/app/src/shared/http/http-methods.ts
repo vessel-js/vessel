@@ -1,4 +1,11 @@
-export type HttpMethod = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+export type HttpMethod =
+  | 'ANY'
+  | 'GET'
+  | 'HEAD'
+  | 'POST'
+  | 'PUT'
+  | 'DELETE'
+  | 'PATCH';
 
 export const HTTP_METHODS: Set<string> = new Set([
   'ANY',

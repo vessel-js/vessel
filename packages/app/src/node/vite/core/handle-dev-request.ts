@@ -7,7 +7,7 @@ import type { ServerEntryModule, ServerManifest } from 'server/types';
 import { resolveStaticDataAssetId } from 'shared/data';
 import { type JSONData } from 'shared/http';
 import { getRouteComponentTypes, matchRoute } from 'shared/routing';
-import { coerceToError } from 'shared/utils/error';
+import { coerceError } from 'shared/utils/error';
 import type { Connect, ModuleNode, ViteDevServer } from 'vite';
 
 import { handleDevServerError, logDevError } from './dev-server';
@@ -40,6 +40,7 @@ export async function handleDevRequest({
 
   try {
     const route = matchRoute(url, app.routes.filterHasType('page'));
+
     const staticDataLoaders: Record<string, () => Promise<{ data: JSONData }>> =
       {};
 
@@ -83,11 +84,14 @@ export async function handleDevRequest({
 
     const manifest: ServerManifest = {
       dev: true,
-      entry: entryLoader,
       baseUrl: app.vite.resolved!.base,
       trailingSlash: app.config.routes.trailingSlash,
+      entry: entryLoader,
+      configs: await Promise.all(
+        app.files.serverConfigs.map((config) => config.viteLoader()),
+      ),
       routes: {
-        app: app.routes.filterHasType('page').map(toServerLoadable),
+        document: app.routes.filterHasType('page').map(toServerLoadable),
         http: app.routes.filterHasType('http').map((route) => ({
           ...route,
           loader: route.http!.viteLoader,
@@ -110,7 +114,7 @@ export async function handleDevRequest({
         serverHashRecord: {},
         loaders: staticDataLoaders,
       },
-      hooks: {
+      devHooks: {
         onDocumentRenderError: (_, error) => {
           if (error instanceof Error) {
             app.vite.server!.ssrFixStacktrace(error);
@@ -126,7 +130,7 @@ export async function handleDevRequest({
 
     const handler = createRequestHandler(manifest);
     await handleIncomingMessage(base, req, res, handler, (error) => {
-      logDevError(app, req, coerceToError(error));
+      logDevError(app, req, coerceError(error));
     });
   } catch (error) {
     handleDevServerError(app, req, res, error);

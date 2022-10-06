@@ -22,7 +22,7 @@ import {
   stripRouteComponentTypes,
 } from 'shared/routing';
 import type { Mutable } from 'shared/types';
-import { coerceToError } from 'shared/utils/error';
+import { coerceError } from 'shared/utils/error';
 import { isFunction, isString } from 'shared/utils/unit';
 import { isLinkExternal } from 'shared/utils/url';
 
@@ -453,6 +453,7 @@ export class Router {
     ) =>
       this._startNavigation({
         ...nav,
+        url,
         token,
         rootError,
         matches,
@@ -510,10 +511,10 @@ export class Router {
       return;
     }
 
-    if (!match?.page) {
+    if (!match || match.matchedURL.pathname !== url.pathname) {
       cancel();
 
-      const error = new HttpError('no page match', 404);
+      const error = new HttpError('no route found', 404);
       if (matches.length > 0) return startNavigation(matches, error);
 
       // Happens in SPA fallback mode - don't go back to the server to prevent infinite reload.
@@ -545,10 +546,12 @@ export class Router {
   }
 
   protected async _startNavigation({
+    url,
     matches,
     rootError,
     ...nav
   }: {
+    url: URL;
     token: any;
     rootError?: Error;
     redirect: NavigationRedirector;
@@ -556,22 +559,19 @@ export class Router {
   } & NavigationOptions): Promise<void> {
     this._navAbortController?.abort();
     this._navAbortController = new AbortController();
+
     const signal = this._navAbortController.signal;
-
     const from = this.currentRoute ?? null;
-    const to = matches[0];
 
-    this._fw.navigation.set({ from: from?.matchedURL, to: to.matchedURL });
+    this._fw.navigation.set({ from: this._url, to: url });
 
     if (import.meta.env.DEV && from) {
       console.log(
-        `[vessel] navigating from \`${fURL(from.matchedURL)}\` to \`${fURL(
-          to.matchedURL,
-        )}\``,
+        `[vessel] navigating from \`${fURL(this._url)}\` to \`${fURL(url)}\``,
       );
     }
 
-    const loadResults = await this._loadRoutes(to.matchedURL, matches, signal);
+    const loadResults = await this._loadRoutes(url, matches, signal);
 
     // Abort if user navigated away during load.
     if (nav.token !== navigationToken) return nav.blocked?.();
@@ -599,7 +599,7 @@ export class Router {
           const reason = resolveSettledPromiseRejection(compResult[dataKey]);
 
           if (reason) {
-            const error = coerceToError(reason);
+            const error = coerceError(reason);
 
             if (import.meta.env.DEV) {
               console.error(
@@ -648,7 +648,7 @@ export class Router {
       } else {
         loadedRoutes[0] = {
           id: 'root_error_boundary',
-          url: to.matchedURL,
+          matchedURL: url,
           error: rootError,
         } as any;
       }
@@ -666,17 +666,17 @@ export class Router {
     // Wait a tick so page is rendered before updating history.
     await this._fw.tick();
 
-    this._changeHistoryState(currentRoute.matchedURL, nav.state, nav.replace);
+    this._changeHistoryState(url, nav.state, nav.replace);
     if (!nav.keepfocus) resetFocus();
 
-    this._url = to.matchedURL;
+    this._url = url;
     this._fw.navigation.set(null);
 
     await this._scrollDelegate.scroll?.({
       from,
       to: currentRoute,
       target: nav.scroll,
-      hash: currentRoute.matchedURL.hash,
+      hash: url.hash,
     });
 
     for (const hook of this._afterNavigate) {

@@ -48,13 +48,6 @@ export function buildServerManifests(
       httpRoutes,
       sharedInit,
     ),
-    edge: createManifestInit(
-      app,
-      build,
-      documentRoutes.filter((route) => edgeRouteIds.has(route.id)),
-      httpRoutes.filter((route) => edgeRouteIds.has(route.id)),
-      sharedInit,
-    ),
     node: createManifestInit(
       app,
       build,
@@ -62,15 +55,36 @@ export function buildServerManifests(
       httpRoutes.filter((route) => !edgeRouteIds.has(route.id)),
       sharedInit,
     ),
+    edge: createManifestInit(
+      app,
+      build,
+      documentRoutes.filter((route) => edgeRouteIds.has(route.id)),
+      httpRoutes.filter((route) => edgeRouteIds.has(route.id)),
+      sharedInit,
+    ),
   };
 
   const dataAssets = new Set<string>();
 
-  for (const key of Object.keys(inits)) {
-    if (inits[key]) {
-      const init = inits[key];
+  for (const key of Object.keys(inits) as (keyof typeof inits)[]) {
+    const init = inits[key];
+    if (init) {
       for (const hash of Object.keys(init.staticData.serverHashRecord)) {
         dataAssets.add(hash);
+      }
+
+      if (key === 'preview') {
+        init.configs = Object.values(build.server.configChunks).map(
+          (chunk) => chunk.fileName,
+        );
+      } else {
+        if (build.server.configChunks.shared) {
+          init.configs.push(build.server.configChunks.shared.fileName);
+        }
+
+        if (build.server.configChunks[key]) {
+          init.configs.push(build.server.configChunks[key]!.fileName);
+        }
       }
     }
   }
@@ -86,13 +100,13 @@ export function buildServerManifests(
 function createManifestInit(
   app: App,
   build: BuildData,
-  appRoutes: AppRoute[],
+  documentRoutes: AppRoute[],
   httpRoutes: AppRoute[],
   shared: SharedSerializeManifestInit,
 ): SerializeManifestInit | null {
-  const hasAppRoutes = appRoutes.length > 0;
+  const hasDocumentRoutes = documentRoutes.length > 0;
   const hasHttpRoutes = httpRoutes.length > 0;
-  if (!hasAppRoutes && !hasHttpRoutes) return null;
+  if (!hasDocumentRoutes && !hasHttpRoutes) return null;
 
   const clientHashRecord = {};
   const serverHashRecord = {};
@@ -102,8 +116,8 @@ function createManifestInit(
   const seen = new Set<string>();
   const routes: AppRoute[] = [];
 
-  if (hasAppRoutes) {
-    for (const route of appRoutes) {
+  if (hasDocumentRoutes) {
+    for (const route of documentRoutes) {
       for (const child of app.routes.getBranch(route)) {
         if (!seen.has(child.id)) {
           routes.push(child);
@@ -115,7 +129,7 @@ function createManifestInit(
     routes.sort(compareRoutes);
   }
 
-  if (hasAppRoutes) {
+  if (hasDocumentRoutes) {
     const dataIds = new Set<string>();
 
     for (const route of routes) {
@@ -142,16 +156,17 @@ function createManifestInit(
 
   return {
     ...shared,
+    configs: [],
     document: {
-      entry: hasAppRoutes ? shared.document.entry : '',
-      template: hasAppRoutes ? shared.document.template : '',
-      resources: hasAppRoutes
+      entry: hasDocumentRoutes ? shared.document.entry : '',
+      template: hasDocumentRoutes ? shared.document.template : '',
+      resources: hasDocumentRoutes
         ? { ...build.resources, routes: routeResources }
         : { all: [], entry: [], app: [], routes: {} },
     },
     routes: {
-      app: Array.from(routes).map((appRoute) => {
-        const route: SerializableAppRoute = toRoute(appRoute);
+      document: Array.from(routes).map((appRoute) => {
+        const route: SerializableDocumentRoute = toRoute(appRoute);
         const chunks = build.server.chunks.get(route.id)!;
         const serverLoaders = build.server.loaders.get(route.id);
 
@@ -187,17 +202,26 @@ function createManifestInit(
 function serializeManifest({
   baseUrl,
   trailingSlash,
-  entry,
   document,
+  entry,
+  configs,
   routes,
   staticData,
 }: SerializeManifestInit) {
-  return `export default {
+  const configImports = configs
+    .map((config, i) => `import serverConfig$${i} from "../${config}";`)
+    .join('\n');
+
+  return `${configImports}
+export default {
   baseUrl: '${baseUrl}',
   trailingSlash: ${trailingSlash},
   entry: () => import('../${entry}'),
+  configs: [${configs.map((_, i) => `serverConfig$${i}`).join(', ')}],
   routes: {
-    app: ${stripImportQuotesFromJson(JSON.stringify(routes.app, null, 2))},
+    document: ${stripImportQuotesFromJson(
+      JSON.stringify(routes.document, null, 2),
+    )},
     http: ${stripImportQuotesFromJson(JSON.stringify(routes.http, null, 2))},
   },
   document: {
@@ -226,11 +250,12 @@ type SharedSerializeManifestInit = {
 };
 
 type SerializeManifestInit = SharedSerializeManifestInit & {
+  configs: string[];
   document: {
     resources: BuildData['resources'];
   };
   routes: {
-    app: SerializableAppRoute[];
+    document: SerializableDocumentRoute[];
     http: SerializableHttpRoute[];
   };
   staticData: {
@@ -240,7 +265,7 @@ type SerializeManifestInit = SharedSerializeManifestInit & {
   };
 };
 
-type SerializableAppRoute = Omit<
+type SerializableDocumentRoute = Omit<
   ServerLoadableRoute,
   'pattern' | RouteComponentType
 > & {

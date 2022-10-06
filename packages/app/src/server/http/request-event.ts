@@ -8,24 +8,22 @@ import {
   coerceFetchInput,
   Cookies,
   createVesselRequest,
-  httpError,
   type RequestParams,
 } from 'shared/http';
 import { matchRoute } from 'shared/routing';
 
-import { handleHttpError } from './handle-http-error';
-import { handleHttpRequest } from './handle-http-request';
+import { handleHttpRequest } from './handlers/handle-http-request';
 
 export function createServerRequestEvent<
   Params extends RequestParams = RequestParams,
 >(init: ServerRequestEventInit<Params>): ServerRequestEvent<Params> {
   init.request = createVesselRequest(init.request);
 
-  const responseHeaders = init.response?.headers ?? new Headers();
+  const pageHeaders = init.pageResponse?.headers ?? new Headers();
 
-  const responseCookies =
-    init.response?.cookies ??
-    new Cookies({ url: init.url, headers: responseHeaders });
+  const pageCookies =
+    init.pageResponse?.cookies ??
+    new Cookies({ url: init.url, headers: pageHeaders });
 
   let fetcher: ServerFetcher | null = null;
 
@@ -36,10 +34,10 @@ export function createServerRequestEvent<
     get request() {
       return init.request as ServerRequestEvent<Params>['request'];
     },
-    get response() {
+    get pageResponse() {
       return {
-        headers: responseHeaders,
-        cookies: responseCookies,
+        headers: pageHeaders,
+        cookies: pageCookies,
       };
     },
     get fetcher() {
@@ -61,18 +59,13 @@ export function createServerFetcher(
 ): ServerFetcher {
   return (input, init) => {
     const request = coerceFetchInput(input, init, event.request.URL);
-    const url = new URL(request.url);
 
+    const url = new URL(request.url);
     if (event.request.URL.origin === url.origin) {
       const route = matchRoute(url, manifest.routes.http);
-
-      if (!route) {
-        return Promise.resolve(
-          handleHttpError(httpError('route not found', 404), url, manifest),
-        );
+      if (route) {
+        return handleHttpRequest(url, request, route, manifest);
       }
-
-      return handleHttpRequest(url, request, route, manifest);
     }
 
     return fetch(request, init);

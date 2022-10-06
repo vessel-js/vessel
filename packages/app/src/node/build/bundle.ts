@@ -35,7 +35,7 @@ export function resolveBuildConfig(app: App): ViteConfig {
   if (!ssr) input.index = app.dirs.app.resolve('index.html');
 
   return {
-    appType: 'spa',
+    appType: 'custom',
     logLevel: 'warn',
     publicDir: ssr ? false : app.dirs.public.path,
     esbuild: { treeShaking: !ssr },

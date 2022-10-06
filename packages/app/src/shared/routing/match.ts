@@ -1,3 +1,5 @@
+import { endslash, noendslash } from 'shared/utils/url';
+
 import type { Route, RouteComponentType, RouteMatch } from './types';
 
 export function matchRoute<T extends Route>(url: URL, routes: T[]) {
@@ -48,9 +50,20 @@ export function execRouteMatch<T extends Route>(url: URL, route?: T) {
   return route?.pattern.exec({ pathname: url.pathname })?.pathname;
 }
 
-export function normalizeURL(url: URL, trailingSlash = true) {
+export function normalizeTrailingSlash(
+  pathname: string,
+  trailingSlash: boolean,
+) {
+  return pathname === '/'
+    ? pathname
+    : trailingSlash
+    ? endslash(pathname)
+    : noendslash(pathname);
+}
+
+export function normalizeURL(url: URL, trailingSlash: boolean) {
   url.pathname = url.pathname.replace('/index.html', '/');
-  if (!trailingSlash) url.pathname = url.pathname.replace(/\/$/, '');
+  url.pathname = normalizeTrailingSlash(url.pathname, trailingSlash);
   return url;
 }
 

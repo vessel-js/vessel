@@ -1,3 +1,4 @@
+import { globbySync } from 'globby';
 import fs from 'node:fs';
 import * as path from 'pathe';
 import { searchForWorkspaceRoot } from 'vite';
@@ -34,10 +35,12 @@ export function createAppDirectories(
 }
 
 export function createDirectory(dirname: string): Directory {
-  const resolve = (...args: string[]) => path.resolve(dirname, ...args);
+  const cwd = path.normalize(dirname);
+
+  const resolve = (...args: string[]) => path.resolve(cwd, ...args);
 
   const relative = (...args: string[]) =>
-    path.relative(dirname, path.join(...args));
+    path.relative(cwd, path.join(...args));
 
   const read = (filePath: string) =>
     fs.readFileSync(resolve(filePath), 'utf-8');
@@ -45,11 +48,14 @@ export function createDirectory(dirname: string): Directory {
   const write = (filePath: string, data: string) =>
     fs.writeFileSync(resolve(filePath), data);
 
+  const glob = (patterns: string | string[]) => globbySync(patterns, { cwd });
+
   return {
-    path: path.normalize(dirname),
+    path: cwd,
     resolve,
     relative,
     read,
     write,
+    glob,
   };
 }

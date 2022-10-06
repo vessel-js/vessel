@@ -46,6 +46,7 @@ export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
         app = await appFactory.create();
         return {
           ...resolveBuildConfig(app),
+          appType: 'custom',
           envPrefix: 'PUBLIC_',
           resolve: { alias: virtualAliases },
           optimizeDeps: { exclude: clientPackages },
@@ -75,12 +76,18 @@ export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
       async configureServer(server) {
         await installPolyfills();
         app.vite.server = server;
+        const { pre, post } = configureDevServer(app, server);
+        pre();
         return () => {
-          configureDevServer(app, server);
+          post();
         };
       },
       async configurePreviewServer(server) {
-        await configurePreviewServer(app, server);
+        const { pre, post } = await configurePreviewServer(app, server);
+        pre();
+        return () => {
+          post();
+        };
       },
       resolveId(id) {
         if (id === virtualModuleRequestPath.client) {

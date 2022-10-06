@@ -8,7 +8,7 @@ import {
   type RouteComponentType,
   testRoute,
 } from 'shared/routing';
-import { coerceToError } from 'shared/utils/error';
+import { coerceError } from 'shared/utils/error';
 import { isString } from 'shared/utils/unit';
 
 import {
@@ -81,7 +81,7 @@ export async function handleStaticDataRequest({
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(response.data ?? {}));
   } catch (e) {
-    const error = coerceToError(e);
+    const error = coerceError(e);
 
     logger.error(
       error.message,

@@ -2,6 +2,7 @@ import type { ServerManifest } from 'server/types';
 import {
   clientRedirect,
   coerceAnyResponse,
+  createVesselRequest,
   createVesselResponse,
   HttpError,
   isRedirectResponse,
@@ -10,8 +11,9 @@ import {
 import { matchRoute } from 'shared/routing';
 import type { RouteComponentType } from 'shared/routing/types';
 
+import { resolveMiddleware } from '../middleware';
+import { createServerRequestEvent } from '../request-event';
 import { handleHttpError } from './handle-http-error';
-import { createServerRequestEvent } from './server-request-event';
 
 export async function handleDataRequest(
   url: URL,
@@ -22,7 +24,7 @@ export async function handleDataRequest(
     const routeId = url.searchParams.get('route_id'),
       routeType = url.searchParams.get('route_type') as RouteComponentType;
 
-    const route = manifest.routes.app.find(
+    const route = manifest.routes.document.find(
       (route) => route.id === routeId && route[routeType],
     );
 
@@ -49,7 +51,7 @@ export async function handleDataRequest(
       request,
       async (request) => {
         const event = createServerRequestEvent({
-          url,
+          url: request.URL,
           request,
           params: match.params,
           manifest,
@@ -57,18 +59,18 @@ export async function handleDataRequest(
         const anyResponse = await serverLoader(event);
         const response = coerceAnyResponse(anyResponse);
         response.headers.set('X-Vessel-Data', 'yes');
-        return createVesselResponse(request.URL, response, event.response);
+        return createVesselResponse(request.URL, response, event.pageResponse);
       },
-      serverLoader.middleware,
+      resolveMiddleware(manifest, serverLoader.middleware, 'api'),
     );
 
-    response.cookies.attach(response.headers);
+    if (response.cookies) response.cookies.attach(response.headers);
     return response;
   } catch (error) {
     if (isRedirectResponse(error)) {
       return clientRedirect(error.headers.get('Location')!, error);
     } else {
-      return handleHttpError(error, url, manifest);
+      return handleHttpError(error, createVesselRequest(request), manifest);
     }
   }
 }

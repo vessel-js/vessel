@@ -66,6 +66,8 @@ export type Directory = {
   relative: (...path: string[]) => string;
   /** Write contents to file relative to current directory. */
   write: (filePath: string, data: string) => void;
+  /** Resolve glob relative to current directory. */
+  glob: (pattern: string | string[]) => string[];
 };
 
 export { DisposalBin };

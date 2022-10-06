@@ -150,6 +150,14 @@ export async function build(
     serverRouteChunkFiles.set(route.id, files);
   }
 
+  const configChunks: BuildData['server']['configChunks'] = {};
+  for (const config of app.files.serverConfigs) {
+    const chunk = bundles.server.chunks.find(
+      (chunk) => chunk.facadeModuleId === config.path,
+    );
+    if (chunk) configChunks[config.type] = chunk;
+  }
+
   const { edgeRoutes, serverLoaders } = resolveServerRoutes(
     app,
     serverRouteChunks,
@@ -175,6 +183,7 @@ export async function build(
       chunks: serverRouteChunks,
       chunkFiles: serverRouteChunkFiles,
       loaders: serverLoaders,
+      configChunks,
     },
     edge: {
       routes: edgeRoutes,
@@ -201,8 +210,8 @@ export async function build(
   // LOAD STATIC DATA
   // -------------------------------------------------------------------------------------------
 
-  const trailingSlashes = app.config.routes.trailingSlash;
-  const normalizeURL = (url: URL) => __normalizeURL(url, trailingSlashes);
+  const hasTrailingSlash = app.config.routes.trailingSlash;
+  const normalizeURL = (url: URL) => __normalizeURL(url, hasTrailingSlash);
 
   const ssrOrigin = getDevServerOrigin(app);
   const ssrRouter = createServerRouter();
@@ -273,7 +282,7 @@ export async function build(
   console.log(kleur.magenta('+ build\n'));
 
   const testTrailingSlash = (pathname: string) =>
-    pathname === '/' || trailingSlashes
+    pathname === '/' || hasTrailingSlash
       ? /\/$/.test(pathname)
       : !/\/$/.test(pathname);
 
@@ -290,7 +299,7 @@ export async function build(
     if (!testTrailingSlash(pathname)) {
       build.badLinks.set(pathname, {
         route: pageRoute,
-        reason: `should ${trailingSlashes ? '' : 'not'} have trailing slash`,
+        reason: `should ${hasTrailingSlash ? '' : 'not'} have trailing slash`,
       });
       return;
     }

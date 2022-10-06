@@ -8,6 +8,7 @@ import {
 import { matchRoute } from 'shared/routing';
 import { noendslash } from 'shared/utils/url';
 
+import { addURLPattern, installServerConfig } from '../app/configure-server';
 import { handleDataRequest } from './handle-data-request';
 import { handleDocumentRequest } from './handle-document-request';
 import { handleHttpRequest } from './handle-http-request';
@@ -16,6 +17,12 @@ import { handleRPCRequest } from './handle-rpc-request';
 export function createRequestHandler(manifest: ServerManifest): RequestHandler {
   if (!manifest.dev) {
     initManifestURLPatterns(manifest);
+  }
+
+  if (manifest.configs) {
+    for (const config of manifest.configs) {
+      installServerConfig(manifest, config);
+    }
   }
 
   return async (request) => {
@@ -77,7 +84,5 @@ function resolveTrailingSlashRedirect(url: URL, trailingSlash: boolean) {
 export function initManifestURLPatterns(manifest: ServerManifest) {
   Object.keys(manifest.routes)
     .flatMap((key) => manifest.routes[key])
-    .forEach((route) => {
-      route.pattern = new URLPattern({ pathname: route.pathname });
-    });
+    .forEach(addURLPattern);
 }

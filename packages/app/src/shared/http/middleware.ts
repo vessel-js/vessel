@@ -31,7 +31,8 @@ export async function withMiddleware(
   let chain = handler;
 
   for (let i = middlewares.length - 1; i >= 0; i--) {
-    chain = async (request) => middlewares[i](request, chain);
+    const next = chain;
+    chain = async (request) => middlewares[i](request, next);
   }
 
   return chain(createVesselRequest(request));

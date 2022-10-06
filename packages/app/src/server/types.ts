@@ -16,6 +16,8 @@ import type {
   RouteMatch,
 } from 'shared/routing';
 
+import type { ServerConfig } from './http/app/configure-server';
+
 // ---------------------------------------------------------------------------------------
 // Server Entry
 // ---------------------------------------------------------------------------------------
@@ -55,9 +57,15 @@ export type ServerManifest = {
   baseUrl: string;
   trailingSlash: boolean;
   entry: ServerEntryLoader;
+  configs?: ServerConfig[];
+  middlewares?: ServerMiddlewareEntry[];
   routes: {
-    app: ServerLoadableRoute[];
+    document: ServerLoadableRoute[];
     http: ServerLoadableHttpRoute[];
+  };
+  errorHandlers?: {
+    document?: ServerErrorRoute[];
+    api?: ServerErrorRoute[];
   };
   document: {
     entry: string;
@@ -84,11 +92,25 @@ export type ServerManifest = {
     /** Hashed client data asset id to dynamic data loader. */
     loaders: Record<string, () => Promise<{ data: JSONData } | undefined>>;
   };
-  hooks?: {
-    onDocumentRenderError?: (url: URL, error: unknown) => void;
-    onUnexpectedHttpError?: (url: URL, error: unknown) => void;
+  devHooks?: {
+    onDocumentRenderError?: (request: VesselRequest, error: unknown) => void;
+    onUnexpectedHttpError?: (request: VesselRequest, error: unknown) => void;
   };
 };
+
+export type ServerMiddlewareEntry = {
+  readonly group?: string;
+  readonly handler: FetchMiddleware;
+};
+
+export type ServerErrorRoute = Route & {
+  readonly handler: ServerErrorHandler;
+};
+
+export type ServerErrorHandler = (
+  request: VesselRequest,
+  error: unknown,
+) => void | AnyResponse | Promise<void | AnyResponse>;
 
 /**
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTML/Element/link}
@@ -167,14 +189,14 @@ export type ServerRequestEventInit<Params extends RequestParams> = {
   url: URL;
   params: Params;
   request: Request & Partial<VesselRequestMetadata>;
-  response?: Partial<VesselResponseMetadata>;
+  pageResponse?: Partial<VesselResponseMetadata>;
   manifest?: ServerManifest;
 };
 
 export type ServerRequestEvent<Params extends RequestParams = RequestParams> = {
   params: Params;
   request: VesselRequest;
-  response: VesselResponseMetadata;
+  pageResponse: VesselResponseMetadata;
   fetcher: ServerFetcher;
 };
 
@@ -187,7 +209,8 @@ export interface ServerRequestHandler<
   Response extends AnyResponse = AnyResponse,
 > {
   (event: ServerRequestEvent<Params>): Response | Promise<Response>;
-  middleware?: FetchMiddleware[];
+  /** string if group */
+  middleware?: (string | FetchMiddleware)[];
 }
 
 export type InferServerHandlerParams<Handler> =
@@ -263,7 +286,8 @@ export interface ServerLoader<
   Response extends AnyResponse = AnyResponse,
 > {
   (event: ServerRequestEvent<Params>): Response | Promise<Response>;
-  middleware?: FetchMiddleware[];
+  /** string if group */
+  middleware?: (string | FetchMiddleware)[];
 }
 
 // ---------------------------------------------------------------------------------------

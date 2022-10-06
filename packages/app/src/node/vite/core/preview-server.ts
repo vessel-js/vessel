@@ -4,10 +4,9 @@ import { installPolyfills } from 'node/polyfills';
 import fs from 'node:fs';
 import * as path from 'pathe';
 import { createRequestHandler } from 'server/http';
-import { initManifestURLPatterns } from 'server/http/server-http-entry';
+import { initManifestURLPatterns } from 'server/http/handlers/server-http-entry';
 import type { ServerManifest } from 'server/types';
-import { findRoute } from 'shared/routing';
-import { coerceToError } from 'shared/utils/error';
+import { coerceError } from 'shared/utils/error';
 import type { PreviewServerHook } from 'vite';
 
 import { handleDevServerError, logDevError } from './dev-server';
@@ -35,9 +34,45 @@ export async function configurePreviewServer(
   }
 
   const handler = manifest
-    ? createRequestHandler({ dev: true, ...manifest })
+    ? createRequestHandler({ dev: app.config.debug, ...manifest })
     : null;
 
+  return {
+    pre: () => {
+      immutableHeaderMiddleware(server);
+    },
+    post: () => {
+      if (manifest && handler) {
+        server.middlewares.use(async (req, res) => {
+          try {
+            if (!req.url || !req.method) {
+              throw new Error('[vessel] incomplete request');
+            }
+
+            const base = `${protocol}://${
+              req.headers[':authority'] || req.headers.host
+            }`;
+
+            return await handleIncomingMessage(
+              base,
+              req,
+              res,
+              handler,
+              (error) => {
+                logDevError(app, req, coerceError(error));
+              },
+            );
+          } catch (error) {
+            handleDevServerError(app, req, res, error);
+            return;
+          }
+        });
+      }
+    },
+  };
+}
+
+function immutableHeaderMiddleware(server: Parameters<PreviewServerHook>[0]) {
   server.middlewares.use((req, res, next) => {
     if (req.url?.startsWith('/_immutable')) {
       res.setHeader('Cache-Control', 'public, immutable, max-age=31536000');
@@ -45,37 +80,6 @@ export async function configurePreviewServer(
         'ETag',
         path.basename(req.url, path.extname(req.url)).replace(/^.+-/, ''),
       );
-    }
-
-    next();
-  });
-
-  server.middlewares.use(async (req, res, next) => {
-    try {
-      if (!req.url || !req.method) {
-        throw new Error('[vessel] incomplete request');
-      }
-
-      const base = `${protocol}://${
-        req.headers[':authority'] || req.headers.host
-      }`;
-
-      const url = new URL(base + req.url);
-
-      if (
-        manifest &&
-        handler &&
-        (url.pathname.startsWith('/__rpc') ||
-          findRoute(url, manifest.routes.app) ||
-          findRoute(url, manifest.routes.http))
-      ) {
-        return await handleIncomingMessage(base, req, res, handler, (error) => {
-          logDevError(app, req, coerceToError(error));
-        });
-      }
-    } catch (error) {
-      handleDevServerError(app, req, res, error);
-      return;
     }
 
     next();

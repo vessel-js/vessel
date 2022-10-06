@@ -3,11 +3,12 @@ import { resolveRelativePath } from 'node/utils';
 import * as path from 'pathe';
 import { isArray } from 'shared/utils/unit';
 
-import type { ResolvedBuildConfig } from '.';
 import type { AppConfig, ResolvedAppConfig } from './app-config';
+import type { ResolvedBuildConfig } from './build-config';
 import type { ResolvedClientConfig } from './client-config';
 import type { ResolvedMarkdownConfig } from './markdown-config';
 import type { ResolvedRoutesConfig } from './routes-config';
+import type { ResolvedServerConfig } from './server-config';
 import type { ResolvedSitemapConfig } from './sitemap-config';
 
 export function resolveAppConfig(
@@ -18,6 +19,7 @@ export function resolveAppConfig(
     debug: isDebug = !!process.env.DEBUG,
     entry = { client: '', server: '' },
     client = {},
+    server = {},
     routes = {},
     markdown = {},
     sitemap,
@@ -36,6 +38,15 @@ export function resolveAppConfig(
   const __client: ResolvedClientConfig = {
     // Set later by a plugin.
     app: client.app ? path.relative(_root, client.app) : '',
+  };
+
+  const __server: ResolvedServerConfig = {
+    config: {
+      edge: ['**/+server.edge.{js,ts}', '**/server.edge.{js,ts}'],
+      node: ['**/+server.node.{js,ts}', '**/server.node.{js,ts}'],
+      shared: ['**/+server.{js,ts}', '**/server.{js,ts}'],
+      ...server.config,
+    },
   };
 
   const pageExts = `md,svelte,vue,jsx,tsx`;
@@ -121,6 +132,7 @@ export function resolveAppConfig(
     },
     entry,
     client: __client,
+    server: __server,
     routes: __routes,
     markdown: __markdown,
     sitemap: __sitemap,

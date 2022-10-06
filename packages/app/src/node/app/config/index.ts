@@ -6,4 +6,5 @@ export * from './entry-config';
 export * from './markdown-config';
 export * from './resolve-config';
 export * from './routes-config';
+export * from './server-config';
 export * from './sitemap-config';

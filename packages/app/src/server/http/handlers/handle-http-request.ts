@@ -1,6 +1,7 @@
 import type { ServerManifest, ServerMatchedHttpRoute } from 'server/types';
 import {
   coerceAnyResponse,
+  createVesselRequest,
   createVesselResponse,
   httpError,
   type HttpMethod,
@@ -9,8 +10,9 @@ import {
   withMiddleware,
 } from 'shared/http';
 
+import { resolveMiddleware } from '../middleware';
+import { createServerRequestEvent } from '../request-event';
 import { handleHttpError } from './handle-http-error';
-import { createServerRequestEvent } from './server-request-event';
 
 export async function handleHttpRequest(
   url: URL,
@@ -65,25 +67,25 @@ export async function handleHttpRequest(
       request,
       async (request) => {
         const event = createServerRequestEvent({
-          url,
+          url: request.URL,
           params: route.params,
           request,
           manifest,
         });
         const anyResponse = await handler(event);
         const response = coerceAnyResponse(anyResponse);
-        return createVesselResponse(request.URL, response, event.response);
+        return createVesselResponse(request.URL, response, event.pageResponse);
       },
-      handler.middleware,
+      manifest ? resolveMiddleware(manifest, handler.middleware, 'api') : [],
     );
 
-    response.cookies.attach(response.headers);
+    if (response.cookies) response.cookies.attach(response.headers);
     return response;
   } catch (error) {
     if (isRedirectResponse(error)) {
       return error;
     } else {
-      return handleHttpError(error, url, manifest);
+      return handleHttpError(error, createVesselRequest(request), manifest);
     }
   }
 }

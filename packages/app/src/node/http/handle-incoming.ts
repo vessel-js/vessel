@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { type RequestHandler } from 'shared/http';
 
 import { getRequest, setResponse } from './http-bridge';
 
@@ -6,7 +7,7 @@ export async function handleIncomingMessage(
   base: string,
   req: IncomingMessage,
   res: ServerResponse,
-  handler: (request: Request) => Response | Promise<Response>,
+  handler: RequestHandler,
   onInvalidRequestBody?: (error: unknown) => void,
 ) {
   let request!: Request;
