@@ -13,11 +13,17 @@ export type VesselResponseMetadata = {
   cookies: Cookies;
 };
 
+const VESSEL_RESPONSE = Symbol();
+
 export function createVesselResponse(
   url: URL,
   response: Response,
   init?: Partial<VesselResponseMetadata>,
 ): VesselResponse {
+  if (isVesselResponse(response)) return response;
+
+  response[VESSEL_RESPONSE] = true;
+
   if (init?.headers) {
     appendResponseHeaders(response, init.headers);
   }
@@ -81,6 +87,10 @@ export type RedirectFunction = (
 
 export function isResponse(value: unknown): value is Response {
   return value instanceof Response;
+}
+
+export function isVesselResponse(value: unknown): value is VesselResponse {
+  return value?.[VESSEL_RESPONSE];
 }
 
 const redirectStatusCodes = new Set([301, 302, 303, 307, 308]);

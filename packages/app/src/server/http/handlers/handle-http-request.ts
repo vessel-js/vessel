@@ -6,6 +6,7 @@ import {
   httpError,
   type HttpMethod,
   isRedirectResponse,
+  isVesselResponse,
   resolveHandlerHttpMethod,
   withMiddleware,
 } from 'shared/http';
@@ -79,8 +80,8 @@ export async function handleHttpRequest(
       manifest ? resolveMiddleware(manifest, handler.middleware, 'api') : [],
     );
 
-    if (response.cookies) response.cookies.attach(response.headers);
-    return response;
+    if (isVesselResponse(response)) response.cookies.attach(response.headers);
+    return coerceAnyResponse(response);
   } catch (error) {
     if (isRedirectResponse(error)) {
       return error;

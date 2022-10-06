@@ -9,6 +9,7 @@ import type {
 import { resolveStaticDataAssetId } from 'shared/data';
 import {
   type AnyResponse,
+  coerceAnyResponse,
   Cookies,
   createVesselRequest,
   createVesselResponse,
@@ -17,6 +18,7 @@ import {
   isHttpError,
   isRedirectResponse,
   isResponse,
+  isVesselResponse,
   resolveResponseData,
   type VesselResponse,
   withMiddleware,
@@ -57,8 +59,8 @@ export async function handleDocumentRequest(
       resolveMiddleware(manifest, [], 'document'),
     );
 
-    if (response.cookies) response.cookies.attach(response.headers);
-    return response;
+    if (isVesselResponse(response)) response.cookies.attach(response.headers);
+    return coerceAnyResponse(response);
   } catch (e) {
     const vesselRequest = createVesselRequest(request);
 

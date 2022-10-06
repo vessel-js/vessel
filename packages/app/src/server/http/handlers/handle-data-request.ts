@@ -6,6 +6,7 @@ import {
   createVesselResponse,
   HttpError,
   isRedirectResponse,
+  isVesselResponse,
   withMiddleware,
 } from 'shared/http';
 import { matchRoute } from 'shared/routing';
@@ -64,8 +65,8 @@ export async function handleDataRequest(
       resolveMiddleware(manifest, serverLoader.middleware, 'api'),
     );
 
-    if (response.cookies) response.cookies.attach(response.headers);
-    return response;
+    if (isVesselResponse(response)) response.cookies.attach(response.headers);
+    return coerceAnyResponse(response);
   } catch (error) {
     if (isRedirectResponse(error)) {
       return clientRedirect(error.headers.get('Location')!, error);

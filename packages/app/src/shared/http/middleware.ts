@@ -1,11 +1,16 @@
 import { createVesselRequest, type VesselRequest } from './request';
 import { type VesselRequestHandler } from './request-handler';
-import { type VesselResponse } from './response';
+import {
+  type AnyResponse,
+  coerceAnyResponse,
+  createVesselResponse,
+  type VesselResponse,
+} from './response';
 
 export type FetchMiddleware = (
   request: VesselRequest,
-  next: VesselRequestHandler,
-) => VesselResponse | Promise<VesselResponse>;
+  next: (request: VesselRequest) => Promise<VesselResponse>,
+) => AnyResponse | Promise<AnyResponse>;
 
 export type MaybeFetchMiddleware = FetchMiddleware | undefined | null | false;
 
@@ -32,7 +37,14 @@ export async function withMiddleware(
 
   for (let i = middlewares.length - 1; i >= 0; i--) {
     const next = chain;
-    chain = async (request) => middlewares[i](request, next);
+
+    chain = async (request) =>
+      middlewares[i](request, async (request: VesselRequest) => {
+        return createVesselResponse(
+          request.URL,
+          coerceAnyResponse(await next(request)),
+        );
+      });
   }
 
   return chain(createVesselRequest(request));

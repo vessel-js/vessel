@@ -6,7 +6,11 @@ import type {
 
 import { type FetchMiddleware, withMiddleware } from './middleware';
 import { type RequestParams, type VesselRequest } from './request';
-import { createVesselResponse, resolveResponseData } from './response';
+import {
+  coerceAnyResponse,
+  createVesselResponse,
+  resolveResponseData,
+} from './response';
 
 export type VesselFetch<RPC = unknown> = (
   init?: VesselFetchInit<InferServerHandlerParams<RPC>>,
@@ -64,10 +68,12 @@ export function createFetch<RPC extends ServerRequestHandler>(
         }
       }
 
-      const response = await withMiddleware(
-        new Request(url, request),
-        vesselFetch,
-        init?.middleware,
+      const response = coerceAnyResponse(
+        await withMiddleware(
+          new Request(url, request),
+          vesselFetch,
+          init?.middleware,
+        ),
       );
 
       if (!response.ok) throw response;
