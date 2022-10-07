@@ -18,14 +18,12 @@ export default defineComponent<{
   name: 'RouteErrorBoundary',
   props: ['error', 'boundary'] as any,
   setup(props, { slots }) {
-    const loadError = ref();
+    const loadError = ref(props.error);
     const renderError = ref();
 
     watchEffect(() => {
       loadError.value = props.error;
     });
-
-    const __error = computed(() => renderError.value ?? loadError.value);
 
     const Fallback = computed(
       () =>
@@ -44,9 +42,11 @@ export default defineComponent<{
       renderError.value = null;
     }
 
+    const error = computed(() => renderError.value ?? loadError.value);
+
     return () =>
-      __error.value
-        ? h(Fallback.value, { error: __error.value, reset })
+      error.value
+        ? h(Fallback.value, { error: error.value, reset })
         : slots.default?.();
   },
 });

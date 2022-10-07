@@ -12,12 +12,12 @@ import {
 } from '@vessel-js/app/node';
 import * as path from 'pathe';
 
-export const vueMarkdocTags: MarkdocConfig['tags'] = {
+export const solidMarkdocTags: MarkdocConfig['tags'] = {
   component: {
-    render: 'vue:component',
+    render: 'solid:component',
     transform(node, config) {
       return new Markdoc.Tag(
-        'vue:component',
+        'solid:component',
         node.attributes,
         node.transformChildren(config),
       );
@@ -38,7 +38,7 @@ const renderAttr: RenderMarkdocConfig['attr'] = (_, name, value) => {
   const isString = typeof value === 'string';
   return isString && !propRE.test(value)
     ? `${name}="${value}"`
-    : `:${name}="${isString ? value.replace(objRE, '') : value}"`;
+    : `${name}={${isString ? value.replace(objRE, '') : value}}`;
 };
 
 export const renderMarkdoc: MarkdocRenderer = ({ meta, content, imports }) => {
@@ -46,26 +46,32 @@ export const renderMarkdoc: MarkdocRenderer = ({ meta, content, imports }) => {
 
   markup = markup
     .substring('<article>'.length, markup.length - '</article>'.length)
-    .replace(stripSlotWrapperRE, '<slot$1/>');
+    .replace(stripSlotWrapperRE, '{props.children}');
 
-  const scriptModule = [
-    '<script>',
-    `  export const __markdownMeta = ${JSON.stringify(meta)};`,
-    '</script>',
-  ].join('\n');
-
-  const script =
+  const moduleCode =
     imports.length > 0
-      ? ['<script setup>', ...imports, '</script>'].join('\n')
+      ? [
+          ...imports,
+          '',
+          `export const __markdownMeta = ${JSON.stringify(meta)};`,
+        ].join('\n')
       : '';
 
-  return `${scriptModule}\n\n${script}\n\n<template>${markup}</template>`;
+  const componentCode = [
+    'function Markdown(props) {',
+    `  return <>${markup}</>;`,
+    '}',
+    '',
+    'export default Markdown;',
+  ];
+
+  return `${moduleCode}\n\n${componentCode.join('\n')}`;
 };
 
 const imgRE = /^img$/;
 const codeNameRE = /^(code|Code)$/;
 const fenceNameRE = /^(pre|Fence)$/;
-const vueComponentNameRE = /^vue:component$/;
+const solidComponentNameRE = /^solid:component$/;
 
 export const transformTreeNode: MarkdocTreeNodeTransformer = ({
   node,
@@ -78,8 +84,8 @@ export const transformTreeNode: MarkdocTreeNodeTransformer = ({
       escapeCodeContent(node);
     } else if (fenceNameRE.test(name)) {
       escapeFenceContent(node);
-    } else if (vueComponentNameRE.test(name)) {
-      resoleVueComponent(node, stuff);
+    } else if (solidComponentNameRE.test(name)) {
+      resoleSolidComponent(node, stuff);
     } else if (imgRE.test(name)) {
       resolveImg(node, stuff);
     }
@@ -93,12 +99,12 @@ function resolveImg(tag: MarkdocTag, stuff: MarkdocTreeWalkStuff) {
   tag.attributes.src = markObj(name);
 }
 
-function resoleVueComponent(tag: MarkdocTag, stuff: MarkdocTreeWalkStuff) {
-  const { is: filePath } = tag.attributes;
+function resoleSolidComponent(tag: MarkdocTag, stuff: MarkdocTreeWalkStuff) {
+  const { component: filePath } = tag.attributes;
   const cname = toPascalCase(path.basename(filePath, path.extname(filePath)));
   stuff.imports.add(`import ${cname} from "${filePath}";`);
   tag.name = cname;
-  delete tag.attributes.is;
+  delete tag.attributes.component;
 }
 
 function escapeCodeContent(tag: MarkdocTag) {
@@ -131,7 +137,7 @@ function escapeFenceContent(tag: MarkdocTag) {
 }
 
 function htmlBlock(html: string) {
-  return `<div v-html="${JSON.stringify(
+  return `<div textContent="${JSON.stringify(
     html,
   )}" style="display: contents;"></div>`;
 }

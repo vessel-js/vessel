@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "outDir": "dist",
+    "declarationDir": "types",
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "paths": {
+      ":virtual/vessel/app": ["src/virtual/app"]
+    }
+  },
+  "include": ["src"]
+}

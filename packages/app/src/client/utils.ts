@@ -15,6 +15,6 @@ export function removeSSRStyles() {
   }
 }
 
-export async function tick() {
+export async function tick(): Promise<any> {
   return new Promise((res) => window.requestAnimationFrame(res));
 }

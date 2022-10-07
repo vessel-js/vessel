@@ -117,11 +117,10 @@
     "fast",
     "lightweight",
     "modern",
-    "nextjs",
     "ssg",
     "ssr",
     "vercel",
-    "vite",
-    "vessel"
+    "vessel",
+    "vite"
   ]
 }

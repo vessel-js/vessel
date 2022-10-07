@@ -49,7 +49,10 @@ export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
           appType: 'custom',
           envPrefix: 'PUBLIC_',
           resolve: { alias: virtualAliases },
-          optimizeDeps: { exclude: clientPackages },
+          optimizeDeps: {
+            include: ['cookie'],
+            exclude: clientPackages,
+          },
           ssr: { noExternal: clientPackages },
           server: {
             fs: {
