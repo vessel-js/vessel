@@ -51,8 +51,8 @@ export function rpcPlugin(): VesselPlugin {
               : '';
 
             const rpcIdExport = `export const ${handlerId} = [${[
-              `'/__rpc?rpc_route_id=${routeId}${rpcHandlerId}'`,
               `'${method.toUpperCase()}'`,
+              `'/__rpc?rpc_route_id=${routeId}${rpcHandlerId}'`,
             ].join(', ')}];`;
 
             handlers.push(rpcIdExport);

@@ -47,8 +47,8 @@ export function createFetch<RPC extends ServerRequestHandler>(
 
       // Array = transformed server RPC call [method: string, path: string]
       const request = Array.isArray(input)
-        ? new Request(new URL(input[0], baseURL), {
-            method: input[1],
+        ? new Request(new URL(input[1], baseURL), {
+            method: input[0],
             ...fetchInit,
           })
         : coerceFetchInput(input, fetchInit, baseURL);
