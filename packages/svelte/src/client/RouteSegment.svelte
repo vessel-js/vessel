@@ -2,7 +2,7 @@
   import { setContext } from 'svelte';
   import { writable } from 'svelte/store';
 
-  import { ROUTE_PARAMS_KEY } from './context';
+  import { ROUTE_PARAMS_KEY } from './context-keys';
   import RouteComponent from './RouteComponent.svelte';
   import RouteErrorBoundary from './ErrorBoundary';
 

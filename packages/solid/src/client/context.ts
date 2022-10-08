@@ -130,13 +130,13 @@ export function createContext() {
   return {
     headManager,
     context,
-    route: toReactive(signals[ROUTE_KEY]),
-    matches: toReactive(signals[ROUTE_MATCHES_KEY]),
-    navigation: toReactive(signals[NAVIGATION_KEY]),
+    route: createReactive(signals[ROUTE_KEY]),
+    matches: createReactive(signals[ROUTE_MATCHES_KEY]),
+    navigation: createReactive(signals[NAVIGATION_KEY]),
   };
 }
 
-export function toReactive<T>([get, set]: Signal<T>): Reactive<T> {
+function createReactive<T>([get, set]: Signal<T>): Reactive<T> {
   return {
     get,
     set,

@@ -127,13 +127,13 @@ export function createContext() {
   return {
     headManager,
     context,
-    route: toReactive(refs[ROUTE_KEY]),
-    matches: toReactive(refs[ROUTE_MATCHES_KEY]),
-    navigation: toReactive(refs[NAVIGATION_KEY]),
+    route: createReactive(refs[ROUTE_KEY]),
+    matches: createReactive(refs[ROUTE_MATCHES_KEY]),
+    navigation: createReactive(refs[NAVIGATION_KEY]),
   };
 }
 
-export function toReactive<T>(ref: Ref<T> | ComputedRef<T>): Reactive<T> {
+function createReactive<T>(ref: Ref<T> | ComputedRef<T>): Reactive<T> {
   return {
     get: () => ref.value,
     set: (value) => {

@@ -4,7 +4,8 @@ import { tick } from 'svelte';
 import App from ':virtual/vessel/app';
 
 import { type SvelteModule } from '../shared';
-import { createContext, ROUTER_KEY } from './context';
+import { createContext } from './context';
+import { ROUTER_KEY } from './context-keys';
 
 async function main() {
   const { context, ...delegate } = createContext();

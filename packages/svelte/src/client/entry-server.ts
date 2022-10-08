@@ -3,7 +3,8 @@ import type { SvelteServerModule } from 'node';
 
 import App from ':virtual/vessel/app';
 
-import { createContext, ROUTER_KEY } from './context';
+import { createContext } from './context';
+import { ROUTER_KEY } from './context-keys';
 
 export const render: ServerRenderer = async ({ route, matches, router }) => {
   const { context, ...delegate } = createContext();

@@ -15,6 +15,7 @@ export default defineConfig([
     entry: {
       index: 'src/client/index.ts',
       context: 'src/client/context.ts',
+      'context-keys': 'src/client/context-keys.ts',
       stores: 'src/client/stores.ts',
       'entry-client': 'src/client/entry-client.ts',
       'entry-server': 'src/client/entry-server.ts',

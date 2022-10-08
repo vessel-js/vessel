@@ -6,7 +6,7 @@
     SERVER_DATA_KEY,
     SERVER_ERROR_KEY,
     STATIC_DATA_KEY,
-  } from './context';
+  } from './context-keys';
 
   export let component;
   export let leaf = false;

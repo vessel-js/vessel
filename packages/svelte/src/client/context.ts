@@ -20,6 +20,18 @@ import {
   writable,
 } from 'svelte/store';
 
+import {
+  FRONTMATTER_KEY,
+  MARKDOWN_KEY,
+  NAVIGATION_KEY,
+  ROUTE_KEY,
+  ROUTE_MATCHES_KEY,
+  ROUTE_PARAMS_KEY,
+  ROUTER_KEY,
+  SERVER_DATA_KEY,
+  SERVER_ERROR_KEY,
+  STATIC_DATA_KEY,
+} from './context-keys';
 import type {
   FrontmatterStore,
   MarkdownStore,
@@ -32,60 +44,49 @@ import type {
   StaticDataStore,
 } from './stores';
 
-export const ROUTER_KEY = Symbol();
 export function getRouter(): Router {
   return getContext(ROUTER_KEY);
 }
 
-const ROUTE_KEY = Symbol();
 export function getRoute(): RouteStore {
   return getContext(ROUTE_KEY);
 }
-
-export const ROUTE_PARAMS_KEY = Symbol();
 export function getRouteParams<
   T extends RouteParams = RouteParams,
 >(): RouteParamsStore<T> {
   return getContext(ROUTE_PARAMS_KEY);
 }
 
-const ROUTE_MATCHES_KEY = Symbol();
 export function getRouteMatches(): RouteMatchesStore {
   return getContext(ROUTE_MATCHES_KEY);
 }
 
-const NAVIGATION_KEY = Symbol();
 export function getNavigation(): NavigationStore {
   return getContext(NAVIGATION_KEY);
 }
 
-const MARKDOWN_KEY = Symbol();
 export function getMarkdown(): MarkdownStore {
   return getContext(MARKDOWN_KEY);
 }
 
-const FRONTMATTER_KEY = Symbol();
 export function getFrontmatter<
   T extends MarkdownFrontmatter = MarkdownFrontmatter,
 >(): FrontmatterStore<T> {
   return getContext(FRONTMATTER_KEY);
 }
 
-export const STATIC_DATA_KEY = Symbol();
 export function getStaticData<
   T extends LoadedStaticData = LoadedStaticData,
 >(): StaticDataStore<T> {
   return getContext(STATIC_DATA_KEY);
 }
 
-export const SERVER_DATA_KEY = Symbol();
 export function getServerData<
   T extends LoadedServerData = LoadedServerData,
 >(): ServerDataStore<T> {
   return getContext(SERVER_DATA_KEY);
 }
 
-export const SERVER_ERROR_KEY = Symbol();
 export function getServerError<
   T extends HttpErrorData = HttpErrorData,
 >(): ServerErrorStore<T> {
@@ -109,13 +110,13 @@ export function createContext() {
 
   return {
     context,
-    route: toReactive(stores[ROUTE_KEY]),
-    matches: toReactive(stores[ROUTE_MATCHES_KEY]),
-    navigation: toReactive(stores[NAVIGATION_KEY]),
+    route: createReactive(stores[ROUTE_KEY]),
+    matches: createReactive(stores[ROUTE_MATCHES_KEY]),
+    navigation: createReactive(stores[NAVIGATION_KEY]),
   };
 }
 
-export function toReactive<T>(store: Readable<T> | Writable<T>): Reactive<T> {
+function createReactive<T>(store: Readable<T> | Writable<T>): Reactive<T> {
   return {
     get: () => get(store),
     // eslint-disable-next-line @typescript-eslint/no-empty-function

@@ -1,0 +1,10 @@
+export const ROUTER_KEY = Symbol();
+export const ROUTE_KEY = Symbol();
+export const ROUTE_PARAMS_KEY = Symbol();
+export const ROUTE_MATCHES_KEY = Symbol();
+export const NAVIGATION_KEY = Symbol();
+export const MARKDOWN_KEY = Symbol();
+export const FRONTMATTER_KEY = Symbol();
+export const STATIC_DATA_KEY = Symbol();
+export const SERVER_DATA_KEY = Symbol();
+export const SERVER_ERROR_KEY = Symbol();
