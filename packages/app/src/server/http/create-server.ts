@@ -8,11 +8,11 @@ import {
 import { matchRoute } from 'shared/routing';
 import { noendslash } from 'shared/utils/url';
 
-import { addURLPattern, installServerConfig } from '../app/configure-server';
-import { handleDataRequest } from './handle-data-request';
-import { handleDocumentRequest } from './handle-document-request';
-import { handleHttpRequest } from './handle-http-request';
-import { handleRPCRequest } from './handle-rpc-request';
+import { addURLPattern, installServerConfig } from './app/configure-server';
+import { handleDataRequest } from './handlers/handle-data-request';
+import { handleDocumentRequest } from './handlers/handle-document-request';
+import { handleHttpRequest } from './handlers/handle-http-request';
+import { handleRPCRequest } from './handlers/handle-rpc-request';
 
 export function createServer(manifest: ServerManifest): RequestHandler {
   if (!manifest.dev) {

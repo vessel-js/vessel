@@ -1,4 +1,4 @@
-export { createServer } from './handlers/create-server';
+export { createServer } from './create-server';
 export {
   createDocumentResource,
   createDocumentResourceLinkTags,

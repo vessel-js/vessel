@@ -43,8 +43,8 @@ import {
   createStaticDataScriptTag,
   createStaticLoaderDataMap,
 } from '../../static-data';
+import { createServerRequestEvent } from '../create-request-event';
 import { resolveMiddleware } from '../middleware';
-import { createServerRequestEvent } from '../request-event';
 import { runErrorHandlers } from './handle-http-error';
 
 export async function handleDocumentRequest(

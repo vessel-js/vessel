@@ -12,8 +12,8 @@ import {
 import { matchRoute } from 'shared/routing';
 import type { RouteComponentType } from 'shared/routing/types';
 
+import { createServerRequestEvent } from '../create-request-event';
 import { resolveMiddleware } from '../middleware';
-import { createServerRequestEvent } from '../request-event';
 import { handleHttpError } from './handle-http-error';
 
 export async function handleDataRequest(

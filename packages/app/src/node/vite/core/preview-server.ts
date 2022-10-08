@@ -4,7 +4,7 @@ import { installPolyfills } from 'node/polyfills';
 import fs from 'node:fs';
 import * as path from 'pathe';
 import { createServer } from 'server/http';
-import { initManifestURLPatterns } from 'server/http/handlers/create-server';
+import { initManifestURLPatterns } from 'server/http/create-server';
 import type { ServerManifest } from 'server/types';
 import { coerceError } from 'shared/utils/error';
 import type { PreviewServerHook } from 'vite';

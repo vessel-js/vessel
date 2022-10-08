@@ -11,8 +11,8 @@ import {
   withMiddleware,
 } from 'shared/http';
 
+import { createServerRequestEvent } from '../create-request-event';
 import { resolveMiddleware } from '../middleware';
-import { createServerRequestEvent } from '../request-event';
 import { handleHttpError } from './handle-http-error';
 
 export async function handleHttpRequest(
