@@ -14,7 +14,7 @@ import { handleDocumentRequest } from './handle-document-request';
 import { handleHttpRequest } from './handle-http-request';
 import { handleRPCRequest } from './handle-rpc-request';
 
-export function createRequestHandler(manifest: ServerManifest): RequestHandler {
+export function createServer(manifest: ServerManifest): RequestHandler {
   if (!manifest.dev) {
     initManifestURLPatterns(manifest);
   }

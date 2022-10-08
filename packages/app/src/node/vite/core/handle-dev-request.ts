@@ -2,7 +2,7 @@ import type { ServerResponse } from 'http';
 import type { App } from 'node/app/App';
 import { type AppRoute, toServerLoadable } from 'node/app/routes';
 import { handleIncomingMessage } from 'node/http';
-import { createRequestHandler } from 'server/http';
+import { createServer } from 'server/http';
 import type { ServerEntryModule, ServerManifest } from 'server/types';
 import { resolveStaticDataAssetId } from 'shared/data';
 import { type JSONData } from 'shared/http';
@@ -128,7 +128,7 @@ export async function handleDevRequest({
       },
     };
 
-    const handler = createRequestHandler(manifest);
+    const handler = createServer(manifest);
     await handleIncomingMessage(base, req, res, handler, (error) => {
       logDevError(app, req, coerceError(error));
     });

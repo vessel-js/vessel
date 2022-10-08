@@ -170,8 +170,8 @@ async function bundleEdge(
     '.manifests/vercel.edge.js',
     [
       'import manifest from "./edge.js";',
-      'import { createRequestHandler } from "@vessel-js/app/server";',
-      'export default createRequestHandler(manifest);',
+      'import { createServer } from "@vessel-js/app/server";',
+      'export default createServer(manifest);',
     ].join('\n'),
   );
 

@@ -1,3 +1,4 @@
+export { createServer } from './handlers/create-server';
 export {
   createDocumentResource,
   createDocumentResourceLinkTags,
@@ -5,4 +6,3 @@ export {
 } from './handlers/handle-document-request';
 export { handleHttpError } from './handlers/handle-http-error';
 export { handleHttpRequest } from './handlers/handle-http-request';
-export { createRequestHandler } from './handlers/server-http-entry';

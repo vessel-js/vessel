@@ -1,7 +1,7 @@
 import { handleIncomingMessage } from 'node/http';
 import { installPolyfills } from 'node/polyfills';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { createRequestHandler } from 'server/http';
+import { createServer } from 'server/http';
 import type { ServerManifest } from 'server/types';
 import { type RequestHandler } from 'shared/http';
 
@@ -12,7 +12,7 @@ export function createIncomingMessageHandler(manifest: ServerManifest) {
   return async (req: IncomingMessage, res: ServerResponse) => {
     if (!installed) {
       await installPolyfills();
-      handler = createRequestHandler(manifest);
+      handler = createServer(manifest);
       installed = true;
     }
 

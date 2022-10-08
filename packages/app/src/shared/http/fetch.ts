@@ -29,12 +29,14 @@ export function createFetch<RPC extends ServerRequestHandler>(
 ): VesselFetch<RPC> {
   if (import.meta.env.SSR) {
     return () => {
-      throw new Error('[vessel] fetcher was called server-side');
+      throw new Error(
+        '[vessel] fetch created with `createFetch` was called server-side',
+      );
     };
   }
 
   if (typeof input === 'function') {
-    throw new Error('[vessel] fetcher RPC call was not transformed');
+    throw new Error('[vessel] fetch RPC call was not transformed');
   }
 
   return async (fetchInit) => {

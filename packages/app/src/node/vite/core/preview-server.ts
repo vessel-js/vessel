@@ -3,8 +3,8 @@ import { handleIncomingMessage } from 'node/http';
 import { installPolyfills } from 'node/polyfills';
 import fs from 'node:fs';
 import * as path from 'pathe';
-import { createRequestHandler } from 'server/http';
-import { initManifestURLPatterns } from 'server/http/handlers/server-http-entry';
+import { createServer } from 'server/http';
+import { initManifestURLPatterns } from 'server/http/handlers/create-server';
 import type { ServerManifest } from 'server/types';
 import { coerceError } from 'shared/utils/error';
 import type { PreviewServerHook } from 'vite';
@@ -34,7 +34,7 @@ export async function configurePreviewServer(
   }
 
   const handler = manifest
-    ? createRequestHandler({ dev: app.config.debug, ...manifest })
+    ? createServer({ dev: app.config.debug, ...manifest })
     : null;
 
   return {
