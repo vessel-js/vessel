@@ -13,7 +13,7 @@ import { isString } from 'shared/utils/unit';
 
 import {
   callStaticLoader,
-  createStaticLoaderFetcher,
+  createStaticLoaderFetch,
 } from './static-data-loader';
 
 type HandleStaticDataRequestInit = {
@@ -33,10 +33,6 @@ export async function handleStaticDataRequest({
 
   const dataURL = new URL(url);
   dataURL.pathname = pathname;
-
-  const fetcher = createStaticLoaderFetcher(app, (route) =>
-    route.http!.viteLoader(),
-  );
 
   const route = app.routes
     .toArray()
@@ -59,11 +55,15 @@ export async function handleStaticDataRequest({
 
   const { staticLoader } = await match[type]!.loader();
 
+  const serverFetch = createStaticLoaderFetch(app, (route) =>
+    route.http!.viteLoader(),
+  );
+
   try {
     const response = await callStaticLoader(
       dataURL,
       match,
-      fetcher,
+      serverFetch,
       staticLoader,
     );
 

@@ -7,7 +7,7 @@ import { handleHttpError, handleHttpRequest } from 'server';
 import { createStaticLoaderInput } from 'server/static-data';
 import type {
   MaybeStaticLoaderResponse,
-  ServerFetcher,
+  ServerFetch,
   ServerHttpModule,
   ServerLoadedRoute,
   ServerModule,
@@ -17,7 +17,12 @@ import type {
   StaticLoaderCacheMap,
   StaticLoaderResponse,
 } from 'server/types';
-import { ALL_HTTP_METHODS, coerceFetchInput, httpError } from 'shared/http';
+import {
+  ALL_HTTP_METHODS,
+  coerceFetchInput,
+  createVesselResponse,
+  httpError,
+} from 'shared/http';
 import {
   getRouteComponentTypes,
   matchAllRoutes,
@@ -35,30 +40,36 @@ import { getDevServerOrigin } from './dev-server';
 
 // Create fetcher to ensure relative paths work when fetching inside `staticLoader`. Also
 // ensures requests are able to load HTTP modules so they can respond because there's no server here.
-export function createStaticLoaderFetcher(
+export function createStaticLoaderFetch(
   app: App,
   loader: (route: AppRoute) => Promise<ServerHttpModule>,
-): ServerFetcher {
+): ServerFetch {
   const ssrOrigin = getDevServerOrigin(app);
+  const ssrURL = new URL(ssrOrigin);
   const httpRoutes = app.routes.filterHasType('http');
 
-  return (input, init) => {
-    if (typeof input === 'string' && input.startsWith('/')) {
-      const url = new URL(`${ssrOrigin}${input}`);
-      const route = matchRoute(url, httpRoutes);
+  return async (input, init) => {
+    const request = coerceFetchInput(input, init, ssrURL);
+    const requestURL = new URL(request.url);
+
+    if (requestURL.origin === ssrOrigin) {
+      const route = matchRoute(requestURL, httpRoutes);
 
       if (!route) {
-        return handleHttpError(httpError('route not found', 404));
+        const error = await handleHttpError(httpError('route not found', 404));
+        return createVesselResponse(requestURL, error);
       }
 
-      return handleHttpRequest(url, coerceFetchInput(input, init, url), {
+      const response = await handleHttpRequest(requestURL, request, {
         ...route,
         loader: () => loader(route),
         methods: ALL_HTTP_METHODS,
       });
+
+      return createVesselResponse(requestURL, response);
     }
 
-    return fetch(input, init);
+    return createVesselResponse(requestURL, await fetch(input, init));
   };
 }
 
@@ -84,7 +95,7 @@ export async function loadStaticRoute(
   app: App,
   url: URL,
   route: AppRoute,
-  fetcher: ServerFetcher,
+  serverFetch: ServerFetch,
   load: (route: AppRoute, type: RouteFileType) => Promise<ServerModule>,
 ): Promise<LoadStaticRouteResult> {
   const branch = app.routes.getBranch(route);
@@ -120,9 +131,10 @@ export async function loadStaticRoute(
                 const data = await callStaticLoader(
                   url,
                   match,
-                  fetcher,
+                  serverFetch,
                   mod.staticLoader,
                 );
+
                 staticData.set(key, data);
               }
             }
@@ -195,11 +207,11 @@ const warned = new Set<string>();
 export async function callStaticLoader(
   url: URL,
   route: Route & RouteMatch,
-  fetcher: ServerFetcher,
+  serverFetch: ServerFetch,
   staticLoader?: StaticLoader,
 ): Promise<StaticLoaderResponse> {
   const id = route.id;
-  const input = createStaticLoaderInput(url, route, fetcher);
+  const input = createStaticLoaderInput(url, route, serverFetch);
 
   if (!staticLoader) {
     clearStaticLoaderCache(id);

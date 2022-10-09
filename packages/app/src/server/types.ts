@@ -3,10 +3,12 @@ import type {
   FetchMiddleware,
   JSONData,
   JSONResponse,
+  RequestEvent,
+  RequestEventInit,
   RequestParams,
   VesselRequest,
-  VesselRequestMetadata,
-  VesselResponseMetadata,
+  VesselResponse,
+  VesselResponseInit,
 } from 'shared/http';
 import type {
   LoadableRoute,
@@ -162,7 +164,7 @@ export type ServerLoadedRoute<Params extends RequestParams = RequestParams> =
 // ---------------------------------------------------------------------------------------
 
 export type ServerHttpModule = {
-  [id: string]: ServerRequestHandler;
+  [id: string]: HttpRequestHandler;
 };
 
 export type ServerLoadableHttpRoute = Route & {
@@ -182,49 +184,72 @@ export type ServerRedirect = {
 };
 
 // ---------------------------------------------------------------------------------------
-// Server Request Event
+// Server Request Events
 // ---------------------------------------------------------------------------------------
 
-export type ServerRequestEventInit<Params extends RequestParams> = {
-  url: URL;
-  params: Params;
-  request: Request & Partial<VesselRequestMetadata>;
-  pageResponse?: Partial<VesselResponseMetadata>;
-  manifest?: ServerManifest;
-};
+export type ServerFetch = (
+  input: RequestInfo | URL,
+  init?: RequestInit,
+) => Promise<VesselResponse>;
 
-export type ServerRequestEvent<Params extends RequestParams = RequestParams> = {
-  params: Params;
-  request: VesselRequest;
-  pageResponse: VesselResponseMetadata;
-  fetcher: ServerFetcher;
-};
+export type HttpRequestEvent<Params extends RequestParams = RequestParams> =
+  RequestEvent<Params> & { serverFetch: ServerFetch };
+
+export type HttpRequestEventInit<Params extends RequestParams = RequestParams> =
+  RequestEventInit<Params> & { manifest?: ServerManifest };
+
+export type DocumentRequestEventInit<
+  Params extends RequestParams = RequestParams,
+> = HttpRequestEventInit<Params> & { response?: VesselResponseInit };
+
+export type DocumentRequestEvent<Params extends RequestParams = RequestParams> =
+  HttpRequestEvent<Params> & { response: VesselResponseInit };
 
 // ---------------------------------------------------------------------------------------
-// Server Request Handler
+// HTTP Request Handler
 // ---------------------------------------------------------------------------------------
 
-export interface ServerRequestHandler<
+export interface HttpRequestHandler<
   Params extends RequestParams = RequestParams,
   Response extends AnyResponse = AnyResponse,
 > {
-  (event: ServerRequestEvent<Params>): Response | Promise<Response>;
-  /** string if group */
+  (event: HttpRequestEvent<Params>): Response | Promise<Response>;
   middleware?: (string | FetchMiddleware)[];
 }
 
-export type InferServerHandlerParams<Handler> =
-  Handler extends ServerRequestHandler<infer T> ? T : RequestParams;
+export type InferHttpHandlerParams<Handler> =
+  Handler extends HttpRequestHandler<infer T> ? T : RequestParams;
 
-export type InferServerHandlerData<Handler> =
+export type InferHttpHandlerData<Handler> =
   // eslint-disable-next-line @typescript-eslint/ban-types
-  Handler extends ServerRequestHandler<{}, infer T>
+  Handler extends HttpRequestHandler<{}, infer T>
     ? T extends Response
       ? T extends JSONResponse<infer Data>
         ? Data
         : unknown
       : T
     : unknown;
+
+// ---------------------------------------------------------------------------------------
+// Server Loader
+// ---------------------------------------------------------------------------------------
+
+export interface ServerLoader<
+  Params extends RequestParams = RequestParams,
+  Response extends AnyResponse = AnyResponse,
+> {
+  (event: DocumentRequestEvent<Params>): Response | Promise<Response>;
+  middleware?: (string | FetchMiddleware)[];
+}
+
+// ---------------------------------------------------------------------------------------
+// Server Action
+// ---------------------------------------------------------------------------------------
+
+export type ServerAction<
+  Params extends RequestParams = RequestParams,
+  Response extends AnyResponse = AnyResponse,
+> = (event: DocumentRequestEvent<Params>) => Response | Promise<Response>;
 
 // ---------------------------------------------------------------------------------------
 // Static Loader
@@ -235,7 +260,7 @@ export type StaticLoaderEvent<Params extends RequestParams = RequestParams> =
     pathname: string;
     route: Route;
     params: Params;
-    fetcher: ServerFetcher;
+    serverFetch: ServerFetch;
   }>;
 
 /** Map of data asset id to server loaded data objects. */
@@ -260,41 +285,14 @@ export type StaticLoader<
   event: StaticLoaderEvent<Params>,
 ) => MaybeStaticLoaderResponse<Data> | Promise<MaybeStaticLoaderResponse<Data>>;
 
-export type StaticLoaderResponse<Data = JSONData> = {
-  data?: Data;
-  readonly redirect?: string | { path: string; status?: number };
-  readonly cache?: StaticLoaderCacheKeyBuilder;
-};
-
-export type ServerFetcher = (
-  input: RequestInfo | URL,
-  init?: RequestInit,
-) => Promise<Response>;
-
 export type MaybeStaticLoaderResponse<Data = JSONData> =
   | void
   | undefined
   | null
   | StaticLoaderResponse<Data>;
 
-// ---------------------------------------------------------------------------------------
-// Server Loader
-// ---------------------------------------------------------------------------------------
-
-export interface ServerLoader<
-  Params extends RequestParams = RequestParams,
-  Response extends AnyResponse = AnyResponse,
-> {
-  (event: ServerRequestEvent<Params>): Response | Promise<Response>;
-  /** string if group */
-  middleware?: (string | FetchMiddleware)[];
-}
-
-// ---------------------------------------------------------------------------------------
-// Server Action
-// ---------------------------------------------------------------------------------------
-
-export type ServerAction<
-  Params extends RequestParams = RequestParams,
-  Response extends AnyResponse = AnyResponse,
-> = (event: ServerRequestEvent<Params>) => Response | Promise<Response>;
+export type StaticLoaderResponse<Data = JSONData> = {
+  data?: Data;
+  readonly redirect?: string | { path: string; status?: number };
+  readonly cache?: StaticLoaderCacheKeyBuilder;
+};

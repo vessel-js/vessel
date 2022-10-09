@@ -11,7 +11,7 @@ import {
   withMiddleware,
 } from 'shared/http';
 
-import { createServerRequestEvent } from '../create-request-event';
+import { createHttpRequestEvent } from '../create-request-event';
 import { resolveMiddleware } from '../middleware';
 import { handleHttpError } from './handle-http-error';
 
@@ -67,15 +67,14 @@ export async function handleHttpRequest(
     const response = await withMiddleware(
       request,
       async (request) => {
-        const event = createServerRequestEvent({
-          url: request.URL,
-          params: route.params,
+        const event = createHttpRequestEvent({
           request,
+          params: route.params,
           manifest,
         });
         const anyResponse = await handler(event);
         const response = coerceAnyResponse(anyResponse);
-        return createVesselResponse(request.URL, response, event.pageResponse);
+        return createVesselResponse(request.URL, response);
       },
       manifest ? resolveMiddleware(manifest, handler.middleware, 'api') : [],
     );

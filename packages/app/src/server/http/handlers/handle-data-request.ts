@@ -12,7 +12,7 @@ import {
 import { matchRoute } from 'shared/routing';
 import type { RouteComponentType } from 'shared/routing/types';
 
-import { createServerRequestEvent } from '../create-request-event';
+import { createDocumentRequestEvent } from '../create-request-event';
 import { resolveMiddleware } from '../middleware';
 import { handleHttpError } from './handle-http-error';
 
@@ -51,8 +51,7 @@ export async function handleDataRequest(
     const response = await withMiddleware(
       request,
       async (request) => {
-        const event = createServerRequestEvent({
-          url: request.URL,
+        const event = createDocumentRequestEvent({
           request,
           params: match.params,
           manifest,
@@ -60,7 +59,7 @@ export async function handleDataRequest(
         const anyResponse = await serverLoader(event);
         const response = coerceAnyResponse(anyResponse);
         response.headers.set('X-Vessel-Data', 'yes');
-        return createVesselResponse(request.URL, response, event.pageResponse);
+        return createVesselResponse(request.URL, response, event.response);
       },
       resolveMiddleware(manifest, serverLoader.middleware, 'api'),
     );

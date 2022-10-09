@@ -5,7 +5,7 @@ import { getRouteFileTypes, type RouteFileType } from 'node/app/files';
 import type { AppRoute } from 'node/app/routes';
 import { installPolyfills } from 'node/polyfills';
 import { hash, logger, LoggerIcon, mkdirp, rimraf } from 'node/utils';
-import { createStaticLoaderFetcher, loadStaticRoute } from 'node/vite/core';
+import { createStaticLoaderFetch, loadStaticRoute } from 'node/vite/core';
 import { getDevServerOrigin } from 'node/vite/core/dev-server';
 import fs from 'node:fs';
 import { writeFile } from 'node:fs/promises';
@@ -216,7 +216,7 @@ export async function build(
   const ssrOrigin = getDevServerOrigin(app);
   const ssrRouter = createServerRouter();
 
-  const fetcher = createStaticLoaderFetcher(
+  const serverFetch = createStaticLoaderFetch(
     app,
     (route) => import(serverRouteChunkFiles.get(route.id)!.http!),
   );
@@ -229,7 +229,7 @@ export async function build(
       app,
       url,
       page,
-      fetcher,
+      serverFetch,
       routeChunkLoader,
     );
 

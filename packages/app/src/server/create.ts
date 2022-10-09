@@ -5,7 +5,7 @@ import type {
   RequestParams,
 } from 'shared/http';
 
-import type { ServerLoader, ServerRequestHandler, StaticLoader } from './types';
+import type { HttpRequestHandler, ServerLoader, StaticLoader } from './types';
 
 export function createStaticLoader<
   Params extends RequestParams = RequestParams,
@@ -29,7 +29,7 @@ export function createHttpRequestHandler<
   Params extends RequestParams = RequestParams,
   Response extends AnyResponse = AnyResponse,
 >(
-  handler: ServerRequestHandler<Params, Response>,
+  handler: HttpRequestHandler<Params, Response>,
   init?: { middleware?: FetchMiddleware[] },
 ) {
   handler.middleware = init?.middleware;

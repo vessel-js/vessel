@@ -3,7 +3,7 @@ import { type JSONData } from 'shared/http';
 import { getRouteComponentTypes, type MatchedRoute } from 'shared/routing';
 
 import type {
-  ServerFetcher,
+  ServerFetch,
   ServerLoadedRoute,
   StaticLoaderDataMap,
   StaticLoaderEvent,
@@ -12,13 +12,13 @@ import type {
 export function createStaticLoaderInput(
   url: URL,
   route: MatchedRoute,
-  fetcher: ServerFetcher,
+  serverFetch: ServerFetch,
 ): StaticLoaderEvent {
   return {
     pathname: url.pathname,
     route,
     params: route.params,
-    fetcher,
+    serverFetch,
   };
 }
 

@@ -43,7 +43,7 @@ import {
   createStaticDataScriptTag,
   createStaticLoaderDataMap,
 } from '../../static-data';
-import { createServerRequestEvent } from '../create-request-event';
+import { createDocumentRequestEvent } from '../create-request-event';
 import { resolveMiddleware } from '../middleware';
 import { runErrorHandlers } from './handle-http-error';
 
@@ -358,7 +358,6 @@ export type LoadServerDataResult = {
 };
 
 async function loadServerData({
-  url,
   request,
   response,
   route,
@@ -368,10 +367,9 @@ async function loadServerData({
   const { serverLoader } = await route[type]!.loader();
   if (!serverLoader) return;
 
-  const event = createServerRequestEvent({
-    url,
+  const event = createDocumentRequestEvent({
     request,
-    pageResponse: response,
+    response,
     params: route.params,
     manifest,
   });

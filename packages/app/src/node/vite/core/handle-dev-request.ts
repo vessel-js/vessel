@@ -12,10 +12,7 @@ import type { Connect, ModuleNode, ViteDevServer } from 'vite';
 
 import { handleDevServerError, logDevError } from './dev-server';
 import { readIndexHtmlFile } from './index-html';
-import {
-  createStaticLoaderFetcher,
-  loadStaticRoute,
-} from './static-data-loader';
+import { createStaticLoaderFetch, loadStaticRoute } from './static-data-loader';
 
 type HandleDevRequestInit = {
   base: string;
@@ -34,7 +31,7 @@ export async function handleDevRequest({
 }: HandleDevRequestInit) {
   url.pathname = url.pathname.replace('/index.html', '/');
 
-  const fetcher = createStaticLoaderFetcher(app, (route) =>
+  const serverFetch = createStaticLoaderFetch(app, (route) =>
     route.http!.viteLoader(),
   );
 
@@ -49,7 +46,7 @@ export async function handleDevRequest({
         app,
         url,
         route,
-        fetcher,
+        serverFetch,
         (route, type) => route[type]!.viteLoader(),
       );
 

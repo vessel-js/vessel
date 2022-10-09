@@ -6,11 +6,11 @@ import { isString } from 'shared/utils/unit';
 
 import { Cookies } from './cookies';
 
-export type VesselResponse = Response & VesselResponseMetadata;
+export type VesselResponse = Response & Required<VesselResponseInit>;
 
-export type VesselResponseMetadata = {
-  headers: Headers;
-  cookies: Cookies;
+export type VesselResponseInit = {
+  headers?: Headers;
+  cookies?: Cookies;
 };
 
 const VESSEL_RESPONSE = Symbol();
@@ -18,7 +18,7 @@ const VESSEL_RESPONSE = Symbol();
 export function createVesselResponse(
   url: URL,
   response: Response,
-  init?: Partial<VesselResponseMetadata>,
+  init?: VesselResponseInit,
 ): VesselResponse {
   if (isVesselResponse(response)) return response;
 
@@ -30,12 +30,7 @@ export function createVesselResponse(
 
   if (!('cookies' in response)) {
     const cookies =
-      init?.cookies ??
-      new Cookies({
-        url,
-        headers: response.headers,
-      });
-
+      init?.cookies ?? new Cookies({ url, headers: response.headers });
     Object.defineProperty(response, 'cookies', {
       enumerable: true,
       get() {

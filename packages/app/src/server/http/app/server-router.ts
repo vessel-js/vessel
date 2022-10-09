@@ -1,11 +1,11 @@
 /* eslint-disable prefer-rest-params */
 import type {
+  HttpRequestHandler,
   ServerErrorHandler,
   ServerErrorRoute,
   ServerHttpModule,
   ServerLoadableHttpRoute,
   ServerMiddlewareEntry,
-  ServerRequestHandler,
 } from 'server/types';
 import {
   type AnyResponse,
@@ -57,7 +57,7 @@ export function createServerRouter() {
   const addHttpRoute = (
     methods: HttpMethod | HttpMethod[],
     path: string,
-    handler: ServerRequestHandler,
+    handler: HttpRequestHandler,
     rpcId = '',
     middlewares: (string | FetchMiddleware)[] = [],
   ) => {
@@ -202,6 +202,6 @@ export type ServerRouter = {
   >(
     methods: HttpMethod | HttpMethod[],
     path: `/${string}` | { path: `/${string}`; rpcId: string },
-    handler: ServerRequestHandler<Params, Response>,
+    handler: HttpRequestHandler<Params, Response>,
   ): ServerRouter;
 };

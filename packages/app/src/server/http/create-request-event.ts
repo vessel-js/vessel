@@ -1,73 +1,85 @@
 import type {
-  ServerFetcher,
+  DocumentRequestEvent,
+  DocumentRequestEventInit,
+  HttpRequestEvent,
+  HttpRequestEventInit,
+  ServerFetch,
   ServerManifest,
-  ServerRequestEvent,
-  ServerRequestEventInit,
 } from 'server/types';
 import {
   coerceFetchInput,
   Cookies,
   createVesselRequest,
+  createVesselResponse,
   type RequestParams,
 } from 'shared/http';
 import { matchRoute } from 'shared/routing';
 
 import { handleHttpRequest } from './handlers/handle-http-request';
 
-export function createServerRequestEvent<
+export function createDocumentRequestEvent<
   Params extends RequestParams = RequestParams,
->(init: ServerRequestEventInit<Params>): ServerRequestEvent<Params> {
-  init.request = createVesselRequest(init.request);
+>(init: DocumentRequestEventInit<Params>): DocumentRequestEvent<Params> {
+  const httpEvent = createHttpRequestEvent(init);
+  const headers = init.response?.headers ?? new Headers();
+  const cookies =
+    init.response?.cookies ??
+    new Cookies({ url: httpEvent.request.URL, headers });
+  return {
+    ...httpEvent,
+    get response() {
+      return { headers, cookies };
+    },
+  };
+}
 
-  const pageHeaders = init.pageResponse?.headers ?? new Headers();
+export function createHttpRequestEvent<
+  Params extends RequestParams = RequestParams,
+>(init: HttpRequestEventInit<Params>): HttpRequestEvent<Params> {
+  let serverFetch: ServerFetch | null = null;
+  const request = createVesselRequest(init.request);
 
-  const pageCookies =
-    init.pageResponse?.cookies ??
-    new Cookies({ url: init.url, headers: pageHeaders });
-
-  let fetcher: ServerFetcher | null = null;
-
-  const event: ServerRequestEvent<Params> = {
+  const event: HttpRequestEvent<Params> = {
     get params() {
       return init.params;
     },
     get request() {
-      return init.request as ServerRequestEvent<Params>['request'];
+      return request;
     },
-    get pageResponse() {
-      return {
-        headers: pageHeaders,
-        cookies: pageCookies,
-      };
-    },
-    get fetcher() {
-      if (!fetcher) {
-        throw Error('`fetcher` can only be used inside `serverLoader`');
+    get serverFetch() {
+      if (!serverFetch) {
+        throw Error('`serverFetch` is not available.');
       }
 
-      return fetcher;
+      return serverFetch;
     },
   };
 
-  fetcher = init.manifest ? createServerFetcher(event, init.manifest) : null;
+  serverFetch = init.manifest
+    ? createServerFetch(request.URL, init.manifest)
+    : null;
+
   return event;
 }
 
-export function createServerFetcher(
-  event: ServerRequestEvent,
+export function createServerFetch(
+  baseURL: URL,
   manifest: ServerManifest,
-): ServerFetcher {
-  return (input, init) => {
-    const request = coerceFetchInput(input, init, event.request.URL);
+): ServerFetch {
+  return async (input, init) => {
+    const request = coerceFetchInput(input, init, baseURL);
+    const requestURL = new URL(request.url);
 
-    const url = new URL(request.url);
-    if (event.request.URL.origin === url.origin) {
-      const route = matchRoute(url, manifest.routes.http);
+    if (requestURL.origin === baseURL.origin) {
+      const route = matchRoute(requestURL, manifest.routes.http);
       if (route) {
-        return handleHttpRequest(url, request, route, manifest);
+        return createVesselResponse(
+          requestURL,
+          await handleHttpRequest(requestURL, request, route, manifest),
+        );
       }
     }
 
-    return fetch(request, init);
+    return createVesselResponse(requestURL, await fetch(request, init));
   };
 }

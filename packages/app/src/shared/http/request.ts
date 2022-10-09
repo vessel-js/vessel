@@ -1,22 +1,33 @@
 import { Cookies } from './cookies';
 
+export type VesselRequest = Request & Required<VesselRequestInit>;
+
+export type VesselRequestInit = {
+  URL?: URL;
+  cookies?: Cookies;
+};
+
 export type RequestParams = {
   [param: string]: string | undefined;
 };
 
-export type VesselRequest = Request & VesselRequestMetadata;
+export type RequestEventInit<Params extends RequestParams = RequestParams> = {
+  request: Request & VesselRequestInit;
+  params: Params;
+};
 
-export type VesselRequestMetadata = {
-  URL: URL;
-  cookies: Cookies;
+export type RequestEvent<Params extends RequestParams = RequestParams> = {
+  request: VesselRequest;
+  params: Params;
 };
 
 export function createVesselRequest(
-  request: Request & Partial<VesselRequestMetadata>,
-  init?: Partial<VesselRequestMetadata>,
+  request: Request & VesselRequestInit,
+  init?: VesselRequestInit,
 ): VesselRequest {
   if (!('URL' in request)) {
     const url = init?.URL ?? new URL(request.url);
+
     Object.defineProperty(request, 'URL', {
       enumerable: true,
       get() {
@@ -28,10 +39,8 @@ export function createVesselRequest(
   if (!('cookies' in request)) {
     const cookies =
       init?.cookies ??
-      new Cookies({
-        url: request.URL!,
-        headers: request.headers,
-      });
+      new Cookies({ url: request.URL!, headers: request.headers });
+
     Object.defineProperty(request, 'cookies', {
       enumerable: true,
       get() {
