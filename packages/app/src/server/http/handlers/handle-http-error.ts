@@ -1,5 +1,5 @@
 import kleur from 'kleur';
-import { type ServerErrorRoute, type ServerManifest } from 'server/types';
+import type { ServerErrorRoute, ServerManifest } from 'server/types';
 import {
   coerceAnyResponse,
   isHttpError,
@@ -11,8 +11,8 @@ import { coerceError } from 'shared/utils/error';
 
 export async function handleHttpError(
   error: unknown,
-  request?: VesselRequest,
-  manifest?: ServerManifest,
+  request: VesselRequest,
+  manifest: ServerManifest,
 ): Promise<Response> {
   let response!: Response;
 
@@ -29,31 +29,27 @@ export async function handleHttpError(
 
     response.headers.set('X-Vessel-Expected', 'yes');
   } else {
-    if (request && manifest) {
-      const handled = await runErrorHandlers(
-        request,
-        error,
-        manifest.errorHandlers?.api ?? [],
-      );
+    const handled = await runErrorHandlers(
+      request,
+      error,
+      manifest.errorHandlers?.api ?? [],
+    );
 
-      if (handled) return handled;
-    }
+    if (handled) return handled;
 
-    if (!manifest?.dev) {
+    if (manifest.production) {
       response = json({ error: { message: 'internal server error' } }, 500);
     } else {
-      if (request) manifest?.devHooks?.onUnexpectedHttpError?.(request, error);
+      if (!manifest.production) {
+        manifest.dev?.onUnexpectedHttpError?.(request, error);
+      }
 
       const err = coerceError(error);
 
       console.error(
         kleur.bold(kleur.red(`\n🚨 Unexpected HTTP Error`)),
         `\n\n${kleur.bold('Messsage:')} ${err.message}`,
-        request?.URL
-          ? `\n${kleur.bold('URL:')} ${request.URL.pathname}${
-              request.URL.search
-            }`
-          : '',
+        `\n${kleur.bold('URL:')} ${request.URL.pathname}${request.URL.search}`,
         err.stack ? `\n\n${err.stack}` : '',
         '\n',
       );

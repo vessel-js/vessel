@@ -1,6 +1,6 @@
 import type { App } from 'node/app/App';
 import { type AppRoute, toRoute } from 'node/app/routes';
-import type { ServerLoadableRoute } from 'server/types';
+import type { ServerLoadableDocumentRoute } from 'server/types';
 import {
   compareRoutes,
   getRouteComponentTypes,
@@ -9,19 +9,15 @@ import {
 import { stripImportQuotesFromJson } from 'shared/utils/json';
 import { noendslash } from 'shared/utils/url';
 
-import type { BuildBundles, BuildData } from './build-data';
+import type { BuildData } from './build-data';
 import { resolveHttpChunkMethods } from './chunks';
 
-export function buildServerManifests(
-  app: App,
-  bundles: BuildBundles,
-  build: BuildData,
-) {
+export function buildServerManifests(app: App, build: BuildData) {
   const documentRoutes = app.routes
     .toArray()
     .filter((route) => build.server.loaders.has(route.id));
   const httpRoutes = app.routes.filterHasType('http');
-  const edgeRouteIds = build.edge.routes;
+  const edgeRoutes = build.edge.routes;
 
   if (documentRoutes.length === 0 && httpRoutes.length === 0) {
     return null;
@@ -33,9 +29,9 @@ export function buildServerManifests(
   const sharedInit: SharedSerializeManifestInit = {
     baseUrl,
     trailingSlash: app.config.routes.trailingSlash,
-    entry: bundles.server.entry.chunk.fileName,
+    entry: build.bundles.server.entry.chunk.fileName,
     document: {
-      entry: bundles.client.entry.chunk.fileName,
+      entry: build.bundles.client.entry.chunk.fileName,
       template: build.template,
     },
   };
@@ -51,15 +47,15 @@ export function buildServerManifests(
     node: createManifestInit(
       app,
       build,
-      documentRoutes.filter((route) => !edgeRouteIds.has(route.id)),
-      httpRoutes.filter((route) => !edgeRouteIds.has(route.id)),
+      documentRoutes.filter((route) => !edgeRoutes.has(route.id)),
+      httpRoutes.filter((route) => !edgeRoutes.has(route.id)),
       sharedInit,
     ),
     edge: createManifestInit(
       app,
       build,
-      documentRoutes.filter((route) => edgeRouteIds.has(route.id)),
-      httpRoutes.filter((route) => edgeRouteIds.has(route.id)),
+      documentRoutes.filter((route) => edgeRoutes.has(route.id)),
+      httpRoutes.filter((route) => edgeRoutes.has(route.id)),
       sharedInit,
     ),
   };
@@ -74,16 +70,16 @@ export function buildServerManifests(
       }
 
       if (key === 'preview') {
-        init.configs = Object.values(build.server.configChunks).map(
+        init.configs = Object.values(build.bundles.server.configs).map(
           (chunk) => chunk.fileName,
         );
       } else {
-        if (build.server.configChunks.shared) {
-          init.configs.push(build.server.configChunks.shared.fileName);
+        if (build.bundles.server.configs.shared) {
+          init.configs.push(build.bundles.server.configs.shared.fileName);
         }
 
-        if (build.server.configChunks[key]) {
-          init.configs.push(build.server.configChunks[key]!.fileName);
+        if (build.bundles.server.configs[key]) {
+          init.configs.push(build.bundles.server.configs[key]!.fileName);
         }
       }
     }
@@ -165,29 +161,31 @@ function createManifestInit(
         : { all: [], entry: [], app: [], routes: {} },
     },
     routes: {
-      document: Array.from(routes).map((appRoute) => {
-        const route: SerializableDocumentRoute = toRoute(appRoute);
-        const chunks = build.server.chunks.get(route.id)!;
-        const serverLoaders = build.server.loaders.get(route.id);
+      document: Array.from(routes).map((route) => {
+        const docRoute: SerializableDocumentRoute = toRoute(route);
+        const chunks = build.bundles.server.routes.chunks.get(docRoute.id)!;
+        const serverLoaders = build.server.loaders.get(docRoute.id);
 
         for (const type of getRouteComponentTypes()) {
-          if (appRoute[type]) {
-            route[type] = {
+          if (route[type]) {
+            docRoute[type] = {
               loader: `() => import('../${chunks[type]!.fileName}')`,
               canFetch: serverLoaders?.[type],
             };
           }
         }
 
-        return { ...route, pattern: undefined };
+        return { ...docRoute, pattern: undefined };
       }),
-      http: httpRoutes.map((appRoute) => {
-        const { fileName } = build.server.chunks.get(appRoute.id)!.http!;
+      http: httpRoutes.map((route) => {
+        const { fileName } = build.bundles.server.routes.chunks.get(route.id)!
+          .http!;
+
         return {
-          ...toRoute(appRoute),
+          ...toRoute(route),
           pattern: undefined,
           loader: `() => import('../${fileName}')`,
-          methods: resolveHttpChunkMethods(appRoute, build),
+          methods: resolveHttpChunkMethods(route, build),
         };
       }),
     },
@@ -266,7 +264,7 @@ type SerializeManifestInit = SharedSerializeManifestInit & {
 };
 
 type SerializableDocumentRoute = Omit<
-  ServerLoadableRoute,
+  ServerLoadableDocumentRoute,
   'pattern' | RouteComponentType
 > & {
   [P in RouteComponentType]?: {
@@ -275,7 +273,10 @@ type SerializableDocumentRoute = Omit<
   };
 };
 
-type SerializableHttpRoute = Omit<ServerLoadableRoute, 'loader' | 'pattern'> & {
+type SerializableHttpRoute = Omit<
+  ServerLoadableDocumentRoute,
+  'loader' | 'pattern'
+> & {
   loader: string;
   methods: string[];
 };

@@ -1,10 +1,10 @@
 import kleur from 'kleur';
 import type {
-  DocumentResource,
-  DocumentResourceEntry,
-  ServerLoadedRoute,
+  ServerDocumentResource,
+  ServerDocumentResourceEntry,
+  ServerLoadedDocumentRoute,
   ServerManifest,
-  ServerMatchedRoute,
+  ServerMatchedDocumentRoute,
 } from 'server/types';
 import { resolveStaticDataAssetId } from 'shared/data';
 import {
@@ -56,7 +56,7 @@ export async function handleDocumentRequest(
     const response = await withMiddleware(
       request,
       (request) => renderDocument(request.URL, request, manifest),
-      resolveMiddleware(manifest, [], 'document'),
+      resolveMiddleware(manifest.middlewares, [], 'document'),
     );
 
     if (isVesselResponse(response)) response.cookies.attach(response.headers);
@@ -72,7 +72,9 @@ export async function handleDocumentRequest(
 
     if (handled) return handled;
 
-    manifest.devHooks?.onDocumentRenderError?.(vesselRequest, e);
+    if (!manifest.production) {
+      manifest.dev?.onDocumentRenderError?.(vesselRequest, e);
+    }
 
     const error = coerceError(e);
 
@@ -84,7 +86,7 @@ export async function handleDocumentRequest(
       '\n',
     );
 
-    if (manifest.dev) {
+    if (!manifest.production) {
       return new Response(
         JSON.stringify({
           message: error.message,
@@ -119,11 +121,11 @@ async function renderDocument(
     matches,
     async (_, route, type) => {
       const id = resolveStaticDataAssetId(route, type);
-      const hashedId = manifest.staticData.serverHashRecord[id] ?? id;
-      return (await manifest.staticData.loaders[hashedId]?.())?.data;
+      const hashedId = manifest.staticData.serverHashRecord?.[id] ?? id;
+      return (await manifest.staticData.loaders?.[hashedId]?.())?.data;
     },
     async (url, route, type) => {
-      if (!manifest.dev && !route[type]!.canFetch) return;
+      if (manifest.production && !route[type]!.canFetch) return;
       return loadServerData({
         url,
         request,
@@ -135,7 +137,7 @@ async function renderDocument(
     },
   );
 
-  const loadedRoutes: ServerLoadedRoute[] = [];
+  const loadedRoutes: ServerLoadedDocumentRoute[] = [];
   const serverData: Record<string, unknown> = {};
 
   // Look for a redirect backwards because anything earlier in the tree (shallow paths) should "win".
@@ -158,7 +160,8 @@ async function renderDocument(
   }
 
   for (const result of loadResults) {
-    const route: Mutable<ServerLoadedRoute> = stripRouteComponentTypes(result);
+    const route: Mutable<ServerLoadedDocumentRoute> =
+      stripRouteComponentTypes(result);
 
     for (const type of getRouteComponentTypes()) {
       const compResult = result[type];
@@ -180,7 +183,7 @@ async function renderDocument(
             serverData[dataId] = {
               error: {
                 message: error.message,
-                stack: manifest.dev ? error.stack : undefined,
+                stack: !manifest.production ? error.stack : undefined,
               },
             };
           }
@@ -227,7 +230,7 @@ async function renderDocument(
       serverData[routeId + '~page'] = {
         error: {
           message: error.message,
-          stack: manifest.dev ? error.stack : undefined,
+          stack: !manifest.production ? error.stack : undefined,
         },
       };
     };
@@ -261,6 +264,7 @@ async function renderDocument(
   });
 
   const dataHashScriptTag =
+    manifest.staticData.clientHashRecord &&
     Object.keys(manifest.staticData.clientHashRecord).length > 0
       ? `<script>__VSL_STATIC_DATA_HASH_MAP__ = JSON.parse(${JSON.stringify(
           JSON.stringify(manifest.staticData.clientHashRecord),
@@ -269,7 +273,7 @@ async function renderDocument(
 
   const staticDataMap = createStaticLoaderDataMap(loadedRoutes);
   const staticDataScriptTag =
-    staticDataMap.size > 0
+    manifest.staticData.serverHashRecord && staticDataMap.size > 0
       ? createStaticDataScriptTag(
           staticDataMap,
           manifest.staticData.serverHashRecord,
@@ -289,21 +293,20 @@ async function renderDocument(
 
   const entryScriptTag = `<script type="module" src="${manifest.document.entry}"></script>`;
 
-  const linkTags = createDocumentResourceLinkTags(
-    manifest.document.resources.all,
-    [
-      ...manifest.document.resources.entry,
-      ...manifest.document.resources.app,
-      ...(manifest.document.resources.routes[route.id] ?? []),
-    ],
-  );
+  const linkTags = manifest.document.resources
+    ? createDocumentResourceLinkTags(manifest.document.resources.all, [
+        ...manifest.document.resources.entry,
+        ...manifest.document.resources.app,
+        ...(manifest.document.resources.routes[route.id] ?? []),
+      ])
+    : [];
 
-  const devStylesheet =
-    manifest.dev && manifest.document.devStylesheets
-      ? await manifest.document.devStylesheets()
+  const devStylesheets =
+    !manifest.production && manifest.dev?.stylesheets
+      ? await manifest.dev.stylesheets()
       : '';
 
-  const headTags = [...linkTags, devStylesheet, ssr.css ?? '', ssr.head ?? '']
+  const headTags = [...linkTags, devStylesheets, ssr.css ?? '', ssr.head ?? '']
     .filter((t) => t.length > 0)
     .join('\n    ');
 
@@ -346,7 +349,7 @@ type LoadServerDataInit = {
   url: URL;
   request: Request;
   response: { headers: Headers; cookies: Cookies };
-  route: ServerMatchedRoute;
+  route: ServerMatchedDocumentRoute;
   type: RouteComponentType;
   manifest: ServerManifest;
 };
@@ -426,8 +429,8 @@ export function generateETag(html: string) {
 }
 
 export function createDocumentResourceLinkTags(
-  resources: DocumentResource[],
-  entries: DocumentResourceEntry[],
+  resources: ServerDocumentResource[],
+  entries: ServerDocumentResourceEntry[],
 ) {
   const tags: string[] = [];
   const seen = new Set<number>();
@@ -458,7 +461,7 @@ export function createDocumentResourceLinkTags(
 export function createDocumentResource(
   file: string,
   baseUrl: string,
-): DocumentResource {
+): ServerDocumentResource {
   const href = `${baseUrl}${slash(file)}`;
   if (file.endsWith('.js')) {
     return { href, as: 'script' };
@@ -489,7 +492,7 @@ export function createDocumentResource(
 export function resolveDocumentResourceRel(
   file: string,
   dynamic?: boolean,
-): DocumentResource['rel'] {
+): ServerDocumentResource['rel'] {
   if (file.endsWith('.js')) {
     return !dynamic ? 'modulepreload' : 'prefetch';
   } else if (file.endsWith('.css')) {

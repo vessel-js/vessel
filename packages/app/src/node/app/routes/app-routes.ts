@@ -1,8 +1,8 @@
 import { sortedInsert } from 'node/utils';
 import type {
+  ServerDocumentModule,
   ServerHttpModule,
-  ServerLoadableRoute,
-  ServerModule,
+  ServerLoadableDocumentRoute,
 } from 'server';
 import { type Route } from 'shared/routing';
 import type { Mutable } from 'shared/types';
@@ -20,7 +20,7 @@ import { resolveRouteFromFilePath } from './resolve-file-route';
 export type AppRoute = Route & { dir: SystemDirPath } & {
   [P in RouteFileType]?: RouteFile & {
     viteLoader: () => Promise<
-      P extends 'http' ? ServerHttpModule : ServerModule
+      P extends 'http' ? ServerHttpModule : ServerDocumentModule
     >;
   };
 };
@@ -174,8 +174,8 @@ export function toRoute(appRoute: AppRoute): Route {
   return route;
 }
 
-export function toServerLoadable(route: AppRoute): ServerLoadableRoute {
-  const loadable: Mutable<ServerLoadableRoute> = toRoute(route);
+export function toServerLoadable(route: AppRoute): ServerLoadableDocumentRoute {
+  const loadable: Mutable<ServerLoadableDocumentRoute> = toRoute(route);
 
   for (const type of getRouteFileTypes()) {
     if (route[type]) {

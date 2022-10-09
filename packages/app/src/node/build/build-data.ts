@@ -2,9 +2,9 @@ import type { RouteFileType } from 'node/app/files';
 import type { AppRoute } from 'node/app/routes';
 import type { OutputAsset, OutputBundle, OutputChunk } from 'rollup';
 import type {
-  DocumentResource,
-  DocumentResourceEntry,
-  ServerLoadedRoute,
+  ServerDocumentResource,
+  ServerDocumentResourceEntry,
+  ServerLoadedDocumentRoute,
   ServerRenderResult,
 } from 'server/types';
 import type { RouteComponentType } from 'shared/routing';
@@ -29,6 +29,17 @@ export type BuildBundles = {
     chunks: OutputChunk[];
     entry: { chunk: OutputChunk };
     app: { chunk: OutputChunk };
+    configs: {
+      shared?: OutputChunk;
+      node?: OutputChunk;
+      edge?: OutputChunk;
+    };
+    routes: {
+      /** Route ids and their respective server component chunks.  */
+      chunks: Map<string, { [P in RouteFileType]?: OutputChunk }>;
+      /** Route ids and their respective server component chunk file paths (absolute). */
+      files: Map<string, { [P in RouteFileType]?: string }>;
+    };
   };
 };
 
@@ -37,6 +48,10 @@ export type BuildData = {
    * Application entry files that are passed to Rollup's `input` option.
    */
   entries: Record<string, string>;
+  /**
+   * Rollup client and server bundle outputs.
+   */
+  bundles: BuildBundles;
   /**
    * The HTML template to be used for creating static pages.
    */
@@ -55,10 +70,10 @@ export type BuildData = {
    * preload and prefetch directives to avoid waterfalls client-side.
    */
   resources: {
-    all: DocumentResource[];
-    entry: DocumentResourceEntry[];
-    app: DocumentResourceEntry[];
-    routes: Record<string, DocumentResourceEntry[]>;
+    all: ServerDocumentResource[];
+    entry: ServerDocumentResourceEntry[];
+    app: ServerDocumentResourceEntry[];
+    routes: Record<string, ServerDocumentResourceEntry[]>;
   };
   static: {
     /**
@@ -97,7 +112,7 @@ export type BuildData = {
         /** The matching page route. */
         route: AppRoute;
         /** The loaded server routes. */
-        matches: ServerLoadedRoute[];
+        matches: ServerLoadedDocumentRoute[];
         /** The SSR results containing head, css, and HTML renders. */
         ssr: ServerRenderResult;
         /**
@@ -156,22 +171,6 @@ export type BuildData = {
      * Raw HTTP server endpoints.
      */
     endpoints: Set<AppRoute>;
-    /**
-     * Route ids and their respective server component chunks.
-     */
-    chunks: Map<string, { [P in RouteFileType]?: OutputChunk }>;
-    /**
-     * Route ids and their respective server component chunk file paths (absolute).
-     */
-    chunkFiles: Map<string, { [P in RouteFileType]?: string }>;
-    /**
-     * Server configuration chunks.
-     */
-    configChunks: {
-      shared?: OutputChunk;
-      node?: OutputChunk;
-      edge?: OutputChunk;
-    };
   };
   edge: {
     /**

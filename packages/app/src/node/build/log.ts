@@ -2,7 +2,7 @@
 import Table from 'cli-table3';
 import { gzipSizeSync } from 'gzip-size';
 import kleur from 'kleur';
-import type { App, RoutesLoggerInput } from 'node';
+import type { App } from 'node';
 import { comparePathDepth, LoggerIcon } from 'node/utils';
 import prettyBytes from 'pretty-bytes';
 import type { OutputChunk } from 'rollup';
@@ -10,7 +10,7 @@ import type { ServerConfig } from 'server/http/app/configure-server';
 import type { Route } from 'shared/routing/types';
 import { noslash, slash } from 'shared/utils/url';
 
-import type { BuildBundles, BuildData } from './build-data';
+import type { BuildData } from './build-data';
 
 type RouteType = 'static' | 'lambda' | 'edge' | 'redirect' | 'invalid';
 
@@ -42,10 +42,7 @@ const TYPE_COLOR = {
   INVALID: kleur.red,
 };
 
-export async function logRoutesTable(
-  app: App,
-  { build, bundles }: RoutesLoggerInput,
-) {
+export async function logRoutesTable(app: App, build: BuildData) {
   console.log(kleur.magenta('\n+ routes\n'));
 
   const documentRoutes: RoutesMap = new Map();
@@ -90,8 +87,8 @@ export async function logRoutesTable(
   const edgeRoutes = new Set<string>(build.edge.routes);
 
   await Promise.all(
-    Object.keys(build.server.configChunks).map(async (type) => {
-      const chunk = build.server.configChunks[type];
+    Object.keys(build.bundles.server.configs).map(async (type) => {
+      const chunk = build.bundles.server.configs[type];
       if (chunk) {
         const mod = (await import(app.dirs.server.resolve(chunk.fileName))) as {
           default: ServerConfig;
@@ -128,16 +125,9 @@ export async function logRoutesTable(
     .sort(naturalCompare)
     .sort(comparePathDepth);
 
-  addRoutesToTable(
-    documentTable,
-    documentLinks,
-    documentRoutes,
-    {
-      build,
-      bundles,
-    },
-    { sizes: true },
-  );
+  addRoutesToTable(documentTable, documentLinks, documentRoutes, build, {
+    sizes: true,
+  });
 
   // API
   const apiTable = createRoutesTable();
@@ -146,7 +136,7 @@ export async function logRoutesTable(
     apiTable,
     apiLinks.sort(naturalCompare).sort(comparePathDepth),
     apiRoutes,
-    { build, bundles },
+    build,
   );
 
   // LOG
@@ -158,15 +148,11 @@ export async function logRoutesTable(
   console.log(apiTable.toString());
 }
 
-export async function logRoutes(
-  app: App,
-  build: BuildData,
-  bundles: BuildBundles,
-) {
+export async function logRoutes(app: App, build: BuildData) {
   const style = app.config.routes.log;
   if (style !== 'none') {
     const logger = style === 'table' ? logRoutesTable : style;
-    await logger(app, { build, bundles });
+    await logger(app, build);
   }
 }
 
@@ -203,7 +189,7 @@ function addRoutesToTable(
   table: ReturnType<typeof createRoutesTable>,
   links: string[],
   routes: RoutesMap,
-  { build, bundles }: RoutesLoggerInput,
+  build: BuildData,
   options: { sizes?: boolean } = {},
 ) {
   for (const link of links) {
@@ -228,7 +214,7 @@ function addRoutesToTable(
     ];
 
     if (pathname && options.sizes) {
-      const size = computeRouteSize(pathname, build, bundles);
+      const size = computeRouteSize(pathname, build);
       row.push(prettySize(size));
     }
 
@@ -236,11 +222,7 @@ function addRoutesToTable(
   }
 }
 
-export function computeRouteSize(
-  routeId: string,
-  build: BuildData,
-  bundles: BuildBundles,
-) {
+export function computeRouteSize(routeId: string, build: BuildData) {
   const chunks: OutputChunk[] = [];
 
   const entries = [
@@ -255,7 +237,7 @@ export function computeRouteSize(
     if (entry >= 0 && !seen.has(entry)) {
       const resource = build.resources.all[entry];
       const fileName = resource.href.slice(1);
-      const chunk = bundles.client.chunks.find(
+      const chunk = build.bundles.client.chunks.find(
         (chunk) => chunk.fileName === fileName,
       );
       if (chunk) chunks.push(chunk);

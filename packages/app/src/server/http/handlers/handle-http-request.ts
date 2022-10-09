@@ -19,7 +19,7 @@ export async function handleHttpRequest(
   url: URL,
   request: Request,
   route: ServerMatchedHttpRoute,
-  manifest?: ServerManifest,
+  manifest: ServerManifest,
 ): Promise<Response> {
   try {
     if (
@@ -76,7 +76,7 @@ export async function handleHttpRequest(
         const response = coerceAnyResponse(anyResponse);
         return createVesselResponse(request.URL, response);
       },
-      manifest ? resolveMiddleware(manifest, handler.middleware, 'api') : [],
+      resolveMiddleware(manifest.middlewares, handler.middleware, 'api'),
     );
 
     if (isVesselResponse(response)) response.cookies.attach(response.headers);

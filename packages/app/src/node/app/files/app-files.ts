@@ -46,4 +46,12 @@ export class AppFiles {
         };
       });
   }
+
+  get serverConfigGlob() {
+    return [
+      ...this._app.config.server.config.shared,
+      ...this._app.config.server.config.node,
+      ...this._app.config.server.config.edge,
+    ];
+  }
 }

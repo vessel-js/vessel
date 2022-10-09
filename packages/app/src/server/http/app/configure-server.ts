@@ -17,10 +17,15 @@ export function configureServer(
 
 export type ServerConfig = ReturnType<typeof configureServer>;
 
-export function installServerConfig(
-  manifest: Partial<ServerManifest>,
-  config: ServerConfig,
-) {
+export function installServerConfigs(manifest: ServerManifest) {
+  if (manifest.configs) {
+    for (const config of manifest.configs) {
+      installServerConfig(manifest, config);
+    }
+  }
+}
+
+function installServerConfig(manifest: ServerManifest, config: ServerConfig) {
   if (!manifest.middlewares) manifest.middlewares = [];
   manifest.middlewares.push(...config.middlewares);
 

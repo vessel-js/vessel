@@ -61,7 +61,7 @@ export async function handleDataRequest(
         response.headers.set('X-Vessel-Data', 'yes');
         return createVesselResponse(request.URL, response, event.response);
       },
-      resolveMiddleware(manifest, serverLoader.middleware, 'api'),
+      resolveMiddleware(manifest.middlewares, serverLoader.middleware, 'api'),
     );
 
     if (isVesselResponse(response)) response.cookies.attach(response.headers);

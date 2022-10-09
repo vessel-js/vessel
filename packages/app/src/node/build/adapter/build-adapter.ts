@@ -1,10 +1,9 @@
 import type { App } from 'node/app/App';
 
-import type { BuildBundles, BuildData } from '../build-data';
+import type { BuildData } from '../build-data';
 
 export type BuildAdapterFactory = (
   app: App,
-  bundles: BuildBundles,
   build: BuildData,
 ) => BuildAdapter | Promise<BuildAdapter>;
 

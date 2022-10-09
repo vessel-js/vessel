@@ -30,7 +30,7 @@ const defaultEdgeConfig = {
 export function createVercelBuildAdapter(
   config?: VercelBuildAdapterConfig,
 ): BuildAdapterFactory {
-  return async (app, bundles, build) => {
+  return async (app, build) => {
     const vercelDirs = {
       root: createDirectory(app.dirs.root.resolve('.vercel')),
       output: createDirectory(app.dirs.root.resolve('.vercel/output')),
@@ -41,7 +41,6 @@ export function createVercelBuildAdapter(
 
     const staticAdapter = await createStaticBuildAdapter({ output: false })(
       app,
-      bundles,
       build,
     );
 

@@ -7,10 +7,10 @@ import { handleHttpError, handleHttpRequest } from 'server';
 import { createStaticLoaderInput } from 'server/static-data';
 import type {
   MaybeStaticLoaderResponse,
+  ServerDocumentModule,
   ServerFetch,
-  ServerHttpModule,
-  ServerLoadedRoute,
-  ServerModule,
+  ServerLoadedDocumentRoute,
+  ServerManifest,
   ServerRedirect,
   StaticLoader,
   StaticLoaderCacheKeyBuilder,
@@ -18,8 +18,8 @@ import type {
   StaticLoaderResponse,
 } from 'server/types';
 import {
-  ALL_HTTP_METHODS,
   coerceFetchInput,
+  createVesselRequest,
   createVesselResponse,
   httpError,
 } from 'shared/http';
@@ -42,29 +42,34 @@ import { getDevServerOrigin } from './dev-server';
 // ensures requests are able to load HTTP modules so they can respond because there's no server here.
 export function createStaticLoaderFetch(
   app: App,
-  loader: (route: AppRoute) => Promise<ServerHttpModule>,
+  manifest: ServerManifest,
 ): ServerFetch {
   const ssrOrigin = getDevServerOrigin(app);
   const ssrURL = new URL(ssrOrigin);
-  const httpRoutes = app.routes.filterHasType('http');
 
   return async (input, init) => {
     const request = coerceFetchInput(input, init, ssrURL);
     const requestURL = new URL(request.url);
 
     if (requestURL.origin === ssrOrigin) {
-      const route = matchRoute(requestURL, httpRoutes);
+      const route = matchRoute(requestURL, manifest.routes.http);
 
       if (!route) {
-        const error = await handleHttpError(httpError('route not found', 404));
+        const error = await handleHttpError(
+          httpError('route not found', 404),
+          createVesselRequest(request),
+          manifest,
+        );
+
         return createVesselResponse(requestURL, error);
       }
 
-      const response = await handleHttpRequest(requestURL, request, {
-        ...route,
-        loader: () => loader(route),
-        methods: ALL_HTTP_METHODS,
-      });
+      const response = await handleHttpRequest(
+        requestURL,
+        request,
+        route,
+        manifest,
+      );
 
       return createVesselResponse(requestURL, response);
     }
@@ -74,7 +79,7 @@ export function createStaticLoaderFetch(
 }
 
 export type LoadStaticRouteResult = {
-  matches: ServerLoadedRoute[];
+  matches: ServerLoadedDocumentRoute[];
   redirect?: ServerRedirect;
 };
 
@@ -82,7 +87,7 @@ const getServerModuleKey = (
   route: Route & RouteMatch,
   type: RouteComponentType,
 ) => route.id + type;
-const serverModules = new Map<string, ServerModule>();
+const serverModules = new Map<string, ServerDocumentModule>();
 
 const getStaticDataKey = (
   url: URL,
@@ -96,7 +101,7 @@ export async function loadStaticRoute(
   url: URL,
   route: AppRoute,
   serverFetch: ServerFetch,
-  load: (route: AppRoute, type: RouteFileType) => Promise<ServerModule>,
+  load: (route: AppRoute, type: RouteFileType) => Promise<ServerDocumentModule>,
 ): Promise<LoadStaticRouteResult> {
   const branch = app.routes.getBranch(route);
   const matches = matchAllRoutes(url, branch, app.config.routes.trailingSlash);
@@ -144,14 +149,15 @@ export async function loadStaticRoute(
     }),
   );
 
-  const results: ServerLoadedRoute[] = [];
+  const results: ServerLoadedDocumentRoute[] = [];
   const baseUrl = app.vite.resolved!.base;
 
   // Go backwards for render order.
   for (let i = matches.length - 1; i >= 0; i--) {
     const match = matches[i];
 
-    const result: Mutable<ServerLoadedRoute> = stripRouteComponentTypes(match);
+    const result: Mutable<ServerLoadedDocumentRoute> =
+      stripRouteComponentTypes(match);
 
     for (const type of getRouteComponentTypes()) {
       if (match[type]) {

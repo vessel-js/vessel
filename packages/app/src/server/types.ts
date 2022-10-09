@@ -25,9 +25,9 @@ import type { ServerConfig } from './http/app/configure-server';
 // ---------------------------------------------------------------------------------------
 
 export type ServerEntryContext = {
-  route: ServerLoadedRoute;
   router: any;
-  matches: ServerLoadedRoute[];
+  route: ServerLoadedDocumentRoute;
+  matches: ServerLoadedDocumentRoute[];
 };
 
 export type ServerEntryModule = {
@@ -50,19 +50,29 @@ export type ServerRenderResult = {
   htmlAttrs?: string;
 };
 
+export type ServerFetch = (
+  input: RequestInfo | URL,
+  init?: RequestInit,
+) => Promise<VesselResponse>;
+
+export type ServerRedirect = {
+  readonly path: string;
+  readonly status: number;
+};
+
 // ---------------------------------------------------------------------------------------
 // Server Manifest
 // ---------------------------------------------------------------------------------------
 
 export type ServerManifest = {
-  dev?: boolean;
+  production?: boolean;
   baseUrl: string;
   trailingSlash: boolean;
   entry: ServerEntryLoader;
   configs?: ServerConfig[];
   middlewares?: ServerMiddlewareEntry[];
   routes: {
-    document: ServerLoadableRoute[];
+    document: ServerLoadableDocumentRoute[];
     http: ServerLoadableHttpRoute[];
   };
   errorHandlers?: {
@@ -72,37 +82,32 @@ export type ServerManifest = {
   document: {
     entry: string;
     template: string;
-    resources: {
-      all: DocumentResource[];
-      entry: DocumentResourceEntry[];
-      app: DocumentResourceEntry[];
-      routes: Record<string, DocumentResourceEntry[]>;
+    resources?: {
+      all: ServerDocumentResource[];
+      entry: ServerDocumentResourceEntry[];
+      app: ServerDocumentResourceEntry[];
+      routes: Record<string, ServerDocumentResourceEntry[]>;
     };
+  };
+  staticData: {
+    /** Used client-side to fetch. Hashed data asset id to hashed content id. */
+    clientHashRecord?: Record<string, string>;
+    /** Used server-side to serialize data. Plain data asset id to hashed client id. */
+    serverHashRecord?: Record<string, string>;
+    /** Hashed client data asset id to dynamic data loader. */
+    loaders?: Record<string, () => Promise<{ data: JSONData } | undefined>>;
+  };
+  dev?: {
     /**
      * Used in dev only to discover and inline styles _after_ modules have loaded. This ensures
      * Vite has had a chance to resolve module graph and discover stylesheets that are lazy. For
      * example, Svelte/Vue SFC styles are only determined after the module has run through Vite
      * resolution.
      */
-    devStylesheets?: () => Promise<string>;
-  };
-  staticData: {
-    /** Used client-side to fetch. Hashed data asset id to hashed content id. */
-    clientHashRecord: Record<string, string>;
-    /** Used server-side to serialize data. Plain data asset id to hashed client id. */
-    serverHashRecord: Record<string, string>;
-    /** Hashed client data asset id to dynamic data loader. */
-    loaders: Record<string, () => Promise<{ data: JSONData } | undefined>>;
-  };
-  devHooks?: {
+    stylesheets?: () => Promise<string>;
     onDocumentRenderError?: (request: VesselRequest, error: unknown) => void;
     onUnexpectedHttpError?: (request: VesselRequest, error: unknown) => void;
   };
-};
-
-export type ServerMiddlewareEntry = {
-  readonly group?: string;
-  readonly handler: FetchMiddleware;
 };
 
 export type ServerErrorRoute = Route & {
@@ -114,10 +119,96 @@ export type ServerErrorHandler = (
   error: unknown,
 ) => void | AnyResponse | Promise<void | AnyResponse>;
 
+export type ServerMiddlewareEntry = {
+  readonly group?: string;
+  readonly handler: FetchMiddleware;
+};
+
+// ---------------------------------------------------------------------------------------
+// HTTP Request Handler
+// ---------------------------------------------------------------------------------------
+
+export interface ServerHttpRequestHandler<
+  Params extends RequestParams = RequestParams,
+  Response extends AnyResponse = AnyResponse,
+> {
+  (event: ServerHttpRequestEvent<Params>): Response | Promise<Response>;
+  middleware?: (string | FetchMiddleware)[];
+}
+
+export type InferServerHttpHandlerParams<Handler> =
+  Handler extends ServerHttpRequestHandler<infer T> ? T : RequestParams;
+
+export type InferServerHttpHandlerData<Handler> =
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  Handler extends ServerHttpRequestHandler<{}, infer T>
+    ? T extends Response
+      ? T extends JSONResponse<infer Data>
+        ? Data
+        : unknown
+      : T
+    : unknown;
+
+// ---------------------------------------------------------------------------------------
+// HTTP Routes
+// ---------------------------------------------------------------------------------------
+
+export type ServerHttpModule = {
+  [id: string]: ServerHttpRequestHandler;
+};
+
+export type ServerLoadableHttpRoute = Route & {
+  readonly loader: () => Promise<ServerHttpModule>;
+  readonly methods?: string[];
+};
+
+export type ServerMatchedHttpRoute = ServerLoadableHttpRoute & RouteMatch;
+
+export type ServerLoadedHttpRoute = ServerMatchedHttpRoute & {
+  readonly module: ServerHttpModule;
+};
+
+export type ServerHttpRequestEvent<
+  Params extends RequestParams = RequestParams,
+> = RequestEvent<Params> & { serverFetch: ServerFetch };
+
+export type ServerHttpRequestEventInit<
+  Params extends RequestParams = RequestParams,
+> = RequestEventInit<Params> & { manifest: ServerManifest };
+
+// ---------------------------------------------------------------------------------------
+// Document Routes
+// ---------------------------------------------------------------------------------------
+
+export type ServerDocumentModule = {
+  [id: string]: unknown;
+  staticLoader?: StaticLoader;
+  serverLoader?: ServerLoader;
+  serverAction?: ServerAction;
+};
+
+export type ServerLoadableDocumentRoute = LoadableRoute<ServerDocumentModule>;
+
+export type ServerMatchedDocumentRoute<
+  Params extends RequestParams = RequestParams,
+> = MatchedRoute<ServerDocumentModule, Params>;
+
+export type ServerLoadedDocumentRoute<
+  Params extends RequestParams = RequestParams,
+> = LoadedRoute<ServerDocumentModule, Params>;
+
+export type ServerDocumentRequestEventInit<
+  Params extends RequestParams = RequestParams,
+> = ServerHttpRequestEventInit<Params> & { response?: VesselResponseInit };
+
+export type ServerDocumentRequestEvent<
+  Params extends RequestParams = RequestParams,
+> = ServerHttpRequestEvent<Params> & { response: VesselResponseInit };
+
 /**
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTML/Element/link}
  */
-export type DocumentResource = {
+export type ServerDocumentResource = {
   href: string;
   rel?: 'prefetch' | 'preload' | 'modulepreload' | 'stylesheet';
   as?:
@@ -138,97 +229,7 @@ export type DocumentResource = {
  * The number should point to a resource in a resource collection (i.e., `DocumentResource[]`). A
  * negative number means it's a dynamic import at the same absolute index.
  */
-export type DocumentResourceEntry = number;
-
-// ---------------------------------------------------------------------------------------
-// Server Route
-// ---------------------------------------------------------------------------------------
-
-export type ServerModule = {
-  [id: string]: unknown;
-  staticLoader?: StaticLoader;
-  serverLoader?: ServerLoader;
-  serverAction?: ServerAction;
-};
-
-export type ServerLoadableRoute = LoadableRoute<ServerModule>;
-
-export type ServerMatchedRoute<Params extends RequestParams = RequestParams> =
-  MatchedRoute<ServerModule, Params>;
-
-export type ServerLoadedRoute<Params extends RequestParams = RequestParams> =
-  LoadedRoute<ServerModule, Params>;
-
-// ---------------------------------------------------------------------------------------
-// Server HTTP Route
-// ---------------------------------------------------------------------------------------
-
-export type ServerHttpModule = {
-  [id: string]: HttpRequestHandler;
-};
-
-export type ServerLoadableHttpRoute = Route & {
-  readonly loader: () => Promise<ServerHttpModule>;
-  readonly methods?: string[];
-};
-
-export type ServerMatchedHttpRoute = ServerLoadableHttpRoute & RouteMatch;
-
-export type ServerLoadedHttpRoute = ServerMatchedHttpRoute & {
-  readonly module: ServerHttpModule;
-};
-
-export type ServerRedirect = {
-  readonly path: string;
-  readonly status: number;
-};
-
-// ---------------------------------------------------------------------------------------
-// Server Request Events
-// ---------------------------------------------------------------------------------------
-
-export type ServerFetch = (
-  input: RequestInfo | URL,
-  init?: RequestInit,
-) => Promise<VesselResponse>;
-
-export type HttpRequestEvent<Params extends RequestParams = RequestParams> =
-  RequestEvent<Params> & { serverFetch: ServerFetch };
-
-export type HttpRequestEventInit<Params extends RequestParams = RequestParams> =
-  RequestEventInit<Params> & { manifest?: ServerManifest };
-
-export type DocumentRequestEventInit<
-  Params extends RequestParams = RequestParams,
-> = HttpRequestEventInit<Params> & { response?: VesselResponseInit };
-
-export type DocumentRequestEvent<Params extends RequestParams = RequestParams> =
-  HttpRequestEvent<Params> & { response: VesselResponseInit };
-
-// ---------------------------------------------------------------------------------------
-// HTTP Request Handler
-// ---------------------------------------------------------------------------------------
-
-export interface HttpRequestHandler<
-  Params extends RequestParams = RequestParams,
-  Response extends AnyResponse = AnyResponse,
-> {
-  (event: HttpRequestEvent<Params>): Response | Promise<Response>;
-  middleware?: (string | FetchMiddleware)[];
-}
-
-export type InferHttpHandlerParams<Handler> =
-  Handler extends HttpRequestHandler<infer T> ? T : RequestParams;
-
-export type InferHttpHandlerData<Handler> =
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  Handler extends HttpRequestHandler<{}, infer T>
-    ? T extends Response
-      ? T extends JSONResponse<infer Data>
-        ? Data
-        : unknown
-      : T
-    : unknown;
+export type ServerDocumentResourceEntry = number;
 
 // ---------------------------------------------------------------------------------------
 // Server Loader
@@ -238,7 +239,7 @@ export interface ServerLoader<
   Params extends RequestParams = RequestParams,
   Response extends AnyResponse = AnyResponse,
 > {
-  (event: DocumentRequestEvent<Params>): Response | Promise<Response>;
+  (event: ServerDocumentRequestEvent<Params>): Response | Promise<Response>;
   middleware?: (string | FetchMiddleware)[];
 }
 
@@ -249,7 +250,7 @@ export interface ServerLoader<
 export type ServerAction<
   Params extends RequestParams = RequestParams,
   Response extends AnyResponse = AnyResponse,
-> = (event: DocumentRequestEvent<Params>) => Response | Promise<Response>;
+> = (event: ServerDocumentRequestEvent<Params>) => Response | Promise<Response>;
 
 // ---------------------------------------------------------------------------------------
 // Static Loader

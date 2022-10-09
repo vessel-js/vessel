@@ -1,4 +1,4 @@
-import type { BuildBundles, BuildData } from 'node/build';
+import type { BuildData } from 'node/build';
 
 import type { App } from '../App';
 
@@ -96,10 +96,8 @@ export type RoutesLogStyle = 'none' | 'table' | CustomRoutesLogger;
 
 export type CustomRoutesLogger = (
   app: App,
-  input: RoutesLoggerInput,
+  build: BuildData,
 ) => void | Promise<void>;
-
-export type RoutesLoggerInput = { build: BuildData; bundles: BuildBundles };
 
 export type RouteMatcher = string | RegExp | null | undefined | void;
 

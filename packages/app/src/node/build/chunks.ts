@@ -1,5 +1,5 @@
 import type { App } from 'node/app/App';
-import { getRouteFileTypes } from 'node/app/files';
+import { getRouteFileTypes, type RouteFileType } from 'node/app/files';
 import { AppRoute } from 'node/app/routes';
 import type {
   GetManualChunk,
@@ -9,12 +9,123 @@ import type {
 } from 'rollup';
 import { ALL_HTTP_METHODS, resolveHandlerHttpMethod } from 'shared/http';
 import { type RouteComponentType } from 'shared/routing';
+import type { Manifest as ViteManifest } from 'vite';
 
-import type { BuildData } from './build-data';
+import type { BuildBundles, BuildData } from './build-data';
+
+export function resolveEntryChunkInfo(
+  app: App,
+  clientManifest: ViteManifest,
+  clientChunks: OutputChunk[],
+  serverChunks: OutputChunk[],
+) {
+  const rootPath = app.dirs.root.relative(app.config.entry.client);
+  const clientFileName = clientManifest[rootPath].file;
+  return {
+    rootPath,
+    client: {
+      fileName: clientFileName,
+      chunk: clientChunks.find(
+        (chunk) => chunk.isEntry && chunk.fileName === clientFileName,
+      )!,
+    },
+    server: {
+      path: app.dirs.server.resolve('entry.js'),
+      chunk: serverChunks.find(
+        (chunk) => chunk.isEntry && chunk.fileName === 'entry.js',
+      )!,
+    },
+    vite: {
+      chunk: clientManifest[rootPath],
+    },
+  };
+}
+
+export function resolveAppChunkInfo(
+  app: App,
+  clientManifest: ViteManifest,
+  clientChunks: OutputChunk[],
+  serverChunks: OutputChunk[],
+) {
+  const rootPath = app.dirs.root.relative(app.config.client.app);
+  const clientFileName = clientManifest[rootPath].file;
+  return {
+    rootPath,
+    client: {
+      fileName: clientFileName,
+      chunk: clientChunks.find(
+        (chunk) => chunk.isEntry && chunk.fileName === clientFileName,
+      )!,
+    },
+    server: {
+      chunk: serverChunks.find(
+        (chunk) => chunk.isEntry && chunk.fileName === 'app.js',
+      )!,
+    },
+    vite: {
+      chunk: clientManifest[rootPath],
+    },
+  };
+}
+
+export function resolveServerConfigChunks(
+  app: App,
+  serverChunks: OutputChunk[],
+) {
+  const chunks: BuildBundles['server']['configs'] = {};
+
+  for (const config of app.files.serverConfigs) {
+    const chunk = serverChunks.find(
+      (chunk) => chunk.facadeModuleId === config.path,
+    );
+
+    if (chunk) chunks[config.type] = chunk;
+  }
+
+  return chunks;
+}
+
+export function resolveServerRouteChunks(
+  app: App,
+  serverChunks: OutputChunk[],
+) {
+  const serverRouteChunks = new Map<
+    string,
+    { [P in RouteFileType]?: OutputChunk }
+  >();
+
+  const serverRouteChunkFiles = new Map<
+    string,
+    { [P in RouteFileType]?: string }
+  >();
+
+  // Resolve route chunks.
+  for (const route of app.routes) {
+    const chunks = {};
+    const files = {};
+
+    for (const type of getRouteFileTypes()) {
+      if (route[type]) {
+        const chunk = serverChunks.find(
+          (chunk) => chunk.facadeModuleId === route[type]!.path.absolute,
+        );
+        if (chunk) {
+          chunks[type] = chunk;
+          files[type] = app.dirs.server.resolve(chunk.fileName);
+        }
+      }
+    }
+
+    serverRouteChunks.set(route.id, chunks);
+    serverRouteChunkFiles.set(route.id, files);
+  }
+
+  return { serverRouteChunks, serverRouteChunkFiles };
+}
 
 export function resolveHttpChunkMethods(httpRoute: AppRoute, build: BuildData) {
   const methods =
-    build.server.chunks
+    build.bundles.server.routes.chunks
       .get(httpRoute.id)
       ?.http?.exports?.map((id) => resolveHandlerHttpMethod(id))
       .filter((handler) => typeof handler === 'string') ?? [];
@@ -80,7 +191,7 @@ export function extendManualChunks(): GetManualChunk {
 
 export function resolveServerRoutes(
   app: App,
-  chunks: BuildData['server']['chunks'],
+  chunks: BuildBundles['server']['routes']['chunks'],
 ) {
   const edgeRoutes: BuildData['edge']['routes'] = new Set();
   const serverLoaders: BuildData['server']['loaders'] = new Map();

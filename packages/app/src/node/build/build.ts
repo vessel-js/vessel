@@ -1,7 +1,7 @@
 import kleur from 'kleur';
 import type { App } from 'node/app/App';
 import { createAppEntries } from 'node/app/create/app-factory';
-import { getRouteFileTypes, type RouteFileType } from 'node/app/files';
+import { type RouteFileType } from 'node/app/files';
 import type { AppRoute } from 'node/app/routes';
 import { installPolyfills } from 'node/polyfills';
 import { hash, logger, LoggerIcon, mkdirp, rimraf } from 'node/utils';
@@ -12,8 +12,12 @@ import { writeFile } from 'node:fs/promises';
 import ora from 'ora';
 import type { OutputBundle } from 'rollup';
 import { createServerRouter } from 'server/http';
+import {
+  installServerConfigs,
+  ServerConfig,
+} from 'server/http/app/configure-server';
 import { createStaticLoaderDataMap } from 'server/static-data';
-import type { ServerEntryModule } from 'server/types';
+import type { ServerEntryModule, ServerManifest } from 'server/types';
 import {
   cleanRoutePath,
   findRoute,
@@ -35,8 +39,12 @@ import {
   resolveHTMLFilename,
 } from './build-utils';
 import {
+  resolveAppChunkInfo,
   resolveChunks,
   resolveChunksAndAssets,
+  resolveEntryChunkInfo,
+  resolveServerConfigChunks,
+  resolveServerRouteChunks,
   resolveServerRoutes,
 } from './chunks';
 import { crawl } from './crawl';
@@ -74,29 +82,30 @@ export async function build(
     await fs.promises.readFile(viteManifestPath, 'utf-8'),
   ) as ViteManifest;
 
-  // Client/server chunks and assets
   const { chunks: clientChunks, assets: clientAssets } =
     resolveChunksAndAssets(clientBundle);
+
   const serverChunks = resolveChunks(serverBundle);
 
-  // Entry client/server chunks
-  const entryRootPath = app.dirs.root.relative(app.config.entry.client);
-  const entryFileName = clientManifest[entryRootPath].file;
-  const entryChunk = clientChunks.find(
-    (chunk) => chunk.isEntry && chunk.fileName === entryFileName,
-  )!;
-  const serverEntryPath = app.dirs.server.resolve('entry.js');
-  const serverEntryChunk = serverChunks.find(
-    (chunk) => chunk.isEntry && chunk.fileName === 'entry.js',
-  )!;
+  const entryChunkInfo = resolveEntryChunkInfo(
+    app,
+    clientManifest,
+    clientChunks,
+    serverChunks,
+  );
 
-  // App client/server chunks
-  const appRootPath = app.dirs.root.relative(app.config.client.app);
-  const appFileName = clientManifest[appRootPath].file;
-  const appManifestChunk = clientManifest[appRootPath];
-  const serverAppChunk = serverChunks.find(
-    (chunk) => chunk.isEntry && chunk.fileName === 'app.js',
-  )!;
+  const appChunkInfo = resolveAppChunkInfo(
+    app,
+    clientManifest,
+    clientChunks,
+    serverChunks,
+  );
+
+  const serverConfigChunks = resolveServerConfigChunks(app, serverChunks);
+  const { serverRouteChunks, serverRouteChunkFiles } = resolveServerRouteChunks(
+    app,
+    serverChunks,
+  );
 
   const bundles: BuildBundles = {
     entries,
@@ -105,15 +114,13 @@ export async function build(
       chunks: clientChunks,
       assets: clientAssets,
       manifest: clientManifest,
-      entry: { chunk: entryChunk },
+      entry: { chunk: entryChunkInfo.client.chunk },
       app: {
-        chunk: clientChunks.find(
-          (chunk) => chunk.isEntry && chunk.fileName === appFileName,
-        )!,
-        css: (appManifestChunk.css ?? []).map(
+        chunk: appChunkInfo.client.chunk,
+        css: (appChunkInfo.vite.chunk.css ?? []).map(
           (file) => clientAssets.find((asset) => asset.fileName === file)!,
         ),
-        assets: (appManifestChunk.assets ?? []).map(
+        assets: (appChunkInfo.vite.chunk.assets ?? []).map(
           (file) => clientAssets.find((asset) => asset.fileName === file)!,
         ),
       },
@@ -121,42 +128,15 @@ export async function build(
     server: {
       bundle: serverBundle,
       chunks: serverChunks,
-      entry: { chunk: serverEntryChunk },
-      app: { chunk: serverAppChunk },
+      entry: { chunk: entryChunkInfo.server.chunk },
+      app: { chunk: appChunkInfo.server.chunk },
+      configs: serverConfigChunks,
+      routes: {
+        chunks: serverRouteChunks,
+        files: serverRouteChunkFiles,
+      },
     },
   };
-
-  const serverRouteChunks: BuildData['server']['chunks'] = new Map();
-  const serverRouteChunkFiles: BuildData['server']['chunkFiles'] = new Map();
-
-  // Resolve route chunks.
-  for (const route of app.routes) {
-    const chunks = {};
-    const files = {};
-
-    for (const type of getRouteFileTypes()) {
-      if (route[type]) {
-        const chunk = bundles.server.chunks.find(
-          (chunk) => chunk.facadeModuleId === route[type]!.path.absolute,
-        );
-        if (chunk) {
-          chunks[type] = chunk;
-          files[type] = app.dirs.server.resolve(chunk.fileName);
-        }
-      }
-    }
-
-    serverRouteChunks.set(route.id, chunks);
-    serverRouteChunkFiles.set(route.id, files);
-  }
-
-  const configChunks: BuildData['server']['configChunks'] = {};
-  for (const config of app.files.serverConfigs) {
-    const chunk = bundles.server.chunks.find(
-      (chunk) => chunk.facadeModuleId === config.path,
-    );
-    if (chunk) configChunks[config.type] = chunk;
-  }
 
   const { edgeRoutes, serverLoaders } = resolveServerRoutes(
     app,
@@ -165,6 +145,7 @@ export async function build(
 
   const build: BuildData = {
     entries,
+    bundles,
     template,
     links: new Map(),
     badLinks: new Map(),
@@ -180,10 +161,7 @@ export async function build(
     server: {
       routes: new Set(),
       endpoints: new Set(httpRoutes),
-      chunks: serverRouteChunks,
-      chunkFiles: serverRouteChunkFiles,
       loaders: serverLoaders,
-      configChunks,
     },
     edge: {
       routes: edgeRoutes,
@@ -204,7 +182,7 @@ export async function build(
     ? app.config.build.adapter
     : createAutoBuildAdapter(app.config.build.adapter);
 
-  const adapter = await adapterFactory(app, bundles, build);
+  const adapter = await adapterFactory(app, build);
 
   // -------------------------------------------------------------------------------------------
   // LOAD STATIC DATA
@@ -213,13 +191,41 @@ export async function build(
   const hasTrailingSlash = app.config.routes.trailingSlash;
   const normalizeURL = (url: URL) => __normalizeURL(url, hasTrailingSlash);
 
-  const ssrOrigin = getDevServerOrigin(app);
-  const ssrRouter = createServerRouter();
+  const serverOrigin = getDevServerOrigin(app);
+  const serverRouter = createServerRouter();
+  const serverConfigs: Record<string, ServerConfig> = {};
 
-  const serverFetch = createStaticLoaderFetch(
-    app,
-    (route) => import(serverRouteChunkFiles.get(route.id)!.http!),
+  await Promise.all(
+    Object.keys(serverConfigChunks).map(async (key) => {
+      serverConfigs[key] = (
+        await import(app.dirs.server.resolve(serverConfigChunks[key].fileName))
+      ).default;
+    }),
   );
+
+  const serverManifest: ServerManifest = {
+    production: false,
+    baseUrl: app.vite.resolved!.base,
+    trailingSlash: app.config.routes.trailingSlash,
+    entry: () => import(entryChunkInfo.server.path),
+    configs: Object.values(serverConfigs),
+    routes: {
+      document: [], // don't need it here.
+      http: app.routes.filterHasType('http').map((route) => ({
+        ...route,
+        loader: () => import(serverRouteChunkFiles.get(route.id)!.http!),
+      })),
+    },
+    document: {
+      entry: `/${bundles.server.entry.chunk.fileName}`,
+      template: build.template,
+    },
+    staticData: {},
+  };
+
+  installServerConfigs(serverManifest);
+
+  const serverFetch = createStaticLoaderFetch(app, serverManifest);
 
   const routeChunkLoader = (route: AppRoute, type: RouteFileType) =>
     import(serverRouteChunkFiles.get(route.id)![type]!);
@@ -286,7 +292,9 @@ export async function build(
       ? /\/$/.test(pathname)
       : !/\/$/.test(pathname);
 
-  const { render } = (await import(serverEntryPath)) as ServerEntryModule;
+  const { render } = (await import(
+    entryChunkInfo.server.path
+  )) as ServerEntryModule;
 
   async function buildPage(url: URL, pageRoute: AppRoute) {
     const normalizedURL = normalizeURL(url);
@@ -322,7 +330,7 @@ export async function build(
     const ssr = await render({
       route: matches[matches.length - 1],
       matches,
-      router: ssrRouter,
+      router: serverRouter,
     });
 
     build.links.set(pathname, pageRoute);
@@ -344,7 +352,7 @@ export async function build(
   async function onFoundLink(pageRoute: AppRoute, href: string) {
     if (href.startsWith('#') || isLinkExternal(href)) return;
 
-    const url = new URL(`${ssrOrigin}${slash(href)}`);
+    const url = new URL(`${serverOrigin}${slash(href)}`);
     const pathname = normalizeURL(url).pathname;
 
     if (build.links.has(pathname) || build.badLinks.has(pathname)) return;
@@ -364,7 +372,7 @@ export async function build(
   // Start with static page paths and then crawl additional links.
   for (const route of pageRoutes.filter((route) => !route.dynamic).reverse()) {
     await buildPage(
-      new URL(`${ssrOrigin}${cleanRoutePath(route.pattern.pathname)}`),
+      new URL(`${serverOrigin}${cleanRoutePath(route.pattern.pathname)}`),
       route,
     );
   }
@@ -382,7 +390,7 @@ export async function build(
   );
 
   for (const entry of app.config.routes.entries) {
-    const url = new URL(`${ssrOrigin}${slash(entry)}`);
+    const url = new URL(`${serverOrigin}${slash(entry)}`);
     const route = findRoute(url, pageRoutes);
     if (route) {
       await buildPage(url, route);
@@ -407,10 +415,10 @@ export async function build(
   // SERVER MANIFEST
   // -------------------------------------------------------------------------------------------
 
-  const serverManifests = buildServerManifests(app, bundles, build);
+  const serverManifestOutputs = buildServerManifests(app, build);
 
-  if (serverManifests) {
-    const { dataAssets, ...manifests } = serverManifests;
+  if (serverManifestOutputs) {
+    const { dataAssets, ...manifests } = serverManifestOutputs;
 
     if (dataAssets.size > 0) {
       const seen = new Set<string>();
@@ -475,9 +483,9 @@ export async function build(
       }
     }
 
-    const content = app.dirs.client.read(appFileName);
+    const content = app.dirs.client.read(appChunkInfo.client.fileName);
     app.dirs.client.write(
-      appFileName,
+      appChunkInfo.client.fileName,
       content.replace('"__VSL_SERVER_FETCH__"', `[${canFetch.join(',')}]`),
     );
   }
@@ -489,7 +497,7 @@ export async function build(
   // -------------------------------------------------------------------------------------------
 
   logBadLinks(build.badLinks);
-  await logRoutes(app, build, bundles);
+  await logRoutes(app, build);
 
   const icons = {
     10: '🤯',

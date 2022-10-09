@@ -1,8 +1,8 @@
 import type { App } from 'node/app/App';
 import {
   createDocumentResource,
-  type DocumentResource,
-  type DocumentResourceEntry,
+  type ServerDocumentResource,
+  type ServerDocumentResourceEntry,
 } from 'server';
 import { noendslash } from 'shared/utils/url';
 import type { Manifest as ViteManifest } from 'vite';
@@ -23,7 +23,7 @@ export function resolveDocumentResourcesFromManifest(
       .map((file) => file.path.root),
   );
 
-  const resources: DocumentResource[] = [];
+  const resources: ServerDocumentResource[] = [];
 
   const resourceIndex = new Map<string, number>();
   const createResource = (filename: string) => {
@@ -38,7 +38,7 @@ export function resolveDocumentResourcesFromManifest(
   };
 
   const resolveResources = (entries: string[]) => {
-    const resources: DocumentResourceEntry[] = [];
+    const resources: ServerDocumentResourceEntry[] = [];
 
     const { js, css, dynamicJs, dynamicCss } = resolveImportsFromManifest(
       manifest,
@@ -70,7 +70,7 @@ export function resolveDocumentResourcesFromManifest(
   const appResources = resolveResources([appFile]);
 
   // Routes
-  const routeResources: Record<string, DocumentResourceEntry[]> = {};
+  const routeResources: Record<string, ServerDocumentResourceEntry[]> = {};
   for (const route of app.routes.filterHasType('page')) {
     const branch = app.routes.getBranch(route);
 

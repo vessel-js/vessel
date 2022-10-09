@@ -6,7 +6,13 @@ import { defineConfig, type Options } from 'tsup';
 export function base(extend?: { external?: (string | RegExp)[] }): Options {
   return {
     format: 'esm',
-    external: ['typescript', 'rollup', ':virtual', ...(extend?.external ?? [])],
+    external: [
+      'typescript',
+      'rollup',
+      'chokidar',
+      ':virtual',
+      ...(extend?.external ?? []),
+    ],
     treeshake: true,
     splitting: true,
     dts: true,

@@ -1,30 +1,28 @@
-import type { ServerManifest } from 'server/types';
+import type { ServerMiddlewareEntry } from 'server/types';
 import { type FetchMiddleware } from 'shared/http';
 import { isString } from 'shared/utils/unit';
 
 export function resolveMiddleware(
-  manifest: ServerManifest,
-  handlerMiddleware: (string | FetchMiddleware)[] = [],
-  defaultGroup?: 'document' | 'api',
+  globalMiddlewares: ServerMiddlewareEntry[] = [],
+  handlerMiddlewares: (string | FetchMiddleware)[] = [],
+  defaultMiddlewareGroup?: 'document' | 'api',
 ) {
-  const globalMiddleware = manifest.middlewares ?? [];
-
-  const nonGroupedMiddleware = globalMiddleware
+  const nonGroupedMiddleware = globalMiddlewares
     .filter((entry) => !entry.group)
     .map((entry) => entry.handler);
 
   const seen = new Set<string | FetchMiddleware>(nonGroupedMiddleware);
   const middlewares: FetchMiddleware[] = [...nonGroupedMiddleware];
 
-  const withDefaultGroup = defaultGroup
-    ? [defaultGroup, ...handlerMiddleware]
-    : handlerMiddleware;
+  const withDefaultGroup = defaultMiddlewareGroup
+    ? [defaultMiddlewareGroup, ...handlerMiddlewares]
+    : handlerMiddlewares;
 
   for (const middleware of withDefaultGroup) {
     if (seen.has(middleware)) continue;
 
     if (isString(middleware)) {
-      const group = globalMiddleware
+      const group = globalMiddlewares
         .filter((entry) => entry.group === middleware)
         .map((entry) => entry.handler);
 

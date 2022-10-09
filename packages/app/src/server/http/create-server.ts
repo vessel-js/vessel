@@ -8,22 +8,14 @@ import {
 import { matchRoute } from 'shared/routing';
 import { noendslash } from 'shared/utils/url';
 
-import { addURLPattern, installServerConfig } from './app/configure-server';
+import { addURLPattern, installServerConfigs } from './app/configure-server';
 import { handleDataRequest } from './handlers/handle-data-request';
 import { handleDocumentRequest } from './handlers/handle-document-request';
 import { handleHttpRequest } from './handlers/handle-http-request';
 import { handleRPCRequest } from './handlers/handle-rpc-request';
 
 export function createServer(manifest: ServerManifest): RequestHandler {
-  if (!manifest.dev) {
-    initManifestURLPatterns(manifest);
-  }
-
-  if (manifest.configs) {
-    for (const config of manifest.configs) {
-      installServerConfig(manifest, config);
-    }
-  }
+  if (manifest.production) initServerManifest(manifest);
 
   return async (request) => {
     const url = new URL(request.url);
@@ -79,6 +71,11 @@ function resolveTrailingSlashRedirect(url: URL, trailingSlash: boolean) {
   }
 
   return false;
+}
+
+export function initServerManifest(manifest: ServerManifest) {
+  initManifestURLPatterns(manifest);
+  installServerConfigs(manifest);
 }
 
 export function initManifestURLPatterns(manifest: ServerManifest) {

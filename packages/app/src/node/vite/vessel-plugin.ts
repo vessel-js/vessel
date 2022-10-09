@@ -79,7 +79,7 @@ export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
       async configureServer(server) {
         await installPolyfills();
         app.vite.server = server;
-        const { pre, post } = configureDevServer(app, server);
+        const { pre, post } = await configureDevServer(app, server);
         pre();
         return () => {
           post();

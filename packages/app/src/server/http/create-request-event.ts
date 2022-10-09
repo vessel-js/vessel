@@ -1,9 +1,9 @@
 import type {
-  DocumentRequestEvent,
-  DocumentRequestEventInit,
-  HttpRequestEvent,
-  HttpRequestEventInit,
+  ServerDocumentRequestEvent,
+  ServerDocumentRequestEventInit,
   ServerFetch,
+  ServerHttpRequestEvent,
+  ServerHttpRequestEventInit,
   ServerManifest,
 } from 'server/types';
 import {
@@ -19,7 +19,9 @@ import { handleHttpRequest } from './handlers/handle-http-request';
 
 export function createDocumentRequestEvent<
   Params extends RequestParams = RequestParams,
->(init: DocumentRequestEventInit<Params>): DocumentRequestEvent<Params> {
+>(
+  init: ServerDocumentRequestEventInit<Params>,
+): ServerDocumentRequestEvent<Params> {
   const httpEvent = createHttpRequestEvent(init);
   const headers = init.response?.headers ?? new Headers();
   const cookies =
@@ -35,11 +37,11 @@ export function createDocumentRequestEvent<
 
 export function createHttpRequestEvent<
   Params extends RequestParams = RequestParams,
->(init: HttpRequestEventInit<Params>): HttpRequestEvent<Params> {
-  let serverFetch: ServerFetch | null = null;
+>(init: ServerHttpRequestEventInit<Params>): ServerHttpRequestEvent<Params> {
   const request = createVesselRequest(init.request);
+  const serverFetch = createServerFetch(request.URL, init.manifest);
 
-  const event: HttpRequestEvent<Params> = {
+  const event: ServerHttpRequestEvent<Params> = {
     get params() {
       return init.params;
     },
@@ -47,17 +49,9 @@ export function createHttpRequestEvent<
       return request;
     },
     get serverFetch() {
-      if (!serverFetch) {
-        throw Error('`serverFetch` is not available.');
-      }
-
       return serverFetch;
     },
   };
-
-  serverFetch = init.manifest
-    ? createServerFetch(request.URL, init.manifest)
-    : null;
 
   return event;
 }

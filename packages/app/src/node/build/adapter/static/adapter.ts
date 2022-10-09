@@ -21,7 +21,7 @@ export type StaticBuildAdapterConfig = {
 export function createStaticBuildAdapter({
   output = true,
 }: StaticBuildAdapterConfig = {}): BuildAdapterFactory {
-  return (app, bundles, build) => {
+  return (app, build) => {
     logger.info(kleur.bold(`vessel@${app.version}`));
 
     const trailingSlashes = app.config.routes.trailingSlash;
@@ -95,7 +95,7 @@ export function createStaticBuildAdapter({
           ),
         );
 
-        const entrySrc = bundles.client.entry.chunk.fileName;
+        const entrySrc = build.bundles.client.entry.chunk.fileName;
         const entryScriptTag = `<script type="module" src="/${entrySrc}" defer></script>`;
 
         for (const render of build.static.renders.values()) {
