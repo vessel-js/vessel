@@ -2,16 +2,27 @@
 import Table from 'cli-table3';
 import { gzipSizeSync } from 'gzip-size';
 import kleur from 'kleur';
-import type { App, AppRoute, RoutesLoggerInput } from 'node';
+import type { App, RoutesLoggerInput } from 'node';
 import { comparePathDepth, LoggerIcon } from 'node/utils';
 import prettyBytes from 'pretty-bytes';
 import type { OutputChunk } from 'rollup';
+import type { ServerConfig } from 'server/http/app/configure-server';
+import type { Route } from 'shared/routing/types';
 import { noslash, slash } from 'shared/utils/url';
 
 import type { BuildBundles, BuildData } from './build-data';
-import { resolveHttpChunkMethods } from './chunks';
 
-type RouteType = 'static' | 'server' | 'api' | 'redirect' | 'invalid';
+type RouteType = 'static' | 'lambda' | 'edge' | 'redirect' | 'invalid';
+
+type RoutesMap = Map<
+  string,
+  {
+    pathname?: string;
+    type: RouteType;
+    methods?: string[];
+    redirect?: { to: string; status: number };
+  }
+>;
 
 const METHOD_COLOR = {
   ANY: kleur.white,
@@ -24,42 +35,47 @@ const METHOD_COLOR = {
 
 const TYPE_COLOR = {
   STATIC: kleur.dim,
-  SERVER: kleur.magenta,
+  LAMBDA: kleur.magenta,
   EDGE: kleur.cyan,
   API: kleur.white,
   REDIRECT: kleur.yellow,
   INVALID: kleur.red,
 };
 
-export function logRoutesTable({ build, bundles }: RoutesLoggerInput) {
+export async function logRoutesTable(
+  app: App,
+  { build, bundles }: RoutesLoggerInput,
+) {
   console.log(kleur.magenta('\n+ routes\n'));
 
-  const routes = new Map<
-    string,
-    {
-      type: RouteType;
-      edge?: boolean;
-      route?: AppRoute;
-      redirect?: { to: string; status: number };
-    }
-  >();
+  const documentRoutes: RoutesMap = new Map();
+  const apiRoutes: RoutesMap = new Map();
 
   for (const [link, route] of build.links) {
-    routes.set(slash(link), { type: 'static', route });
+    documentRoutes.set(slash(link), {
+      pathname: route.id,
+      type: 'static',
+    });
   }
 
   for (const [link, info] of build.badLinks) {
     if (info.route) {
-      routes.set(slash(link), { type: 'invalid', route: info.route });
+      documentRoutes.set(slash(link), {
+        pathname: info.route.id,
+        type: 'invalid',
+      });
     }
   }
 
   for (const route of build.server.routes) {
-    routes.set(slash(route.id), { type: 'server', route });
+    documentRoutes.set(slash(route.id), {
+      pathname: route.id,
+      type: build.edge.routes.has(route.id) ? 'edge' : 'lambda',
+    });
   }
 
   for (const [link, redirect] of build.static.redirects) {
-    routes.set(slash(link), {
+    documentRoutes.set(slash(link), {
       type: 'redirect',
       redirect: {
         to: redirect.to,
@@ -68,68 +84,89 @@ export function logRoutesTable({ build, bundles }: RoutesLoggerInput) {
     });
   }
 
-  const headings = ['METHOD', 'URI', 'TYPE', 'SIZE'];
+  const apiLinks: string[] = [];
+  const httpRoutes: Omit<Route, 'pattern'>[] = [...build.server.endpoints];
+  const httpMethods = new Map<string, string[]>();
+  const edgeRoutes = new Set<string>(build.edge.routes);
 
-  const hasEdgeRoutes = build.edge.routes.size > 0;
-  if (hasEdgeRoutes) headings.push('EDGE');
+  await Promise.all(
+    Object.keys(build.server.configChunks).map(async (type) => {
+      const chunk = build.server.configChunks[type];
+      if (chunk) {
+        const mod = (await import(app.dirs.server.resolve(chunk.fileName))) as {
+          default: ServerConfig;
+        };
 
-  const table = new Table({
-    head: headings.map((title) => kleur.bold(title)),
-    wordWrap: true,
-    colAligns: ['center', 'left', 'center', 'center', 'center'],
-    style: { compact: true },
-  });
+        const { httpRoutes: routes } = mod.default;
+        const isEdge = type === 'edge';
 
-  const links = Array.from(routes.keys())
-    .sort(naturalCompare)
-    .sort(comparePathDepth);
+        for (const route of routes) {
+          httpRoutes.push(route);
+          if (isEdge) edgeRoutes.add(route.id);
+        }
+      }
+    }),
+  );
 
-  const httpLinks: string[] = [];
-  for (const route of build.server.endpoints) {
-    const id = slash(route.id);
-    routes.set(id, { type: 'api', route });
-    httpLinks.push(id);
-  }
-
-  links.push(...httpLinks.sort(naturalCompare).sort(comparePathDepth));
-
-  for (const id of links) {
-    const { type, route, redirect } = routes.get(id)!;
-
-    const uri = id === '/' ? id : noslash(id);
-    const edge = route && build.edge.routes.has(route.id);
-    const methods =
-      route && type === 'api' ? resolveHttpChunkMethods(route, build) : ['GET'];
-    const size =
-      route && type !== 'api' ? computeRouteSize(route, build, bundles) : ``;
-
-    const typeColor = TYPE_COLOR[type.toUpperCase()];
-    const typeTitle = redirect ? `${redirect.status}` : type.toLowerCase();
-
-    for (const method of methods) {
-      const methodColor = METHOD_COLOR[method];
-
-      const row = [
-        kleur.bold(methodColor(method)),
-        uri.replace(/(\[.*?\])/g, (g) => kleur.bold(kleur.yellow(g))),
-        typeColor(typeTitle),
-        typeof size === 'number' ? prettySize(size) : '',
-      ];
-
-      if (hasEdgeRoutes) row.push(edge ? '✅' : '');
-
-      table.push(row);
+  for (const route of httpRoutes) {
+    const type = edgeRoutes.has(route.id) ? 'edge' : 'lambda';
+    const id = route.id + type;
+    if (!apiRoutes.has(id)) {
+      apiLinks.push(id);
+      apiRoutes.set(id, {
+        pathname: route.pathname,
+        type,
+        methods: httpMethods.get(route.id),
+      });
     }
   }
 
-  console.log(table.toString());
+  // Document
+  const documentTable = createRoutesTable({ sizes: true });
+
+  const documentLinks = Array.from(documentRoutes.keys())
+    .sort(naturalCompare)
+    .sort(comparePathDepth);
+
+  addRoutesToTable(
+    documentTable,
+    documentLinks,
+    documentRoutes,
+    {
+      build,
+      bundles,
+    },
+    { sizes: true },
+  );
+
+  // API
+  const apiTable = createRoutesTable();
+
+  addRoutesToTable(
+    apiTable,
+    apiLinks.sort(naturalCompare).sort(comparePathDepth),
+    apiRoutes,
+    { build, bundles },
+  );
+
+  // LOG
+
+  console.log(kleur.bold('DOCUMENT'));
+  console.log(documentTable.toString());
+
+  console.log(kleur.bold('\nAPI'));
+  console.log(apiTable.toString());
 }
 
-export function logRoutes(app: App, build: BuildData, bundles: BuildBundles) {
+export async function logRoutes(
+  app: App,
+  build: BuildData,
+  bundles: BuildBundles,
+) {
   const style = app.config.routes.log;
   if (style !== 'none') {
     const logger = style === 'table' ? logRoutesTable : style;
-    logger({ build, bundles });
+    await logger(app, { build, bundles });
   }
 }
 
@@ -151,8 +188,56 @@ export function logBadLinks(badLinks: BuildData['badLinks']) {
   console.log(logs.join('\n'));
 }
 
+function createRoutesTable(options: { sizes?: boolean } = {}) {
+  const headings = ['METHODS', 'URI', 'TYPE'];
+  if (options.sizes) headings.push('FIRST LOAD');
+  return new Table({
+    head: headings.map((title) => kleur.bold(title)),
+    wordWrap: true,
+    colAligns: ['center', 'left', 'center', 'center'],
+    style: { compact: true },
+  });
+}
+
+function addRoutesToTable(
+  table: ReturnType<typeof createRoutesTable>,
+  links: string[],
+  routes: RoutesMap,
+  { build, bundles }: RoutesLoggerInput,
+  options: { sizes?: boolean } = {},
+) {
+  for (const link of links) {
+    const { pathname, type, redirect, ...info } = routes.get(link)!;
+
+    let uri = pathname
+      ? noslash(pathname).replace('{/}?{index}?{.html}?', '')
+      : noslash(link);
+
+    if (uri === '') uri = '/';
+
+    const methods = info.methods ?? ['GET'];
+    const typeColor = TYPE_COLOR[type.toUpperCase()];
+    const typeTitle = redirect ? `${redirect.status}` : type.toLowerCase();
+
+    const row = [
+      kleur.bold(
+        methods.map((method) => METHOD_COLOR[method](method)).join('|'),
+      ),
+      uri.replace(/(\[.*?\])/g, (g) => kleur.bold(kleur.yellow(g))),
+      typeColor(typeTitle),
+    ];
+
+    if (pathname && options.sizes) {
+      const size = computeRouteSize(pathname, build, bundles);
+      row.push(prettySize(size));
+    }
+
+    table.push(row);
+  }
+}
+
 export function computeRouteSize(
-  route: AppRoute,
+  routeId: string,
   build: BuildData,
   bundles: BuildBundles,
 ) {
@@ -161,7 +246,7 @@ export function computeRouteSize(
   const entries = [
     ...build.resources.entry,
     ...build.resources.app,
-    ...(build.resources.routes[route.id] ?? []),
+    ...(build.resources.routes[routeId] ?? []),
   ];
 
   const seen = new Set<number>();

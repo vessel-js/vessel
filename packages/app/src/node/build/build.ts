@@ -489,7 +489,7 @@ export async function build(
   // -------------------------------------------------------------------------------------------
 
   logBadLinks(build.badLinks);
-  logRoutes(app, build, bundles);
+  await logRoutes(app, build, bundles);
 
   const icons = {
     10: '🤯',

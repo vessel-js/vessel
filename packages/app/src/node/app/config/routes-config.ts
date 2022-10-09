@@ -1,5 +1,7 @@
 import type { BuildBundles, BuildData } from 'node/build';
 
+import type { App } from '../App';
+
 export type ResolvedRoutesConfig = {
   /**
    * An array of pages to crawl from. The given path must be a valid route such as
@@ -93,6 +95,7 @@ export type ResolvedRoutesConfig = {
 export type RoutesLogStyle = 'none' | 'table' | CustomRoutesLogger;
 
 export type CustomRoutesLogger = (
+  app: App,
   input: RoutesLoggerInput,
 ) => void | Promise<void>;
 
