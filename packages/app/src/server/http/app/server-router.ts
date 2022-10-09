@@ -15,7 +15,7 @@ import {
   type RequestParams,
 } from 'shared/http';
 import { calcRoutePathScore } from 'shared/routing';
-import { isArray, isString } from 'shared/utils/unit';
+import { isArray } from 'shared/utils/unit';
 import { noendslash } from 'shared/utils/url';
 
 export function createServerRouter() {
@@ -50,10 +50,9 @@ export function createServerRouter() {
   const httpRoutes: Omit<ServerLoadableHttpRoute, 'pattern'>[] = [];
   const existingHttpRoutes = new Map<
     string,
-    { module: ServerHttpModule; methods: string[]; score: number }
+    { module: ServerHttpModule; methods: string[] }
   >();
 
-  let httpRoutesCount = 0;
   const addHttpRoute = (
     methods: HttpMethod | HttpMethod[],
     path: string,
@@ -62,29 +61,37 @@ export function createServerRouter() {
     middlewares: (string | FetchMiddleware)[] = [],
   ) => {
     const existing = existingHttpRoutes.get(path);
+    const existingMethods = existing?.methods ?? [];
+
     const module: ServerHttpModule = existing?.module ?? {};
     const normalizedMethods = isArray(methods) ? methods : [methods];
-    const score = existing?.score ?? calcRoutePathScore(path);
-    const allMethods = [...(existing?.methods ?? []), ...normalizedMethods];
+
+    const allMethods = [
+      ...existingMethods,
+      ...normalizedMethods.filter(
+        (method) => !existingMethods.includes(method),
+      ),
+    ];
+
     handler.middleware = [...(handler.middleware ?? []), ...middlewares];
 
     for (const method of normalizedMethods) {
       module[`${method}${rpcId}`] = handler;
     }
 
-    httpRoutes.push({
-      id: `server_http_route_${httpRoutesCount++}`,
-      score,
-      pathname: path,
-      methods: allMethods,
-      loader: () => Promise.resolve(module),
-    });
+    if (!existing) {
+      httpRoutes.push({
+        id: path,
+        score: calcRoutePathScore(path),
+        pathname: path,
+        methods: allMethods,
+        loader: () => Promise.resolve(module),
+      });
+    } else {
+      existing.methods.splice(0, existing.methods.length, ...allMethods);
+    }
 
-    existingHttpRoutes.set(path, {
-      module,
-      score,
-      methods: allMethods,
-    });
+    existingHttpRoutes.set(path, { module, methods: allMethods });
   };
 
   const app: ServerApp = {
@@ -141,13 +148,11 @@ export function createServerRouter() {
         return router;
       },
       http: (method, path, handler) => {
-        const _path = isString(path) ? path : path.path;
-        const rpcId = isString(path) ? undefined : path.rpcId;
         addHttpRoute(
           method,
-          `${_prefix}${_path}`,
+          `${_prefix}${path}`,
           handler as any,
-          rpcId,
+          undefined,
           middlewares,
         );
         return router;
@@ -201,7 +206,7 @@ export type ServerRouter = {
     Response extends AnyResponse = AnyResponse,
   >(
     methods: HttpMethod | HttpMethod[],
-    path: `/${string}` | { path: `/${string}`; rpcId: string },
+    path: `/${string}`,
     handler: ServerHttpRequestHandler<Params, Response>,
   ): ServerRouter;
 };

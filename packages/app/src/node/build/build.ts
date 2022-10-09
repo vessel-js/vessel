@@ -2,7 +2,7 @@ import kleur from 'kleur';
 import type { App } from 'node/app/App';
 import { createAppEntries } from 'node/app/create/app-factory';
 import { type RouteFileType } from 'node/app/files';
-import type { AppRoute } from 'node/app/routes';
+import { AppRoute, toRoute } from 'node/app/routes';
 import { installPolyfills } from 'node/polyfills';
 import { hash, logger, LoggerIcon, mkdirp, rimraf } from 'node/utils';
 import { createStaticLoaderFetch, loadStaticRoute } from 'node/vite/core';
@@ -212,7 +212,7 @@ export async function build(
     routes: {
       document: [], // don't need it here.
       http: app.routes.filterHasType('http').map((route) => ({
-        ...route,
+        ...toRoute(route),
         loader: () => import(serverRouteChunkFiles.get(route.id)!.http!),
       })),
     },

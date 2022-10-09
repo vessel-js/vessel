@@ -2,7 +2,7 @@ import type { HttpError } from '../http/errors';
 
 export type Route = {
   /**
-   * A unique value used to identify this route.
+   * A unique value used to identify this route (i.e., URI).
    */
   readonly id: string;
   /**
