@@ -118,14 +118,9 @@ export function createVercelBuildAdapter(
 
         // SPA fallback so we can render 404 page.
         if (rootRoute) {
-          const isServerRoute = build.server.loaders.has('/');
           routes.push({
             src: '/(.*)',
-            dest: isServerRoute
-              ? edgeRouteIds.has('/')
-                ? '/edge.func'
-                : '/node.func'
-              : '/index.html',
+            dest: build.server.loaders.size > 0 ? '/node.func' : '/index.html',
           });
         }
 
