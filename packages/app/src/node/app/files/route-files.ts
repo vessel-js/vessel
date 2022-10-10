@@ -90,6 +90,14 @@ export class RouteFiles extends SystemFiles<RouteFile> {
     return super.remove(filePath);
   }
 
+  isDocumentFile(filePath: string) {
+    return (
+      this.isPageFile(filePath) ||
+      this.isLayoutFile(filePath) ||
+      this.isErrorBoundaryFile(filePath)
+    );
+  }
+
   isPageFile(filePath: string) {
     return this._pageFilter(filePath);
   }

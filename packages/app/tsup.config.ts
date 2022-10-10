@@ -10,6 +10,7 @@ export function base(extend?: { external?: (string | RegExp)[] }): Options {
       'typescript',
       'rollup',
       'chokidar',
+      'esbuild',
       ':virtual',
       ...(extend?.external ?? []),
     ],

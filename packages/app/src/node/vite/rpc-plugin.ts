@@ -56,11 +56,13 @@ export function rpcPlugin(): VesselPlugin {
           }
         };
 
-        const result = lexer.parse(code, id);
+        const [, exports] = lexer.parse(code, id);
 
-        result[1]
-          .map((s) => s.n)
-          .forEach((id) => HTTP_METHOD_RE.test(id) && addHandler(id));
+        for (const specifier of exports) {
+          if (HTTP_METHOD_RE.test(specifier.n)) {
+            addHandler(specifier.n);
+          }
+        }
 
         return handlers.join('\n\n');
       }
