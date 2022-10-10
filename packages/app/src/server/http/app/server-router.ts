@@ -8,6 +8,7 @@ import type {
   ServerMiddlewareEntry,
 } from 'server/types';
 import {
+  ALL_HTTP_METHODS,
   type AnyResponse,
   type FetchMiddleware,
   type HttpMethod,
@@ -87,11 +88,12 @@ export function createServerRouter() {
         methods: allMethods,
         loader: () => Promise.resolve(module),
       });
+
+      apiRoutesCache.set(path, { module, methods: allMethods });
     } else {
+      Object.assign(cached.module, module);
       cached.methods.splice(0, cached.methods.length, ...allMethods);
     }
-
-    apiRoutesCache.set(path, { module, methods: allMethods });
   };
 
   const app: ServerApp = {
@@ -131,6 +133,7 @@ export function createServerRouter() {
     middlewares: (string | FetchMiddleware)[] = [],
   ) => {
     const _prefix = noendslash(prefix);
+    const methods = ALL_HTTP_METHODS as HttpMethod[];
 
     const router: ServerRouter = {
       get basePrefix() {
@@ -157,6 +160,22 @@ export function createServerRouter() {
         );
         return router;
       },
+      ...methods.reduce(
+        (p, method) => ({
+          ...p,
+          [method.toLowerCase()]: (path, handler) => {
+            addHttpRoute(
+              method,
+              `${basePrefix}${_prefix}${path}`,
+              handler as any,
+              undefined,
+              middlewares,
+            );
+            return router;
+          },
+        }),
+        {} as any,
+      ),
       http: (method, path, handler) => {
         addHttpRoute(
           method,
@@ -211,6 +230,62 @@ export type ServerRouter = {
     from: `/${string}`,
     to: `/${string}`,
     init?: number | ResponseInit,
+  ): ServerRouter;
+
+  any<
+    Params extends RequestParams = RequestParams,
+    Response extends AnyResponse = AnyResponse,
+  >(
+    path: `/${string}`,
+    handler: ServerApiRequestHandler<Params, Response>,
+  ): ServerRouter;
+
+  head<
+    Params extends RequestParams = RequestParams,
+    Response extends AnyResponse = AnyResponse,
+  >(
+    path: `/${string}`,
+    handler: ServerApiRequestHandler<Params, Response>,
+  ): ServerRouter;
+
+  get<
+    Params extends RequestParams = RequestParams,
+    Response extends AnyResponse = AnyResponse,
+  >(
+    path: `/${string}`,
+    handler: ServerApiRequestHandler<Params, Response>,
+  ): ServerRouter;
+
+  post<
+    Params extends RequestParams = RequestParams,
+    Response extends AnyResponse = AnyResponse,
+  >(
+    path: `/${string}`,
+    handler: ServerApiRequestHandler<Params, Response>,
+  ): ServerRouter;
+
+  put<
+    Params extends RequestParams = RequestParams,
+    Response extends AnyResponse = AnyResponse,
+  >(
+    path: `/${string}`,
+    handler: ServerApiRequestHandler<Params, Response>,
+  ): ServerRouter;
+
+  patch<
+    Params extends RequestParams = RequestParams,
+    Response extends AnyResponse = AnyResponse,
+  >(
+    path: `/${string}`,
+    handler: ServerApiRequestHandler<Params, Response>,
+  ): ServerRouter;
+
+  delete<
+    Params extends RequestParams = RequestParams,
+    Response extends AnyResponse = AnyResponse,
+  >(
+    path: `/${string}`,
+    handler: ServerApiRequestHandler<Params, Response>,
   ): ServerRouter;
 
   http<

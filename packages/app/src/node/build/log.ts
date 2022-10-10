@@ -6,12 +6,14 @@ import type { App } from 'node';
 import { comparePathDepth, LoggerIcon } from 'node/utils';
 import prettyBytes from 'pretty-bytes';
 import type { OutputChunk } from 'rollup';
+import { ALL_HTTP_METHODS } from 'shared/http';
 import { noslash } from 'shared/utils/url';
 
 import type { BuildData } from './build-data';
 
 const METHOD_COLOR = {
   ANY: kleur.white,
+  HEAD: kleur.dim,
   GET: kleur.green,
   POST: kleur.magenta,
   PUT: kleur.cyan,
@@ -93,7 +95,10 @@ function logApiTable(build: BuildData) {
 
     table.push([
       kleur.bold(
-        route.methods.map((method) => METHOD_COLOR[method](method)).join('|'),
+        // Sort
+        ALL_HTTP_METHODS.filter((method) => route.methods.includes(method))
+          .map((method) => METHOD_COLOR[method](method))
+          .join('|'),
       ),
       uri.replace(/(\[.*?\])/g, (g) => kleur.bold(kleur.yellow(g))),
       typeColor(typeTitle),
