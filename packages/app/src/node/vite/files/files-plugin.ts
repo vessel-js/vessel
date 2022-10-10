@@ -37,11 +37,9 @@ export function filesPlugin(): VesselPlugin {
 }
 
 export function loadClientManifestModule(app: App) {
-  const clientRoutes = app.routes
-    .toArray()
-    .filter((route) => getRouteComponentTypes().some((type) => route[type]));
+  const documentRoutes = app.routes.filterDocumentRoutes();
 
-  const loaders = clientRoutes.flatMap((route) =>
+  const loaders = documentRoutes.flatMap((route) =>
     getRouteComponentTypes()
       .map((type) =>
         route[type] ? `() => import('/${route[type]!.path.root}')` : '',
@@ -55,8 +53,8 @@ export function loadClientManifestModule(app: App) {
 
   const routes: ClientManifest['routes'] = [];
 
-  for (let i = 0; i < clientRoutes.length; i++) {
-    const route = clientRoutes[i];
+  for (let i = 0; i < documentRoutes.length; i++) {
+    const route = documentRoutes[i];
     routes.push({
       u: [route.id, route.pathname, route.score],
       l: route.layout ? 1 : undefined,

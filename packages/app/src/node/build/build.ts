@@ -417,7 +417,7 @@ export async function build(
 
   const serverManifestOutputs = buildServerManifests(app, build);
 
-  if (serverManifestOutputs) {
+  if (serverManifestOutputs.edge || serverManifestOutputs.node) {
     const { dataAssets, ...manifests } = serverManifestOutputs;
 
     if (dataAssets.size > 0) {

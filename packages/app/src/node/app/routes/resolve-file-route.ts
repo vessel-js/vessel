@@ -53,7 +53,6 @@ const PAGE_ORDER_RE = /^\[(\d+)\]/;
 export function resolveRouteFromFilePath(
   routePath: string,
   matchers: RouteMatcherConfig = [],
-  isDocument = true,
 ): Route {
   const basename = path.basename(routePath);
   const orderMatch = basename.match(PAGE_ORDER_RE)?.[1];
@@ -61,7 +60,6 @@ export function resolveRouteFromFilePath(
   const { pathname, dynamic, score } = resolveRouteInfoFromFilePath(
     routePath,
     matchers,
-    isDocument,
   );
   const pattern = new URLPattern({ pathname });
   return {
@@ -77,7 +75,6 @@ export function resolveRouteFromFilePath(
 export function resolveRouteInfoFromFilePath(
   routePath: string,
   matchers: RouteMatcherConfig = [],
-  isDocument = true,
 ) {
   let route = routePath === '.' ? '/' : stripRouteMeta(routePath);
 
@@ -101,7 +98,7 @@ export function resolveRouteInfoFromFilePath(
   const dynamic = /\/\[.*?\](\/|$)/.test(routePath);
 
   const pathname = dynamic
-    ? slash(`${route}${!isDocument ? '{/}?' : '{/}?{index}?{.html}?'}`)
+    ? slash(`${route}${'{/}?{index}?{.html}?'}`)
     : resolveStaticPathname();
 
   const score = calcRoutePathScore(pathname);

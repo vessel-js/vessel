@@ -4,7 +4,7 @@ import type {
   ServerHttpModule,
   ServerLoadableDocumentRoute,
 } from 'server';
-import { type Route } from 'shared/routing';
+import { getRouteComponentTypes, type Route } from 'shared/routing';
 import type { Mutable } from 'shared/types';
 
 import type { App } from '../App';
@@ -17,7 +17,10 @@ import {
 } from '../files';
 import { resolveRouteFromFilePath } from './resolve-file-route';
 
-export type AppRoute = Route & { dir: SystemDirPath } & {
+export type AppRoute = Route & {
+  dir: SystemDirPath;
+  document: boolean;
+} & {
   [P in RouteFileType]?: RouteFile & {
     viteLoader: () => Promise<
       P extends 'http' ? ServerHttpModule : ServerDocumentModule
@@ -57,12 +60,9 @@ export class AppRoutes implements Iterable<AppRoute> {
     );
 
     const route: AppRoute = existingRoute ?? {
-      ...resolveRouteFromFilePath(
-        file.dir.route,
-        this._matchers,
-        file.type !== 'http',
-      ),
+      ...resolveRouteFromFilePath(file.dir.route, this._matchers),
       dir: file.dir,
+      document: file.type !== 'http',
     };
 
     route[file.type] = {
@@ -70,6 +70,10 @@ export class AppRoutes implements Iterable<AppRoute> {
       viteLoader: () =>
         this._app.vite.server!.ssrLoadModule(file.path.absolute),
     };
+
+    if (existingRoute && file.type !== 'http') {
+      existingRoute.document = true;
+    }
 
     if (!existingRoute) {
       sortedInsert(this._routes, route, (a, b) => b.score - a.score);
@@ -87,6 +91,8 @@ export class AppRoutes implements Iterable<AppRoute> {
 
       if (!getRouteFileTypes().some((type) => route[type])) {
         this._routes = this._routes.filter((g) => route !== g);
+      } else if (!getRouteComponentTypes().some((type) => route[type])) {
+        route.document = false;
       }
 
       for (const callback of this._onRemove) {
@@ -121,6 +127,10 @@ export class AppRoutes implements Iterable<AppRoute> {
     return this.getBranch(route)
       .filter((route) => route.layout)
       .map((route) => route.layout!);
+  }
+
+  filterDocumentRoutes() {
+    return this._routes.filter((route) => route.document);
   }
 
   filterHasType(type: RouteFileType) {
