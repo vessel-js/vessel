@@ -1,6 +1,9 @@
 import type { App } from 'node/app/App';
 import { type AppRoute, toRoute } from 'node/app/routes';
-import type { ServerLoadableDocumentRoute } from 'server/types';
+import type {
+  ServerLoadableApiRoute,
+  ServerLoadablePageRoute,
+} from 'server/types';
 import {
   compareRoutes,
   getRouteComponentTypes,
@@ -11,7 +14,7 @@ import { isString } from 'shared/utils/unit';
 import { noendslash } from 'shared/utils/url';
 
 import type { BuildData } from './build-data';
-import { resolveHttpChunkMethods } from './chunks';
+import { resolveApiChunkMethods } from './chunks';
 
 export function buildServerManifests(app: App, build: BuildData) {
   const baseUrl =
@@ -27,14 +30,14 @@ export function buildServerManifests(app: App, build: BuildData) {
     },
   };
 
-  const documentRoutes = app.routes.filterDocumentRoutes();
-  const httpRoutes = app.routes.filterHasType('http');
+  const clientRoutes = app.routes.filterClientRoutes();
+  const apiRoutes = app.routes.filterHasType('api');
 
   const inits = {
     node: createManifestInit(
       build,
-      documentRoutes,
-      httpRoutes,
+      clientRoutes,
+      apiRoutes,
       sharedInit,
       Object.values(build.bundles.server.configs).map(
         (chunk) => chunk.fileName,
@@ -42,8 +45,8 @@ export function buildServerManifests(app: App, build: BuildData) {
     ),
     edge: createManifestInit(
       build,
-      filterEdgeDocumentRoutes(app, build, documentRoutes),
-      httpRoutes.filter((route) => build.edge.routes.has(route.id)),
+      filterEdgePageRoutes(app, build, clientRoutes),
+      apiRoutes.filter((route) => build.edge.routes.has(route.id)),
       sharedInit,
       [
         build.bundles.server.configs.shared?.fileName,
@@ -72,26 +75,26 @@ export function buildServerManifests(app: App, build: BuildData) {
 
 function createManifestInit(
   build: BuildData,
-  documentRoutes: AppRoute[],
-  httpRoutes: AppRoute[],
+  pageRoutes: AppRoute[],
+  apiRoutes: AppRoute[],
   shared: SharedSerializeManifestInit,
   serverConfigs: string[] = [],
 ): SerializeManifestInit | null {
-  const hasDocumentRoutes = documentRoutes.length > 0;
-  const hasHttpRoutes = httpRoutes.length > 0;
+  const hasPageRoutes = pageRoutes.length > 0;
+  const hasApiRoutes = apiRoutes.length > 0;
   const hasServerConfigs = serverConfigs.length > 0;
 
-  if (!hasDocumentRoutes && !hasHttpRoutes && !hasServerConfigs) return null;
+  if (!hasPageRoutes && !hasApiRoutes && !hasServerConfigs) return null;
 
   const clientHashRecord = {};
   const serverHashRecord = {};
   const loaders = {};
   const routeResources = {};
 
-  if (hasDocumentRoutes) {
+  if (hasPageRoutes) {
     const dataIds = new Set<string>();
 
-    for (const route of documentRoutes) {
+    for (const route of pageRoutes) {
       const ids = build.static.routeData.get(route.id);
       if (ids) for (const id of ids) dataIds.add(id);
     }
@@ -106,7 +109,7 @@ function createManifestInit(
       }
     }
 
-    for (const route of documentRoutes) {
+    for (const route of pageRoutes) {
       const resources = build.resources.routes[route.id];
       if (resources) routeResources[route.id] = resources;
     }
@@ -116,39 +119,39 @@ function createManifestInit(
     ...shared,
     configs: serverConfigs,
     document: {
-      entry: hasDocumentRoutes ? shared.document.entry : '',
-      template: hasDocumentRoutes ? shared.document.template : '',
-      resources: hasDocumentRoutes
+      entry: hasPageRoutes ? shared.document.entry : '',
+      template: hasPageRoutes ? shared.document.template : '',
+      resources: hasPageRoutes
         ? { ...build.resources, routes: routeResources }
         : undefined,
     },
     routes: {
-      document: Array.from(documentRoutes).map((route) => {
-        const docRoute: SerializableDocumentRoute = toRoute(route);
-        const chunks = build.bundles.server.routes.chunks.get(docRoute.id)!;
-        const serverLoaders = build.server.loaders.get(docRoute.id);
+      pages: Array.from(pageRoutes).map((route) => {
+        const pageRoute: SerializablePageRoute = toRoute(route);
+        const chunks = build.bundles.server.routes.chunks.get(pageRoute.id)!;
+        const serverLoaders = build.server.loaders.get(pageRoute.id);
 
         for (const type of getRouteComponentTypes()) {
           if (route[type]) {
-            docRoute[type] = {
+            pageRoute[type] = {
               loader: `() => import('../${chunks[type]!.fileName}')`,
               canFetch: serverLoaders?.[type],
             };
           }
         }
 
-        return { ...docRoute, pattern: undefined };
+        return { ...pageRoute, pattern: undefined };
       }),
-      http: httpRoutes.map((route) => {
+      api: apiRoutes.map((route) => {
         const { fileName } = build.bundles.server.routes.chunks.get(route.id)!
-          .http!;
+          .api!;
 
         return {
           ...toRoute(route),
           pathname: route.pathname.replace('{/}?{index}?{.html}?', '{/}?'),
           pattern: undefined,
           loader: `() => import('../${fileName}')`,
-          methods: resolveHttpChunkMethods(route, build),
+          methods: resolveApiChunkMethods(route, build),
         };
       }),
     },
@@ -180,10 +183,8 @@ export default {
   entry: () => import('../${entry}'),
   configs: [${configs.map((_, i) => `serverConfig$${i}`).join(', ')}],
   routes: {
-    document: ${stripImportQuotesFromJson(
-      JSON.stringify(routes.document, null, 2),
-    )},
-    http: ${stripImportQuotesFromJson(JSON.stringify(routes.http, null, 2))},
+    pages: ${stripImportQuotesFromJson(JSON.stringify(routes.pages, null, 2))},
+    api: ${stripImportQuotesFromJson(JSON.stringify(routes.api, null, 2))},
   },
   document: {
     entry: '/${document.entry}',
@@ -212,12 +213,12 @@ type SharedSerializeManifestInit = {
 
 type SerializeManifestInit = SharedSerializeManifestInit & {
   configs: string[];
+  routes: {
+    pages: SerializablePageRoute[];
+    api: SerializableApiRoute[];
+  };
   document: {
     resources?: BuildData['resources'];
-  };
-  routes: {
-    document: SerializableDocumentRoute[];
-    http: SerializableHttpRoute[];
   };
   staticData: {
     loaders: Record<string, string>;
@@ -226,8 +227,8 @@ type SerializeManifestInit = SharedSerializeManifestInit & {
   };
 };
 
-type SerializableDocumentRoute = Omit<
-  ServerLoadableDocumentRoute,
+type SerializablePageRoute = Omit<
+  ServerLoadablePageRoute,
   'pattern' | RouteComponentType
 > & {
   [P in RouteComponentType]?: {
@@ -236,33 +237,33 @@ type SerializableDocumentRoute = Omit<
   };
 };
 
-type SerializableHttpRoute = Omit<
-  ServerLoadableDocumentRoute,
+type SerializableApiRoute = Omit<
+  ServerLoadableApiRoute,
   'loader' | 'pattern'
 > & {
   loader: string;
   methods: string[];
 };
 
-function filterEdgeDocumentRoutes(
+function filterEdgePageRoutes(
   app: App,
   build: BuildData,
-  documentRoutes: AppRoute[],
+  pageRoutes: AppRoute[],
 ) {
-  const edgeRoutes = documentRoutes.filter((route) =>
+  const edgePages = pageRoutes.filter((route) =>
     build.edge.routes.has(route.id),
   );
 
-  if (edgeRoutes.length === 0) return [];
+  if (edgePages.length === 0) return [];
 
   const routes: AppRoute[] = [];
   const seen = new Set<string>();
 
   // Need the route + branch for layouts and error boundaries.
-  for (const route of edgeRoutes) {
+  for (const route of edgePages) {
     for (const child of app.routes.getBranch(route)) {
       if (!seen.has(child.id)) {
-        if (child.document) routes.push(child);
+        if (child.client) routes.push(child);
         seen.add(child.id);
       }
     }

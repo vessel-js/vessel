@@ -1,7 +1,7 @@
 import { type VesselPlugins, VM_PREFIX } from '@vessel-js/app/node';
+import { globbySync } from 'globby';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
-import * as path from 'pathe';
 
 import { renderMarkdoc, transformTreeNode, vueMarkdocTags } from './markdoc';
 
@@ -13,19 +13,12 @@ export function vuePlugin(): VesselPlugins {
   const require = createRequire(import.meta.url);
 
   function resolveAppId() {
-    const exts = ['.vue', '.ts', '.js'];
-
-    let appFile: string | null = null;
-    for (const ext of exts) {
-      const file = path.resolve(appDir, `+app${ext}`);
-      if (fs.existsSync(file)) {
-        appFile = file;
-        break;
-      }
-    }
-
-    return appFile
-      ? { id: appFile }
+    const exts = ['vue', 'ts', 'js'].join(', ');
+    const file = globbySync([`app.{${exts}}`, `+app.{${exts}}`], {
+      cwd: appDir,
+    })[0];
+    return file && fs.existsSync(file)
+      ? { id: file }
       : { id: require.resolve('@vessel-js/vue/+app.js') };
   }
 

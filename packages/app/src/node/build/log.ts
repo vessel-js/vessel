@@ -6,23 +6,9 @@ import type { App } from 'node';
 import { comparePathDepth, LoggerIcon } from 'node/utils';
 import prettyBytes from 'pretty-bytes';
 import type { OutputChunk } from 'rollup';
-import type { ServerConfig } from 'server/http/app/configure-server';
-import type { Route } from 'shared/routing/types';
-import { noslash, slash } from 'shared/utils/url';
+import { noslash } from 'shared/utils/url';
 
 import type { BuildData } from './build-data';
-
-type RouteType = 'static' | 'node' | 'edge' | 'redirect' | 'invalid';
-
-type RoutesMap = Map<
-  string,
-  {
-    pathname?: string;
-    type: RouteType;
-    methods?: string[];
-    redirect?: { to: string; status: number };
-  }
->;
 
 const METHOD_COLOR = {
   ANY: kleur.white,
@@ -35,117 +21,87 @@ const METHOD_COLOR = {
 
 const TYPE_COLOR = {
   STATIC: kleur.dim,
+  SERVER: kleur.magenta,
   EDGE: kleur.green,
-  NODE: kleur.red,
-  API: kleur.white,
+  NODE: kleur.white,
   REDIRECT: kleur.yellow,
-  INVALID: kleur.red,
+  NOT_FOUND: kleur.red,
 };
 
 export async function logRoutesTable(app: App, build: BuildData) {
   console.log(kleur.magenta('\n+ routes\n'));
+  logPagesTable(build);
+  logApiTable(build);
+}
 
-  const documentRoutes: RoutesMap = new Map();
-  const apiRoutes: RoutesMap = new Map();
+function logPagesTable(build: BuildData) {
+  const table = createRoutesTable({ sizes: true });
+  const pages = build.routes.pages;
 
-  for (const [link, route] of build.links) {
-    documentRoutes.set(slash(link), {
-      pathname: route.id,
-      type: 'static',
-    });
-  }
-
-  for (const [link, info] of build.badLinks) {
-    if (info.route) {
-      documentRoutes.set(slash(link), {
-        pathname: info.route.id,
-        type: 'invalid',
-      });
-    }
-  }
-
-  for (const route of build.server.routes) {
-    documentRoutes.set(slash(route.id), {
-      pathname: route.id,
-      type: build.edge.routes.has(route.id) ? 'edge' : 'node',
-    });
-  }
-
-  for (const [link, redirect] of build.static.redirects) {
-    documentRoutes.set(slash(link), {
-      type: 'redirect',
-      redirect: {
-        to: redirect.to,
-        status: redirect.status,
-      },
-    });
-  }
-
-  const apiLinks: string[] = [];
-  const httpRoutes: Omit<Route, 'pattern'>[] = [...build.server.endpoints];
-  const httpMethods = new Map<string, string[]>();
-  const edgeRoutes = new Set<string>(build.edge.routes);
-
-  await Promise.all(
-    Object.keys(build.bundles.server.configs).map(async (type) => {
-      const chunk = build.bundles.server.configs[type];
-      if (chunk) {
-        const mod = (await import(app.dirs.server.resolve(chunk.fileName))) as {
-          default: ServerConfig;
-        };
-
-        const { httpRoutes: routes } = mod.default;
-        const isEdge = type === 'edge';
-
-        for (const route of routes) {
-          httpRoutes.push(route);
-          if (isEdge) edgeRoutes.add(route.id);
-        }
-      }
-    }),
-  );
-
-  for (const route of httpRoutes) {
-    const type = edgeRoutes.has(route.id) ? 'edge' : 'node';
-    const id = route.id + type;
-    if (!apiRoutes.has(id)) {
-      apiLinks.push(id);
-      apiRoutes.set(id, {
-        pathname: route.pathname,
-        type,
-        methods: httpMethods.get(route.id),
-      });
-    }
-  }
-
-  // Document
-  const documentTable = createRoutesTable({ sizes: true });
-
-  const documentLinks = Array.from(documentRoutes.keys())
+  const links = Array.from(pages.keys())
     .sort(naturalCompare)
     .sort(comparePathDepth);
 
-  addRoutesToTable(documentTable, documentLinks, documentRoutes, build, {
-    sizes: true,
-  });
+  for (const link of links) {
+    const route = pages.get(link)!;
 
-  // API
-  const apiTable = createRoutesTable();
+    let uri = noslash(route.path).replace('{/}?{index}?{.html}?', '');
+    if (uri === '') uri = '/';
 
-  addRoutesToTable(
-    apiTable,
-    apiLinks.sort(naturalCompare).sort(comparePathDepth),
-    apiRoutes,
-    build,
-  );
+    const typeColor = route.notFound
+      ? TYPE_COLOR.NOT_FOUND
+      : route.redirect
+      ? TYPE_COLOR.REDIRECT
+      : TYPE_COLOR[route.type.toUpperCase()];
 
-  // LOG
+    const typeTitle = route.notFound
+      ? '404'
+      : route.redirect
+      ? route.redirect.status
+      : route.type.toLowerCase();
 
-  console.log(kleur.bold('DOCUMENT'));
-  console.log(documentTable.toString());
+    table.push([
+      kleur.bold(
+        route.methods.map((method) => METHOD_COLOR[method](method)).join('|'),
+      ),
+      uri.replace(/(\[.*?\])/g, (g) => kleur.bold(kleur.yellow(g))),
+      typeColor(typeTitle),
+      prettySize(computeRouteSize(route.path, build)),
+    ]);
+  }
 
-  console.log(kleur.bold('\nAPI'));
-  console.log(apiTable.toString());
+  console.log(kleur.bold('PAGES'));
+  console.log(table.toString());
+}
+
+function logApiTable(build: BuildData) {
+  const table = createRoutesTable();
+  const api = build.routes.api;
+
+  const links = Array.from(api.keys())
+    .sort(naturalCompare)
+    .sort(comparePathDepth);
+
+  for (const link of links) {
+    const route = api.get(link)!;
+
+    let uri = noslash(route.path).replace('{/}?{index}?{.html}?', '');
+    if (uri === '') uri = '/';
+
+    const typeColor = TYPE_COLOR[route.type.toUpperCase()];
+    const typeTitle = route.type.toLowerCase();
+
+    table.push([
+      kleur.bold(
+        route.methods.map((method) => METHOD_COLOR[method](method)).join('|'),
+      ),
+      uri.replace(/(\[.*?\])/g, (g) => kleur.bold(kleur.yellow(g))),
+      typeColor(typeTitle),
+    ]);
+  }
+
+  console.log(kleur.bold('API'));
+  console.log(table.toString());
 }
 
 export async function logRoutes(app: App, build: BuildData) {
@@ -183,43 +139,6 @@ function createRoutesTable(options: { sizes?: boolean } = {}) {
     colAligns: ['center', 'left', 'center', 'center'],
     style: { compact: true },
   });
-}
-
-function addRoutesToTable(
-  table: ReturnType<typeof createRoutesTable>,
-  links: string[],
-  routes: RoutesMap,
-  build: BuildData,
-  options: { sizes?: boolean } = {},
-) {
-  for (const link of links) {
-    const { pathname, type, redirect, ...info } = routes.get(link)!;
-
-    let uri = pathname
-      ? noslash(pathname).replace('{/}?{index}?{.html}?', '')
-      : noslash(link);
-
-    if (uri === '') uri = '/';
-
-    const methods = info.methods ?? ['GET'];
-    const typeColor = TYPE_COLOR[type.toUpperCase()];
-    const typeTitle = redirect ? `${redirect.status}` : type.toLowerCase();
-
-    const row = [
-      kleur.bold(
-        methods.map((method) => METHOD_COLOR[method](method)).join('|'),
-      ),
-      uri.replace(/(\[.*?\])/g, (g) => kleur.bold(kleur.yellow(g))),
-      typeColor(typeTitle),
-    ];
-
-    if (pathname && options.sizes) {
-      const size = computeRouteSize(pathname, build);
-      row.push(prettySize(size));
-    }
-
-    table.push(row);
-  }
 }
 
 export function computeRouteSize(routeId: string, build: BuildData) {

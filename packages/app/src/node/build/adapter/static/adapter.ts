@@ -9,7 +9,7 @@ import {
 import { buildAllSitemaps } from 'node/build/sitemap';
 import { copyDir, logger, LoggerIcon } from 'node/utils';
 import ora from 'ora';
-import { createDocumentResourceLinkTags } from 'server';
+import { createPageResourceLinkTags } from 'server';
 
 import { type BuildAdapterFactory } from '../build-adapter';
 
@@ -99,7 +99,7 @@ export function createStaticBuildAdapter({
         const entryScriptTag = `<script type="module" src="/${entrySrc}" defer></script>`;
 
         for (const render of build.static.renders.values()) {
-          const linkTags = createDocumentResourceLinkTags(build.resources.all, [
+          const linkTags = createPageResourceLinkTags(build.resources.all, [
             ...build.resources.entry,
             ...build.resources.app,
             ...build.resources.routes[render.route.id],

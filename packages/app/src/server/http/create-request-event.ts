@@ -1,10 +1,10 @@
 import type {
-  ServerDocumentRequestEvent,
-  ServerDocumentRequestEventInit,
+  ServerApiRequestEvent,
+  ServerApiRequestEventInit,
   ServerFetch,
-  ServerHttpRequestEvent,
-  ServerHttpRequestEventInit,
   ServerManifest,
+  ServerPageRequestEvent,
+  ServerPageRequestEventInit,
 } from 'server/types';
 import {
   coerceFetchInput,
@@ -15,33 +15,31 @@ import {
 } from 'shared/http';
 import { matchRoute } from 'shared/routing';
 
-import { handleHttpRequest } from './handlers/handle-http-request';
+import { handleApiRequest } from './handlers/handle-api-request';
 
-export function createDocumentRequestEvent<
+export function createPageRequestEvent<
   Params extends RequestParams = RequestParams,
->(
-  init: ServerDocumentRequestEventInit<Params>,
-): ServerDocumentRequestEvent<Params> {
-  const httpEvent = createHttpRequestEvent(init);
+>(init: ServerPageRequestEventInit<Params>): ServerPageRequestEvent<Params> {
+  const apiEvent = createApiRequestEvent(init);
   const headers = init.response?.headers ?? new Headers();
   const cookies =
     init.response?.cookies ??
-    new Cookies({ url: httpEvent.request.URL, headers });
+    new Cookies({ url: apiEvent.request.URL, headers });
   return {
-    ...httpEvent,
+    ...apiEvent,
     get response() {
       return { headers, cookies };
     },
   };
 }
 
-export function createHttpRequestEvent<
+export function createApiRequestEvent<
   Params extends RequestParams = RequestParams,
->(init: ServerHttpRequestEventInit<Params>): ServerHttpRequestEvent<Params> {
+>(init: ServerApiRequestEventInit<Params>): ServerApiRequestEvent<Params> {
   const request = createVesselRequest(init.request);
   const serverFetch = createServerFetch(request.URL, init.manifest);
 
-  const event: ServerHttpRequestEvent<Params> = {
+  const event: ServerApiRequestEvent<Params> = {
     get params() {
       return init.params;
     },
@@ -65,11 +63,11 @@ export function createServerFetch(
     const requestURL = new URL(request.url);
 
     if (requestURL.origin === baseURL.origin) {
-      const route = matchRoute(requestURL, manifest.routes.http);
+      const route = matchRoute(requestURL, manifest.routes.api);
       if (route) {
         return createVesselResponse(
           requestURL,
-          await handleHttpRequest(requestURL, request, route, manifest),
+          await handleApiRequest(requestURL, request, route, manifest),
         );
       }
     }

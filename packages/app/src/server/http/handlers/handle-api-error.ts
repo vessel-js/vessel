@@ -9,7 +9,7 @@ import {
 import { testRoute } from 'shared/routing';
 import { coerceError } from 'shared/utils/error';
 
-export async function handleHttpError(
+export async function handleApiError(
   error: unknown,
   request: VesselRequest,
   manifest: ServerManifest,
@@ -41,13 +41,13 @@ export async function handleHttpError(
       response = json({ error: { message: 'internal server error' } }, 500);
     } else {
       if (!manifest.production) {
-        manifest.dev?.onUnexpectedHttpError?.(request, error);
+        manifest.dev?.onApiError?.(request, error);
       }
 
       const err = coerceError(error);
 
       console.error(
-        kleur.bold(kleur.red(`\n🚨 Unexpected HTTP Error`)),
+        kleur.bold(kleur.red(`\n🚨 Unexpected API Error`)),
         `\n\n${kleur.bold('Messsage:')} ${err.message}`,
         `\n${kleur.bold('URL:')} ${request.URL.pathname}${request.URL.search}`,
         err.stack ? `\n\n${err.stack}` : '',

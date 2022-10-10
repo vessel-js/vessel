@@ -1,4 +1,4 @@
-import type { ServerManifest, ServerMatchedHttpRoute } from 'server/types';
+import type { ServerManifest, ServerMatchedApiRoute } from 'server/types';
 import {
   coerceAnyResponse,
   createVesselRequest,
@@ -11,14 +11,14 @@ import {
   withMiddleware,
 } from 'shared/http';
 
-import { createHttpRequestEvent } from '../create-request-event';
+import { createApiRequestEvent } from '../create-request-event';
 import { resolveMiddleware } from '../middleware';
-import { handleHttpError } from './handle-http-error';
+import { handleApiError } from './handle-api-error';
 
-export async function handleHttpRequest(
+export async function handleApiRequest(
   url: URL,
   request: Request,
-  route: ServerMatchedHttpRoute,
+  route: ServerMatchedApiRoute,
   manifest: ServerManifest,
 ): Promise<Response> {
   try {
@@ -67,7 +67,7 @@ export async function handleHttpRequest(
     const response = await withMiddleware(
       request,
       async (request) => {
-        const event = createHttpRequestEvent({
+        const event = createApiRequestEvent({
           request,
           params: route.params,
           manifest,
@@ -85,7 +85,7 @@ export async function handleHttpRequest(
     if (isRedirectResponse(error)) {
       return error;
     } else {
-      return handleHttpError(error, createVesselRequest(request), manifest);
+      return handleApiError(error, createVesselRequest(request), manifest);
     }
   }
 }

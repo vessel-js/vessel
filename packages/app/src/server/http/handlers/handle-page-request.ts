@@ -1,10 +1,10 @@
 import kleur from 'kleur';
 import type {
-  ServerDocumentResource,
-  ServerDocumentResourceEntry,
-  ServerLoadedDocumentRoute,
+  ServerLoadedPageRoute,
   ServerManifest,
-  ServerMatchedDocumentRoute,
+  ServerMatchedPageRoute,
+  ServerPageResource,
+  ServerPageResourceEntry,
 } from 'server/types';
 import { resolveStaticDataAssetId } from 'shared/data';
 import {
@@ -43,11 +43,11 @@ import {
   createStaticDataScriptTag,
   createStaticLoaderDataMap,
 } from '../../static-data';
-import { createDocumentRequestEvent } from '../create-request-event';
+import { createPageRequestEvent } from '../create-request-event';
 import { resolveMiddleware } from '../middleware';
-import { runErrorHandlers } from './handle-http-error';
+import { runErrorHandlers } from './handle-api-error';
 
-export async function handleDocumentRequest(
+export async function handlePageRequest(
   url: URL,
   request: Request,
   manifest: ServerManifest,
@@ -56,7 +56,7 @@ export async function handleDocumentRequest(
     const response = await withMiddleware(
       request,
       (request) => renderDocument(request.URL, request, manifest),
-      resolveMiddleware(manifest.middlewares, [], 'document'),
+      resolveMiddleware(manifest.middlewares, [], 'page'),
     );
 
     if (isVesselResponse(response)) response.cookies.attach(response.headers);
@@ -67,19 +67,19 @@ export async function handleDocumentRequest(
     const handled = await runErrorHandlers(
       vesselRequest,
       e,
-      manifest.errorHandlers?.document ?? [],
+      manifest.errorHandlers?.page ?? [],
     );
 
     if (handled) return handled;
 
     if (!manifest.production) {
-      manifest.dev?.onDocumentRenderError?.(vesselRequest, e);
+      manifest.dev?.onPageRenderError?.(vesselRequest, e);
     }
 
     const error = coerceError(e);
 
     console.error(
-      kleur.bold(kleur.red(`\n🚨 Document Render Error`)),
+      kleur.bold(kleur.red(`\n🚨 Page Render Error`)),
       `\n\n${kleur.bold('Messsage:')} ${error.message}`,
       url ? `\n${kleur.bold('URL:')} ${url?.pathname}${url?.search}` : '',
       error.stack ? `\n\n${error.stack}` : '',
@@ -112,7 +112,7 @@ async function renderDocument(
 
   const matches = matchAllRoutes(
     url,
-    manifest.routes.document,
+    manifest.routes.pages,
     manifest.trailingSlash,
   );
 
@@ -137,7 +137,7 @@ async function renderDocument(
     },
   );
 
-  const loadedRoutes: ServerLoadedDocumentRoute[] = [];
+  const loadedRoutes: ServerLoadedPageRoute[] = [];
   const serverData: Record<string, unknown> = {};
 
   // Look for a redirect backwards because anything earlier in the tree (shallow paths) should "win".
@@ -160,7 +160,7 @@ async function renderDocument(
   }
 
   for (const result of loadResults) {
-    const route: Mutable<ServerLoadedDocumentRoute> =
+    const route: Mutable<ServerLoadedPageRoute> =
       stripRouteComponentTypes(result);
 
     for (const type of getRouteComponentTypes()) {
@@ -294,7 +294,7 @@ async function renderDocument(
   const entryScriptTag = `<script type="module" src="${manifest.document.entry}"></script>`;
 
   const linkTags = manifest.document.resources
-    ? createDocumentResourceLinkTags(manifest.document.resources.all, [
+    ? createPageResourceLinkTags(manifest.document.resources.all, [
         ...manifest.document.resources.entry,
         ...manifest.document.resources.app,
         ...(manifest.document.resources.routes[route.id] ?? []),
@@ -349,7 +349,7 @@ type LoadServerDataInit = {
   url: URL;
   request: Request;
   response: { headers: Headers; cookies: Cookies };
-  route: ServerMatchedDocumentRoute;
+  route: ServerMatchedPageRoute;
   type: RouteComponentType;
   manifest: ServerManifest;
 };
@@ -370,7 +370,7 @@ async function loadServerData({
   const { serverLoader } = await route[type]!.loader();
   if (!serverLoader) return;
 
-  const event = createDocumentRequestEvent({
+  const event = createPageRequestEvent({
     request,
     response,
     params: route.params,
@@ -428,9 +428,9 @@ export function generateETag(html: string) {
   return (hash >>> 0).toString(36);
 }
 
-export function createDocumentResourceLinkTags(
-  resources: ServerDocumentResource[],
-  entries: ServerDocumentResourceEntry[],
+export function createPageResourceLinkTags(
+  resources: ServerPageResource[],
+  entries: ServerPageResourceEntry[],
 ) {
   const tags: string[] = [];
   const seen = new Set<number>();
@@ -439,7 +439,7 @@ export function createDocumentResourceLinkTags(
     if (seen.has(entry)) continue;
 
     const resource = resources[Math.abs(entry)];
-    const rel = resolveDocumentResourceRel(resource.href, entry < 0);
+    const rel = resolvePageResourceRel(resource.href, entry < 0);
 
     const attrs: string[] = [
       rel ? `rel="${rel}"` : '',
@@ -458,10 +458,10 @@ export function createDocumentResourceLinkTags(
   return tags;
 }
 
-export function createDocumentResource(
+export function createPageResource(
   file: string,
   baseUrl: string,
-): ServerDocumentResource {
+): ServerPageResource {
   const href = `${baseUrl}${slash(file)}`;
   if (file.endsWith('.js')) {
     return { href, as: 'script' };
@@ -489,10 +489,10 @@ export function createDocumentResource(
   }
 }
 
-export function resolveDocumentResourceRel(
+export function resolvePageResourceRel(
   file: string,
   dynamic?: boolean,
-): ServerDocumentResource['rel'] {
+): ServerPageResource['rel'] {
   if (file.endsWith('.js')) {
     return !dynamic ? 'modulepreload' : 'prefetch';
   } else if (file.endsWith('.css')) {

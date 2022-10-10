@@ -50,7 +50,7 @@ export function resolveAppConfig(
   };
 
   const pageExts = `md,svelte,vue,jsx,tsx`;
-  const endpointExts = 'js,ts';
+  const apiExts = 'js,ts';
 
   const __routes: ResolvedRoutesConfig = {
     entries: routes.entries ?? [],
@@ -80,10 +80,10 @@ export function resolveAppConfig(
       exclude: [],
       ...routes.errors,
     },
-    http: {
-      include: [`**/+http.{${endpointExts}}`, `**/http.{${endpointExts}}`],
+    api: {
+      include: [`**/+api.{${apiExts}}`, `**/api.{${apiExts}}`],
       exclude: [],
-      ...routes.http,
+      ...routes.api,
     },
   };
 

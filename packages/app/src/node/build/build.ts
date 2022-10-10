@@ -51,6 +51,7 @@ import { crawl } from './crawl';
 import { logBadLinks, logRoutes } from './log';
 import { buildServerManifests } from './manifest';
 import { resolveDocumentResourcesFromManifest } from './resources';
+import { resolveAllRoutes } from './routes';
 
 export async function build(
   app: App,
@@ -58,7 +59,7 @@ export async function build(
   serverBundle: OutputBundle,
 ): Promise<void> {
   const pageRoutes = app.routes.filterHasType('page');
-  const httpRoutes = app.routes.filterHasType('http');
+  const apiRoutes = app.routes.filterHasType('api');
 
   if (pageRoutes.length === 0) {
     console.log(kleur.bold(`❓ No pages were resolved`));
@@ -158,6 +159,10 @@ export async function build(
     template,
     links: new Map(),
     badLinks: new Map(),
+    routes: {
+      pages: new Map(),
+      api: new Map(),
+    },
     static: {
       pages: new Set(),
       redirects: new Map(),
@@ -168,8 +173,8 @@ export async function build(
       serverHashRecord: {},
     },
     server: {
-      routes: new Set(),
-      endpoints: new Set(httpRoutes),
+      pages: new Set(),
+      api: new Set(apiRoutes),
       loaders: serverLoaders,
       configs: serverConfigs,
     },
@@ -182,7 +187,7 @@ export async function build(
   // Determine which pages are static and which are dynamically rendered on the server.
   for (const route of pageRoutes) {
     if (build.server.loaders.has(route.id)) {
-      build.server.routes.add(route);
+      build.server.pages.add(route);
     } else {
       build.static.pages.add(route);
     }
@@ -211,10 +216,10 @@ export async function build(
     entry: () => import(entryChunkInfo.server.path),
     configs: Object.values(serverConfigs),
     routes: {
-      document: [], // don't need it here.
-      http: app.routes.filterHasType('http').map((route) => ({
+      pages: [], // don't need it here.
+      api: app.routes.filterHasType('api').map((route) => ({
         ...toRoute(route),
-        loader: () => import(serverRouteChunkFiles.get(route.id)!.http!),
+        loader: () => import(serverRouteChunkFiles.get(route.id)!.api!),
       })),
     },
     document: {
@@ -491,6 +496,7 @@ export async function build(
     );
   }
 
+  build.routes = await resolveAllRoutes(app, build);
   await adapter.write?.();
 
   // -------------------------------------------------------------------------------------------

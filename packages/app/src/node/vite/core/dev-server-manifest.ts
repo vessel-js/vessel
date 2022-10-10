@@ -21,19 +21,19 @@ export function initDevServerManifest(app: App): ServerManifest {
     trailingSlash: app.config.routes.trailingSlash,
     entry: entryLoader,
     configs: [],
-    dev: {
-      onDocumentRenderError: fixStacktrace,
-      onUnexpectedHttpError: fixStacktrace,
-    },
+    staticData: {},
     routes: {
-      document: [],
-      http: [],
+      pages: [],
+      api: [],
     },
     document: {
       entry: '/:virtual/vessel/client',
       template: '',
     },
-    staticData: {},
+    dev: {
+      onPageRenderError: fixStacktrace,
+      onApiError: fixStacktrace,
+    },
   };
 }
 
@@ -42,10 +42,10 @@ export async function updateDevServerManifestRoutes(
   manifest: ServerManifest,
 ) {
   manifest.routes = {
-    document: app.routes.toArray().map(toServerLoadable),
-    http: app.routes.filterHasType('http').map((route) => ({
+    pages: app.routes.toArray().map(toServerLoadable),
+    api: app.routes.filterHasType('api').map((route) => ({
       ...route,
-      loader: route.http!.viteLoader,
+      loader: route.api!.viteLoader,
     })),
   };
 

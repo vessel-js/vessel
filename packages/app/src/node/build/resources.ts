@@ -1,8 +1,8 @@
 import type { App } from 'node/app/App';
 import {
-  createDocumentResource,
-  type ServerDocumentResource,
-  type ServerDocumentResourceEntry,
+  createPageResource,
+  type ServerPageResource,
+  type ServerPageResourceEntry,
 } from 'server';
 import { noendslash } from 'shared/utils/url';
 import type { Manifest as ViteManifest } from 'vite';
@@ -19,11 +19,11 @@ export function resolveDocumentResourcesFromManifest(
   const routeFiles = new Set(
     app.files.routes
       .toArray()
-      .filter((file) => file.type !== 'http')
+      .filter((file) => file.type !== 'api')
       .map((file) => file.path.root),
   );
 
-  const resources: ServerDocumentResource[] = [];
+  const resources: ServerPageResource[] = [];
 
   const resourceIndex = new Map<string, number>();
   const createResource = (filename: string) => {
@@ -31,14 +31,14 @@ export function resolveDocumentResourcesFromManifest(
       return resourceIndex.get(filename)!;
     } else {
       const index = resources.length;
-      resources.push(createDocumentResource(filename, baseUrl));
+      resources.push(createPageResource(filename, baseUrl));
       resourceIndex.set(filename, index);
       return index;
     }
   };
 
   const resolveResources = (entries: string[]) => {
-    const resources: ServerDocumentResourceEntry[] = [];
+    const resources: ServerPageResourceEntry[] = [];
 
     const { js, css, dynamicJs, dynamicCss } = resolveImportsFromManifest(
       manifest,
@@ -70,7 +70,7 @@ export function resolveDocumentResourcesFromManifest(
   const appResources = resolveResources([appFile]);
 
   // Routes
-  const routeResources: Record<string, ServerDocumentResourceEntry[]> = {};
+  const routeResources: Record<string, ServerPageResourceEntry[]> = {};
   for (const route of app.routes.filterHasType('page')) {
     const branch = app.routes.getBranch(route);
 

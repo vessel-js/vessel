@@ -121,7 +121,7 @@ export function createAppEntries(app: App, { isSSR = false } = {}) {
   const files =
     isSSR || app.config.isSSR
       ? app.files.routes.toArray()
-      : app.files.routes.toArray().filter((file) => file.type !== 'http');
+      : app.files.routes.toArray().filter((file) => file.type !== 'api');
 
   for (const file of files) {
     const name = trimExt(file.path.route);

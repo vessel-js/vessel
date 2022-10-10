@@ -1,8 +1,8 @@
 import { sortedInsert } from 'node/utils';
 import type {
-  ServerDocumentModule,
-  ServerHttpModule,
-  ServerLoadableDocumentRoute,
+  ServerApiModule,
+  ServerLoadablePageRoute,
+  ServerPageModule,
 } from 'server';
 import { getRouteComponentTypes, type Route } from 'shared/routing';
 import type { Mutable } from 'shared/types';
@@ -19,11 +19,11 @@ import { resolveRouteFromFilePath } from './resolve-file-route';
 
 export type AppRoute = Route & {
   dir: SystemDirPath;
-  document: boolean;
+  client: boolean;
 } & {
   [P in RouteFileType]?: RouteFile & {
     viteLoader: () => Promise<
-      P extends 'http' ? ServerHttpModule : ServerDocumentModule
+      P extends 'api' ? ServerApiModule : ServerPageModule
     >;
   };
 };
@@ -62,7 +62,7 @@ export class AppRoutes implements Iterable<AppRoute> {
     const route: AppRoute = existingRoute ?? {
       ...resolveRouteFromFilePath(file.dir.route, this._matchers),
       dir: file.dir,
-      document: file.type !== 'http',
+      client: file.type !== 'api',
     };
 
     route[file.type] = {
@@ -71,8 +71,8 @@ export class AppRoutes implements Iterable<AppRoute> {
         this._app.vite.server!.ssrLoadModule(file.path.absolute),
     };
 
-    if (existingRoute && file.type !== 'http') {
-      existingRoute.document = true;
+    if (existingRoute && file.type !== 'api') {
+      existingRoute.client = true;
     }
 
     if (!existingRoute) {
@@ -92,7 +92,7 @@ export class AppRoutes implements Iterable<AppRoute> {
       if (!getRouteFileTypes().some((type) => route[type])) {
         this._routes = this._routes.filter((g) => route !== g);
       } else if (!getRouteComponentTypes().some((type) => route[type])) {
-        route.document = false;
+        route.client = false;
       }
 
       for (const callback of this._onRemove) {
@@ -129,8 +129,8 @@ export class AppRoutes implements Iterable<AppRoute> {
       .map((route) => route.layout!);
   }
 
-  filterDocumentRoutes() {
-    return this._routes.filter((route) => route.document);
+  filterClientRoutes() {
+    return this._routes.filter((route) => route.client);
   }
 
   filterHasType(type: RouteFileType) {
@@ -184,8 +184,8 @@ export function toRoute(appRoute: AppRoute): Route {
   return route;
 }
 
-export function toServerLoadable(route: AppRoute): ServerLoadableDocumentRoute {
-  const loadable: Mutable<ServerLoadableDocumentRoute> = toRoute(route);
+export function toServerLoadable(route: AppRoute): ServerLoadablePageRoute {
+  const loadable: Mutable<ServerLoadablePageRoute> = toRoute(route);
 
   for (const type of getRouteFileTypes()) {
     if (route[type]) {

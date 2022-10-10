@@ -12,9 +12,9 @@ import {
 import { matchRoute } from 'shared/routing';
 import type { RouteComponentType } from 'shared/routing/types';
 
-import { createDocumentRequestEvent } from '../create-request-event';
+import { createPageRequestEvent } from '../create-request-event';
 import { resolveMiddleware } from '../middleware';
-import { handleHttpError } from './handle-http-error';
+import { handleApiError } from './handle-api-error';
 
 export async function handleDataRequest(
   url: URL,
@@ -25,7 +25,7 @@ export async function handleDataRequest(
     const routeId = url.searchParams.get('route_id'),
       routeType = url.searchParams.get('route_type') as RouteComponentType;
 
-    const route = manifest.routes.document.find(
+    const route = manifest.routes.pages.find(
       (route) => route.id === routeId && route[routeType],
     );
 
@@ -51,7 +51,7 @@ export async function handleDataRequest(
     const response = await withMiddleware(
       request,
       async (request) => {
-        const event = createDocumentRequestEvent({
+        const event = createPageRequestEvent({
           request,
           params: match.params,
           manifest,
@@ -70,7 +70,7 @@ export async function handleDataRequest(
     if (isRedirectResponse(error)) {
       return clientRedirect(error.headers.get('Location')!, error);
     } else {
-      return handleHttpError(error, createVesselRequest(request), manifest);
+      return handleApiError(error, createVesselRequest(request), manifest);
     }
   }
 }

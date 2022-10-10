@@ -4,7 +4,7 @@ import { getRouteComponentTypes, type MatchedRoute } from 'shared/routing';
 
 import type {
   ServerFetch,
-  ServerLoadedDocumentRoute,
+  ServerLoadedPageRoute,
   StaticLoaderDataMap,
   StaticLoaderEvent,
 } from './types';
@@ -23,7 +23,7 @@ export function createStaticLoaderInput(
 }
 
 export function createStaticLoaderDataMap(
-  routes: ServerLoadedDocumentRoute[],
+  routes: ServerLoadedPageRoute[],
 ): StaticLoaderDataMap {
   const map: StaticLoaderDataMap = new Map();
 

@@ -9,9 +9,9 @@ import { matchRoute } from 'shared/routing';
 import { noendslash } from 'shared/utils/url';
 
 import { addURLPattern, installServerConfigs } from './app/configure-server';
+import { handleApiRequest } from './handlers/handle-api-request';
 import { handleDataRequest } from './handlers/handle-data-request';
-import { handleDocumentRequest } from './handlers/handle-document-request';
-import { handleHttpRequest } from './handlers/handle-http-request';
+import { handlePageRequest } from './handlers/handle-page-request';
 import { handleRPCRequest } from './handlers/handle-rpc-request';
 
 export function createServer(manifest: ServerManifest): RequestHandler {
@@ -34,11 +34,11 @@ export function createServer(manifest: ServerManifest): RequestHandler {
     } else if (url.searchParams.has('__data')) {
       response = await handleDataRequest(url, request, manifest);
     } else if (acceptsHTML && HTML_DOCUMENT_HTTP_METHOD.has(method)) {
-      response = await handleDocumentRequest(url, request, manifest);
+      response = await handlePageRequest(url, request, manifest);
     } else {
-      const route = matchRoute(url, manifest.routes.http);
+      const route = matchRoute(url, manifest.routes.api);
       if (route) {
-        response = await handleHttpRequest(url, request, route, manifest);
+        response = await handleApiRequest(url, request, route, manifest);
       } else {
         response = json({ error: { message: 'route not found' } }, 404);
       }

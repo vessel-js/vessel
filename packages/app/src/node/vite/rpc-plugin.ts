@@ -27,7 +27,7 @@ export function rpcPlugin(): VesselPlugin {
       if (
         !ssr &&
         filePath.startsWith(app.dirs.app.path) &&
-        app.files.routes.isHttpFile(filePath)
+        app.files.routes.isApiFile(filePath)
       ) {
         if (!installed) {
           await lexer.init;

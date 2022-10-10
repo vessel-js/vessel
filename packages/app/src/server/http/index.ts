@@ -1,8 +1,8 @@
 export { createServer } from './create-server';
+export { handleApiError } from './handlers/handle-api-error';
+export { handleApiRequest } from './handlers/handle-api-request';
 export {
-  createDocumentResource,
-  createDocumentResourceLinkTags,
+  createPageResource,
+  createPageResourceLinkTags,
   createServerRouter,
-} from './handlers/handle-document-request';
-export { handleHttpError } from './handlers/handle-http-error';
-export { handleHttpRequest } from './handlers/handle-http-request';
+} from './handlers/handle-page-request';

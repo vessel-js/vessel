@@ -3,26 +3,26 @@ import { type FetchMiddleware } from 'shared/http';
 import { isString } from 'shared/utils/unit';
 
 export function resolveMiddleware(
-  globalMiddlewares: ServerMiddlewareEntry[] = [],
-  handlerMiddlewares: (string | FetchMiddleware)[] = [],
-  defaultMiddlewareGroup?: 'document' | 'api',
+  globals: ServerMiddlewareEntry[] = [],
+  provided: (string | FetchMiddleware)[] = [],
+  defaultGroup?: 'page' | 'api',
 ) {
-  const nonGroupedMiddleware = globalMiddlewares
+  const nonGroupedMiddleware = globals
     .filter((entry) => !entry.group)
     .map((entry) => entry.handler);
 
   const seen = new Set<string | FetchMiddleware>(nonGroupedMiddleware);
   const middlewares: FetchMiddleware[] = [...nonGroupedMiddleware];
 
-  const withDefaultGroup = defaultMiddlewareGroup
-    ? [defaultMiddlewareGroup, ...handlerMiddlewares]
-    : handlerMiddlewares;
+  const withDefaultGroup = defaultGroup
+    ? [defaultGroup, ...provided]
+    : provided;
 
   for (const middleware of withDefaultGroup) {
     if (seen.has(middleware)) continue;
 
     if (isString(middleware)) {
-      const group = globalMiddlewares
+      const group = globals
         .filter((entry) => entry.group === middleware)
         .map((entry) => entry.handler);
 

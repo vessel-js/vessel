@@ -123,11 +123,11 @@ export function resolveServerRouteChunks(
   return { serverRouteChunks, serverRouteChunkFiles };
 }
 
-export function resolveHttpChunkMethods(httpRoute: AppRoute, build: BuildData) {
+export function resolveApiChunkMethods(route: AppRoute, build: BuildData) {
   const methods =
     build.bundles.server.routes.chunks
-      .get(httpRoute.id)
-      ?.http?.exports?.map((id) => resolveHandlerHttpMethod(id))
+      .get(route.id)
+      ?.api?.exports?.map((id) => resolveHandlerHttpMethod(id))
       .filter((handler) => typeof handler === 'string') ?? [];
 
   // Done this way so it's sorted and deduped.
@@ -219,8 +219,8 @@ export function resolveServerRoutes(
     for (const type of getRouteFileTypes()) {
       if (!route[type]) continue;
 
-      if (type === 'http') {
-        if (hasEdgeExport(chunk.http!.exports)) edgeRoutes.add(route.id);
+      if (type === 'api') {
+        if (hasEdgeExport(chunk.api!.exports)) edgeRoutes.add(route.id);
       } else if (chunk[type]!.exports.includes('serverLoader')) {
         server = true;
         serverLoader[type] = true;

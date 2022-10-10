@@ -1,10 +1,10 @@
 /* eslint-disable prefer-rest-params */
 import type {
+  ServerApiModule,
+  ServerApiRequestHandler,
   ServerErrorHandler,
   ServerErrorRoute,
-  ServerHttpModule,
-  ServerHttpRequestHandler,
-  ServerLoadableHttpRoute,
+  ServerLoadableApiRoute,
   ServerMiddlewareEntry,
 } from 'server/types';
 import {
@@ -16,7 +16,7 @@ import {
 } from 'shared/http';
 import { calcRoutePathScore } from 'shared/routing';
 import { isArray } from 'shared/utils/unit';
-import { noendslash } from 'shared/utils/url';
+import { noendslash, slash } from 'shared/utils/url';
 
 export function createServerRouter() {
   const middlewares: Omit<ServerMiddlewareEntry, 'pattern'>[] = [];
@@ -25,12 +25,11 @@ export function createServerRouter() {
     middlewares.push({ group, handler });
   };
 
-  let globalErrorHandlerCount = 0;
   const errorHandlers: {
-    document: Omit<ServerErrorRoute, 'pattern'>[];
+    page: Omit<ServerErrorRoute, 'pattern'>[];
     api: Omit<ServerErrorRoute, 'pattern'>[];
   } = {
-    document: [],
+    page: [],
     api: [],
   };
 
@@ -40,37 +39,38 @@ export function createServerRouter() {
     handler: ServerErrorHandler,
   ) => {
     errorHandlers[type].push({
-      id: `server_error_handler_${globalErrorHandlerCount++}`,
+      id: path,
       score: calcRoutePathScore(path),
       pathname: path,
       handler,
     });
   };
 
-  const httpRoutes: Omit<ServerLoadableHttpRoute, 'pattern'>[] = [];
-  const existingHttpRoutes = new Map<
+  const apiRoutes: Omit<ServerLoadableApiRoute, 'pattern'>[] = [];
+
+  const apiRoutesCache = new Map<
     string,
-    { module: ServerHttpModule; methods: string[] }
+    { module: ServerApiModule; methods: string[] }
   >();
 
   const addHttpRoute = (
     methods: HttpMethod | HttpMethod[],
     path: string,
-    handler: ServerHttpRequestHandler,
+    handler: ServerApiRequestHandler,
     rpcId = '',
     middlewares: (string | FetchMiddleware)[] = [],
   ) => {
-    const existing = existingHttpRoutes.get(path);
-    const existingMethods = existing?.methods ?? [];
+    path = path === '/' ? path : noendslash(path);
 
-    const module: ServerHttpModule = existing?.module ?? {};
+    const cached = apiRoutesCache.get(path);
+    const cachedMethods = cached?.methods ?? [];
+
+    const module: ServerApiModule = cached?.module ?? {};
     const normalizedMethods = isArray(methods) ? methods : [methods];
 
     const allMethods = [
-      ...existingMethods,
-      ...normalizedMethods.filter(
-        (method) => !existingMethods.includes(method),
-      ),
+      ...cachedMethods,
+      ...normalizedMethods.filter((method) => !cachedMethods.includes(method)),
     ];
 
     handler.middleware = [...(handler.middleware ?? []), ...middlewares];
@@ -79,8 +79,8 @@ export function createServerRouter() {
       module[`${method}${rpcId}`] = handler;
     }
 
-    if (!existing) {
-      httpRoutes.push({
+    if (!cached) {
+      apiRoutes.push({
         id: path,
         score: calcRoutePathScore(path),
         pathname: path,
@@ -88,10 +88,10 @@ export function createServerRouter() {
         loader: () => Promise.resolve(module),
       });
     } else {
-      existing.methods.splice(0, existing.methods.length, ...allMethods);
+      cached.methods.splice(0, cached.methods.length, ...allMethods);
     }
 
-    existingHttpRoutes.set(path, { module, methods: allMethods });
+    apiRoutesCache.set(path, { module, methods: allMethods });
   };
 
   const app: ServerApp = {
@@ -113,8 +113,8 @@ export function createServerRouter() {
       },
     },
     errors: {
-      onDocumentRenderError: (...args) => {
-        globalErrorHandler('document', ...args);
+      onPageRenderError: (...args) => {
+        globalErrorHandler('page', ...args);
         return app.errors;
       },
       onApiError: (...args) => {
@@ -124,6 +124,8 @@ export function createServerRouter() {
     },
   };
 
+  let basePrefix = '/api';
+
   const createRouteManager = (
     prefix = '',
     middlewares: (string | FetchMiddleware)[] = [],
@@ -131,16 +133,24 @@ export function createServerRouter() {
     const _prefix = noendslash(prefix);
 
     const router: ServerRouter = {
+      get basePrefix() {
+        return basePrefix as `/${string}`;
+      },
+      set basePrefix(prefix) {
+        basePrefix = noendslash(slash(prefix));
+      },
       middleware: (group: string | FetchMiddleware) => {
         return createRouteManager(_prefix, [...middlewares, group]);
       },
       prefix: (nextPrefix) => {
-        return createRouteManager(`${_prefix}${nextPrefix}`, [...middlewares]);
+        return createRouteManager(`${basePrefix}${_prefix}${nextPrefix}`, [
+          ...middlewares,
+        ]);
       },
       redirect: (from, to, init) => {
         addHttpRoute(
           ['GET', 'HEAD'],
-          `${_prefix}${from}`,
+          `${basePrefix}${_prefix}${from}`,
           () => redirect(to, init),
           undefined,
           middlewares,
@@ -150,7 +160,7 @@ export function createServerRouter() {
       http: (method, path, handler) => {
         addHttpRoute(
           method,
-          `${_prefix}${path}`,
+          `${basePrefix}${_prefix}${path}`,
           handler as any,
           undefined,
           middlewares,
@@ -167,7 +177,7 @@ export function createServerRouter() {
     router: createRouteManager(),
     middlewares,
     errorHandlers,
-    httpRoutes,
+    apiRoutes,
   };
 }
 
@@ -178,7 +188,7 @@ export type ServerApp = {
   };
 
   errors: {
-    onDocumentRenderError: (
+    onPageRenderError: (
       path: `/${string}`,
       handler: ServerErrorHandler,
     ) => ServerApp['errors'];
@@ -190,6 +200,8 @@ export type ServerApp = {
 };
 
 export type ServerRouter = {
+  basePrefix: `/${string}`;
+
   middleware(handler: FetchMiddleware): ServerRouter;
   middleware(group: string): ServerRouter;
 
@@ -207,6 +219,6 @@ export type ServerRouter = {
   >(
     methods: HttpMethod | HttpMethod[],
     path: `/${string}`,
-    handler: ServerHttpRequestHandler<Params, Response>,
+    handler: ServerApiRequestHandler<Params, Response>,
   ): ServerRouter;
 };

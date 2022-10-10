@@ -1,7 +1,7 @@
 import type {
-  InferServerHttpHandlerData,
-  InferServerHttpHandlerParams,
-  ServerHttpRequestHandler,
+  InferApiHandlerData,
+  InferApiHandlerParams,
+  ServerApiRequestHandler,
 } from 'server/types';
 
 import { type FetchMiddleware, withMiddleware } from './middleware';
@@ -13,8 +13,8 @@ import {
 } from './response';
 
 export type VesselFetch<RPC = unknown> = (
-  init?: VesselFetchInit<InferServerHttpHandlerParams<RPC>>,
-) => Promise<InferServerHttpHandlerData<RPC>>;
+  init?: VesselFetchInit<InferApiHandlerParams<RPC>>,
+) => Promise<InferApiHandlerData<RPC>>;
 
 export type VesselFetchInit<Params = RequestParams> = RequestInit & {
   params?: Params;
@@ -23,7 +23,7 @@ export type VesselFetchInit<Params = RequestParams> = RequestInit & {
   onError?: (error: unknown) => void;
 };
 
-export function createFetch<RPC extends ServerHttpRequestHandler>(
+export function createFetch<RPC extends ServerApiRequestHandler>(
   input: string | Request | URL | RPC,
   init?: { middleware?: FetchMiddleware[] },
 ): VesselFetch<RPC> {

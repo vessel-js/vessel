@@ -54,9 +54,20 @@ export function createVercelBuildAdapter(
 
         const serverRoutes = app.routes
           .toArray()
-          .filter((route) => route.http || build.server.loaders.has(route.id));
+          .filter((route) => route.api || build.server.loaders.has(route.id));
 
-        if (serverRoutes.length === 0) {
+        const edgeRoutes = build.edge.routes;
+        const hasEdgeRoutes =
+          edgeRoutes.size ||
+          build.server.configs.shared?.apiRoutes.length ||
+          build.server.configs.edge?.apiRoutes.length;
+
+        const hasNodeRoutes =
+          build.server.loaders.size ||
+          build.server.configs.shared?.apiRoutes.length ||
+          build.server.configs.node?.apiRoutes.length;
+
+        if (!serverRoutes.length && !hasEdgeRoutes && !hasNodeRoutes) {
           return;
         }
 
@@ -104,7 +115,6 @@ export function createVercelBuildAdapter(
           { handle: 'filesystem' },
         ];
 
-        const edgeRoutes = build.edge.routes;
         for (const route of serverRoutes) {
           routes.push({
             src: `^/${buildSrc(route.dir.route)}/?`,
@@ -124,19 +134,11 @@ export function createVercelBuildAdapter(
           });
         }
 
-        if (
-          edgeRoutes.size ||
-          build.server.configs.shared?.httpRoutes.length ||
-          build.server.configs.edge?.httpRoutes.length
-        ) {
+        if (hasEdgeRoutes) {
           await bundleEdge(app, vercelDirs.output, config?.edge);
         }
 
-        if (
-          build.server.loaders.size ||
-          build.server.configs.shared?.httpRoutes.length ||
-          build.server.configs.node?.httpRoutes.length
-        ) {
+        if (hasNodeRoutes) {
           await bundleNode(app, vercelDirs.output, config?.functions);
         }
 

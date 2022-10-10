@@ -3,14 +3,14 @@ import type { App } from 'node/app/App';
 import type { RouteFileType } from 'node/app/files';
 import type { AppRoute } from 'node/app/routes';
 import { logger } from 'node/utils';
-import { handleHttpError, handleHttpRequest } from 'server';
+import { handleApiError, handleApiRequest } from 'server';
 import { createStaticLoaderInput } from 'server/static-data';
 import type {
   MaybeStaticLoaderResponse,
-  ServerDocumentModule,
   ServerFetch,
-  ServerLoadedDocumentRoute,
+  ServerLoadedPageRoute,
   ServerManifest,
+  ServerPageModule,
   ServerRedirect,
   StaticLoader,
   StaticLoaderCacheKeyBuilder,
@@ -52,10 +52,10 @@ export function createStaticLoaderFetch(
     const requestURL = new URL(request.url);
 
     if (requestURL.origin === ssrOrigin) {
-      const route = matchRoute(requestURL, manifest.routes.http);
+      const route = matchRoute(requestURL, manifest.routes.api);
 
       if (!route) {
-        const error = await handleHttpError(
+        const error = await handleApiError(
           httpError('route not found', 404),
           createVesselRequest(request),
           manifest,
@@ -64,7 +64,7 @@ export function createStaticLoaderFetch(
         return createVesselResponse(requestURL, error);
       }
 
-      const response = await handleHttpRequest(
+      const response = await handleApiRequest(
         requestURL,
         request,
         route,
@@ -79,7 +79,7 @@ export function createStaticLoaderFetch(
 }
 
 export type LoadStaticRouteResult = {
-  matches: ServerLoadedDocumentRoute[];
+  matches: ServerLoadedPageRoute[];
   redirect?: ServerRedirect;
 };
 
@@ -87,7 +87,7 @@ const getServerModuleKey = (
   route: Route & RouteMatch,
   type: RouteComponentType,
 ) => route.id + type;
-const serverModules = new Map<string, ServerDocumentModule>();
+const serverModules = new Map<string, ServerPageModule>();
 
 const getStaticDataKey = (
   url: URL,
@@ -101,7 +101,7 @@ export async function loadStaticRoute(
   url: URL,
   route: AppRoute,
   serverFetch: ServerFetch,
-  load: (route: AppRoute, type: RouteFileType) => Promise<ServerDocumentModule>,
+  load: (route: AppRoute, type: RouteFileType) => Promise<ServerPageModule>,
 ): Promise<LoadStaticRouteResult> {
   const branch = app.routes.getBranch(route);
   const matches = matchAllRoutes(url, branch, app.config.routes.trailingSlash);
@@ -149,14 +149,14 @@ export async function loadStaticRoute(
     }),
   );
 
-  const results: ServerLoadedDocumentRoute[] = [];
+  const results: ServerLoadedPageRoute[] = [];
   const baseUrl = app.vite.resolved!.base;
 
   // Go backwards for render order.
   for (let i = matches.length - 1; i >= 0; i--) {
     const match = matches[i];
 
-    const result: Mutable<ServerLoadedDocumentRoute> =
+    const result: Mutable<ServerLoadedPageRoute> =
       stripRouteComponentTypes(match);
 
     for (const type of getRouteComponentTypes()) {

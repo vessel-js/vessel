@@ -6,7 +6,7 @@ import type {
 } from 'shared/http';
 
 import type {
-  ServerHttpRequestHandler,
+  ServerApiRequestHandler,
   ServerLoader,
   StaticLoader,
 } from './types';
@@ -33,7 +33,7 @@ export function createHttpRequestHandler<
   Params extends RequestParams = RequestParams,
   Response extends AnyResponse = AnyResponse,
 >(
-  handler: ServerHttpRequestHandler<Params, Response>,
+  handler: ServerApiRequestHandler<Params, Response>,
   init?: { middleware?: FetchMiddleware[] },
 ) {
   handler.middleware = init?.middleware;

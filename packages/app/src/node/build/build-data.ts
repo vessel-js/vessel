@@ -3,9 +3,9 @@ import type { AppRoute } from 'node/app/routes';
 import type { OutputAsset, OutputBundle, OutputChunk } from 'rollup';
 import { ServerConfig } from 'server/http/app/configure-server';
 import type {
-  ServerDocumentResource,
-  ServerDocumentResourceEntry,
-  ServerLoadedDocumentRoute,
+  ServerLoadedPageRoute,
+  ServerPageResource,
+  ServerPageResourceEntry,
   ServerRenderResult,
 } from 'server/types';
 import type { RouteComponentType } from 'shared/routing';
@@ -62,19 +62,45 @@ export type BuildData = {
    */
   links: Map<string, AppRoute>;
   /**
-   * Map of invalid links that were either malformed or matched no route pattern during
-   * the static build process. The key contains the bad URL pathname.
+   * Map of invalid links that were either malformed or matched no route pattern during the static
+   * build process. The key contains the bad URL pathname.
    */
   badLinks: Map<string, { route?: AppRoute; reason: string }>;
   /**
-   * All document resources and references (e.g., js, css, fonts, etc.). Mainly used to build
-   * preload and prefetch directives to avoid waterfalls client-side.
+   * All discovered route URIs and basic information about them. Mainly used for logging at the
+   * moment.
+   */
+  routes: {
+    pages: Map<
+      string,
+      {
+        type: 'static' | 'server' | 'node' | 'edge';
+        path: string;
+        file?: string;
+        notFound?: boolean;
+        redirect?: { status: number };
+        methods: string[];
+      }
+    >;
+    api: Map<
+      string,
+      {
+        type: 'server' | 'node' | 'edge';
+        path: string;
+        file: string;
+        methods: string[];
+      }
+    >;
+  };
+  /**
+   * All page resources and references (e.g., js, css, fonts, etc.). Mainly used to build preload
+   * and prefetch directives to avoid waterfalls client-side.
    */
   resources: {
-    all: ServerDocumentResource[];
-    entry: ServerDocumentResourceEntry[];
-    app: ServerDocumentResourceEntry[];
-    routes: Record<string, ServerDocumentResourceEntry[]>;
+    all: ServerPageResource[];
+    entry: ServerPageResourceEntry[];
+    app: ServerPageResourceEntry[];
+    routes: Record<string, ServerPageResourceEntry[]>;
   };
   static: {
     /**
@@ -113,7 +139,7 @@ export type BuildData = {
         /** The matching page route. */
         route: AppRoute;
         /** The loaded server routes. */
-        matches: ServerLoadedDocumentRoute[];
+        matches: ServerLoadedPageRoute[];
         /** The SSR results containing head, css, and HTML renders. */
         ssr: ServerRenderResult;
         /**
@@ -158,10 +184,10 @@ export type BuildData = {
   };
   server: {
     /**
-     * Routes that are dynamic meaning they contain a `serverLoader` in their branch (page/error
-     * itself or any of its layouts).
+     * Page routes that are dynamic meaning they contain a `serverLoader` in their branch
+     * (page/error itself or any of its layouts).
      */
-    routes: Set<AppRoute>;
+    pages: Set<AppRoute>;
     /**
      * Route ids and whether their respective component modules contain a `serverLoader` export. If
      * a route id exists in this map it means that one if its components in its branch has a
@@ -169,9 +195,9 @@ export type BuildData = {
      */
     loaders: Map<string, { [P in RouteComponentType]?: boolean }>;
     /**
-     * Raw HTTP server endpoints.
+     * API server endpoints.
      */
-    endpoints: Set<AppRoute>;
+    api: Set<AppRoute>;
     /**
      * Loaded server configuration files.
      */
@@ -183,7 +209,7 @@ export type BuildData = {
   };
   edge: {
     /**
-     * Page and HTTP route ids that should be dynamically rendered at the edge
+     * Page and HTTP route ids that should be dynamically rendered at the edge.
      *
      * ```ts
      * // Edge routes contain the following export in their branch:

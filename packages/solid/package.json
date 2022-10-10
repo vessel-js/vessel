@@ -45,6 +45,7 @@
     "dev": "DEV=true pnpm run build --watch"
   },
   "dependencies": {
+    "globby": "^13.1.1",
     "pathe": "^0.3.8"
   },
   "peerDependencies": {

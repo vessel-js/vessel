@@ -30,10 +30,10 @@ function installServerConfig(manifest: ServerManifest, config: ServerConfig) {
   manifest.middlewares.push(...config.middlewares);
 
   if (!manifest.errorHandlers) {
-    manifest.errorHandlers = { document: [], api: [] };
+    manifest.errorHandlers = { page: [], api: [] };
   }
 
-  for (const type of ['document', 'api'] as const) {
+  for (const type of ['page', 'api'] as const) {
     if (!manifest.errorHandlers[type]) {
       manifest.errorHandlers[type] = [];
     }
@@ -47,9 +47,9 @@ function installServerConfig(manifest: ServerManifest, config: ServerConfig) {
     }
   }
 
-  if (config.httpRoutes.length > 0) {
-    manifest.routes!.http!.push(...config.httpRoutes.map(addURLPattern));
-    manifest.routes!.http!.sort(compareRoutes);
+  if (config.apiRoutes.length > 0) {
+    manifest.routes!.api!.push(...config.apiRoutes.map(addURLPattern));
+    manifest.routes!.api!.sort(compareRoutes);
   }
 }
 

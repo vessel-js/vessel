@@ -13,7 +13,7 @@ import {
   SystemFiles,
 } from './system-files';
 
-export type RouteFileType = RouteComponentType | 'http';
+export type RouteFileType = RouteComponentType | 'api';
 
 export type RouteFile = SystemFileMeta & {
   readonly moduleId: string;
@@ -24,7 +24,7 @@ export type RouteDir = { path: SystemDirPath } & {
   [P in RouteFileType]?: RouteFile;
 };
 
-const routeFileTypes = [...getRouteComponentTypes(), 'http'] as const;
+const routeFileTypes = [...getRouteComponentTypes(), 'api'] as const;
 export function getRouteFileTypes(): readonly RouteFileType[] {
   return routeFileTypes;
 }
@@ -35,7 +35,7 @@ export class RouteFiles extends SystemFiles<RouteFile> {
   protected _pageFilter!: (id: string) => boolean;
   protected _layoutFilter!: (id: string) => boolean;
   protected _errorBoundaryFilter!: (id: string) => boolean;
-  protected _httpFilter!: (id: string) => boolean;
+  protected _apiFilter!: (id: string) => boolean;
 
   get dirs() {
     return [...this._dirs];
@@ -52,19 +52,19 @@ export class RouteFiles extends SystemFiles<RouteFile> {
       config.errors.include,
       config.errors.exclude,
     );
-    this._httpFilter = createFilter(config.http.include, config.http.exclude);
+    this._apiFilter = createFilter(config.api.include, config.api.exclude);
     return super.init(app, {
       include: [
         ...config.layouts.include,
         ...config.errors.include,
         ...config.pages.include,
-        ...config.http.include,
+        ...config.api.include,
       ],
       exclude: [
         ...config.layouts.exclude,
         ...config.errors.exclude,
         ...config.pages.exclude,
-        ...config.http.exclude,
+        ...config.api.exclude,
       ],
     });
   }
@@ -110,8 +110,8 @@ export class RouteFiles extends SystemFiles<RouteFile> {
     return this._errorBoundaryFilter(filePath);
   }
 
-  isHttpFile(filePath: string) {
-    return this._httpFilter(filePath);
+  isApiFile(filePath: string) {
+    return this._apiFilter(filePath);
   }
 
   isLeafFile(filePath: string) {
@@ -139,8 +139,8 @@ export class RouteFiles extends SystemFiles<RouteFile> {
       return 'layout';
     } else if (this.isErrorBoundaryFile(filePath)) {
       return 'errorBoundary';
-    } else if (this.isHttpFile(filePath)) {
-      return 'http';
+    } else if (this.isApiFile(filePath)) {
+      return 'api';
     } else {
       return null;
     }

@@ -2,7 +2,7 @@ import type { ServerResponse } from 'http';
 import kleur from 'kleur';
 import type { App } from 'node/app/App';
 import { logger } from 'node/utils';
-import type { ServerManifest, ServerMatchedDocumentRoute } from 'server/types';
+import type { ServerManifest, ServerMatchedPageRoute } from 'server/types';
 import {
   createMatchedRoute,
   type RouteComponentType,
@@ -53,7 +53,7 @@ export async function handleStaticDataRequest({
       ...route[type],
       loader: () => route[type]!.viteLoader(),
     },
-  }) as ServerMatchedDocumentRoute;
+  }) as ServerMatchedPageRoute;
 
   const { staticLoader } = await match[type]!.loader();
   const serverFetch = createStaticLoaderFetch(app, manifest);

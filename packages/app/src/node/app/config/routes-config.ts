@@ -79,14 +79,13 @@ export type ResolvedRoutesConfig = {
      */
     exclude: (string | RegExp)[];
   };
-  http: {
+  api: {
     /**
-     * Globs indicating serverless/edge functions to be included in Vessel (relative to `<app>`).
+     * Globs indicating API routes to be included in Vessel (relative to `<app>`).
      */
     include: string[];
     /**
-     * Globs or RegExp indicating serverless/edge functions to be excluded from Vessel (relative
-     * to `<app>`).
+     * Globs or RegExp indicating API routes to be excluded from Vessel (relative to `<app>`).
      */
     exclude: (string | RegExp)[];
   };
@@ -114,10 +113,10 @@ export type ComplexRouteMatcher = (
 export type RouteMatcherConfig = (SimpleRouteMatcher | ComplexRouteMatcher)[];
 
 export type RoutesConfig = Partial<
-  Omit<ResolvedRoutesConfig, 'pages' | 'layouts' | 'errors' | 'http'>
+  Omit<ResolvedRoutesConfig, 'pages' | 'layouts' | 'errors' | 'api'>
 > & {
   pages?: Partial<ResolvedRoutesConfig['pages']>;
   layouts?: Partial<ResolvedRoutesConfig['layouts']>;
   errors?: Partial<ResolvedRoutesConfig['errors']>;
-  http?: Partial<ResolvedRoutesConfig['http']>;
+  api?: Partial<ResolvedRoutesConfig['api']>;
 };
