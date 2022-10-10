@@ -66,6 +66,7 @@ importers:
       '@wooorm/starry-night': ^1.0.0
       cli-table3: ^0.6.3
       cookie: ^0.5.0
+      es-module-lexer: ^1.0.3
       esbuild: ^0.15.9
       fast-glob: ^3.2.11
       globby: ^13.1.1
@@ -96,6 +97,7 @@ importers:
       '@types/lru-cache': 5.1.1
       '@types/markdown-it': 12.2.3
       cookie: 0.5.0
+      es-module-lexer: 1.0.3
       esbuild: 0.15.9
       globby: 13.1.2
       gray-matter: 4.0.3
@@ -1556,6 +1558,10 @@ packages:
       string.prototype.trimstart: 1.0.5
       unbox-primitive: 1.0.2
     dev: true
+
+  /es-module-lexer/1.0.3:
+    resolution: {integrity: sha512-iC67eXHToclrlVhQfpRawDiF8D8sQxNxmbqw5oebegOaJkyx/w9C/k57/5e6yJR2zIByRt9OXdqX50DV2t6ZKw==}
+    dev: false
 
   /es-shim-unscopables/1.0.0:
     resolution: {integrity: sha512-Jm6GPcCdC30eMLbZ2x8z2WuRwAws3zTBBKuusffYVUrNj/GVSUAZ+xKMaUpfNDR5IbyNA5LJbaecoUVbmUcB1w==}

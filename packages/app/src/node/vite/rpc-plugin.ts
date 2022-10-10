@@ -1,3 +1,4 @@
+import * as lexer from 'es-module-lexer';
 import type { App } from 'node/app/App';
 import * as path from 'pathe';
 import {
@@ -5,24 +6,16 @@ import {
   HTTP_METHODS,
   resolveHandlerHttpMethod,
 } from 'shared/http';
-import t from 'typescript';
 
 import type { VesselPlugin } from './Plugin';
 
 export function rpcPlugin(): VesselPlugin {
-  let app: App;
-
-  const isRequestHandlerExport = (
-    node: t.Node,
-  ): node is t.VariableStatement | t.FunctionDeclaration =>
-    (t.isVariableStatement(node) || t.isFunctionDeclaration(node)) &&
-    (t.getCombinedModifierFlags(node as t.Declaration) &
-      t.ModifierFlags.Export) !==
-      0;
+  let app: App,
+    installed = false;
 
   return {
     name: '@vessel/rpc',
-    enforce: 'pre',
+    enforce: 'post',
     vessel: {
       configureApp(_app) {
         app = _app;
@@ -36,12 +29,16 @@ export function rpcPlugin(): VesselPlugin {
         filePath.startsWith(app.dirs.app.path) &&
         app.files.routes.isHttpFile(filePath)
       ) {
+        if (!installed) {
+          await lexer.init;
+          installed = true;
+        }
+
         const handlers: string[] = [];
         const routeFile = app.files.routes.find(filePath)!;
         const routeId = app.routes.find(routeFile)!.id;
-        const sourceFile = t.createSourceFile(id, code, 99, false);
 
-        const addHandler = (root: t.Node, handlerId: string) => {
+        const addHandler = (handlerId: string) => {
           const method = resolveHandlerHttpMethod(handlerId);
           if (method) {
             const isNamedHandler = !HTTP_METHODS.has(handlerId);
@@ -59,30 +56,11 @@ export function rpcPlugin(): VesselPlugin {
           }
         };
 
-        t.forEachChild(sourceFile, (node) => {
-          if (isRequestHandlerExport(node)) {
-            if (t.isFunctionDeclaration(node)) {
-              const handlerId = node.name?.escapedText;
-              if (handlerId && HTTP_METHOD_RE.test(handlerId)) {
-                addHandler(node, handlerId);
-              }
-            } else {
-              const declaration = node.declarationList.declarations[0];
-              if (
-                declaration &&
-                declaration.initializer &&
-                (t.isArrowFunction(declaration.initializer) ||
-                  t.isCallExpression(declaration.initializer))
-              ) {
-                const handlerId = (declaration.name as t.Identifier)
-                  ?.escapedText;
-                if (handlerId && HTTP_METHOD_RE.test(handlerId)) {
-                  addHandler(node, handlerId);
-                }
-              }
-            }
-          }
-        });
+        const result = lexer.parse(code, id);
+
+        result[1]
+          .map((s) => s.n)
+          .forEach((id) => HTTP_METHOD_RE.test(id) && addHandler(id));
 
         return handlers.join('\n\n');
       }
