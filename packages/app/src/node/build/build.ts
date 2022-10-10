@@ -143,6 +143,15 @@ export async function build(
     serverRouteChunks,
   );
 
+  const serverConfigs: Record<string, ServerConfig> = {};
+  await Promise.all(
+    Object.keys(serverConfigChunks).map(async (key) => {
+      serverConfigs[key] = (
+        await import(app.dirs.server.resolve(serverConfigChunks[key].fileName))
+      ).default;
+    }),
+  );
+
   const build: BuildData = {
     entries,
     bundles,
@@ -162,6 +171,7 @@ export async function build(
       routes: new Set(),
       endpoints: new Set(httpRoutes),
       loaders: serverLoaders,
+      configs: serverConfigs,
     },
     edge: {
       routes: edgeRoutes,
@@ -193,15 +203,6 @@ export async function build(
 
   const serverOrigin = getDevServerOrigin(app);
   const serverRouter = createServerRouter();
-  const serverConfigs: Record<string, ServerConfig> = {};
-
-  await Promise.all(
-    Object.keys(serverConfigChunks).map(async (key) => {
-      serverConfigs[key] = (
-        await import(app.dirs.server.resolve(serverConfigChunks[key].fileName))
-      ).default;
-    }),
-  );
 
   const serverManifest: ServerManifest = {
     production: false,

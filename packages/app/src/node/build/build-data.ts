@@ -1,6 +1,7 @@
 import type { RouteFileType } from 'node/app/files';
 import type { AppRoute } from 'node/app/routes';
 import type { OutputAsset, OutputBundle, OutputChunk } from 'rollup';
+import { ServerConfig } from 'server/http/app/configure-server';
 import type {
   ServerDocumentResource,
   ServerDocumentResourceEntry,
@@ -171,6 +172,14 @@ export type BuildData = {
      * Raw HTTP server endpoints.
      */
     endpoints: Set<AppRoute>;
+    /**
+     * Loaded server configuration files.
+     */
+    configs: {
+      shared?: ServerConfig;
+      edge?: ServerConfig;
+      node?: ServerConfig;
+    };
   };
   edge: {
     /**

@@ -104,11 +104,11 @@ export function createVercelBuildAdapter(
           { handle: 'filesystem' },
         ];
 
-        const edgeRouteIds = build.edge.routes;
+        const edgeRoutes = build.edge.routes;
         for (const route of serverRoutes) {
           routes.push({
             src: `^/${buildSrc(route.dir.route)}/?`,
-            dest: edgeRouteIds.has(route.id) ? '/edge' : '/node',
+            dest: edgeRoutes.has(route.id) ? '/edge' : '/node',
           });
         }
 
@@ -124,11 +124,19 @@ export function createVercelBuildAdapter(
           });
         }
 
-        if (edgeRouteIds.size > 0) {
+        if (
+          edgeRoutes.size ||
+          build.server.configs.shared?.httpRoutes.length ||
+          build.server.configs.edge?.httpRoutes.length
+        ) {
           await bundleEdge(app, vercelDirs.output, config?.edge);
         }
 
-        if (serverRoutes.length !== edgeRouteIds.size) {
+        if (
+          build.server.loaders.size ||
+          build.server.configs.shared?.httpRoutes.length ||
+          build.server.configs.node?.httpRoutes.length
+        ) {
           await bundleNode(app, vercelDirs.output, config?.functions);
         }
 
