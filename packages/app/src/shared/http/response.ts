@@ -96,15 +96,16 @@ export function isRedirectResponse(
 }
 
 /**
- * A redirect response. Sets the status code and the `Location` header. Defaults to "302 Found".
+ * A redirect response. Sets the status code and the `Location` header. Defaults to `307` -
+ * "Temporary Redirect".
  */
-export const redirect: RedirectFunction = (url, init = 302) => {
+export const redirect: RedirectFunction = (url, init = 307) => {
   let responseInit = init;
 
   if (typeof responseInit === 'number') {
     responseInit = { status: responseInit };
   } else if (typeof responseInit.status === 'undefined') {
-    responseInit.status = 302;
+    responseInit.status = 307;
   }
 
   const headers = new Headers(responseInit.headers);
@@ -118,9 +119,9 @@ export const redirect: RedirectFunction = (url, init = 302) => {
 
 /**
  * A redirect response that's intended to be handled client-side without triggering a page reload.
- * Defaults to "302 Found".
+ * Defaults to `307` - "Temporary Redirect".
  */
-export const clientRedirect: RedirectFunction = (url, init = 302) => {
+export const clientRedirect: RedirectFunction = (url, init = 307) => {
   const response = redirect(url, init);
   response.headers.set('X-Vessel-Redirect', response.headers.get('Location')!);
   response.headers.delete('Location');

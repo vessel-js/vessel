@@ -195,7 +195,7 @@ function normalizeRedirectPath(
   baseUrl = '/',
 ): ServerRedirect {
   const path = isString(redirect) ? redirect : redirect.path!;
-  const status = isString(redirect) ? 302 : redirect.status ?? 302;
+  const status = isString(redirect) ? 307 : redirect.status ?? 307;
   const normalizedPath = !isLinkExternal(path, baseUrl) ? slash(path) : path;
   return { path: normalizedPath, status };
 }
