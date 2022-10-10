@@ -12,7 +12,7 @@ import { noslash, slash } from 'shared/utils/url';
 
 import type { BuildData } from './build-data';
 
-type RouteType = 'static' | 'lambda' | 'edge' | 'redirect' | 'invalid';
+type RouteType = 'static' | 'node' | 'edge' | 'redirect' | 'invalid';
 
 type RoutesMap = Map<
   string,
@@ -35,8 +35,8 @@ const METHOD_COLOR = {
 
 const TYPE_COLOR = {
   STATIC: kleur.dim,
-  LAMBDA: kleur.magenta,
-  EDGE: kleur.cyan,
+  EDGE: kleur.green,
+  NODE: kleur.red,
   API: kleur.white,
   REDIRECT: kleur.yellow,
   INVALID: kleur.red,
@@ -67,7 +67,7 @@ export async function logRoutesTable(app: App, build: BuildData) {
   for (const route of build.server.routes) {
     documentRoutes.set(slash(route.id), {
       pathname: route.id,
-      type: build.edge.routes.has(route.id) ? 'edge' : 'lambda',
+      type: build.edge.routes.has(route.id) ? 'edge' : 'node',
     });
   }
 
@@ -106,7 +106,7 @@ export async function logRoutesTable(app: App, build: BuildData) {
   );
 
   for (const route of httpRoutes) {
-    const type = edgeRoutes.has(route.id) ? 'edge' : 'lambda';
+    const type = edgeRoutes.has(route.id) ? 'edge' : 'node';
     const id = route.id + type;
     if (!apiRoutes.has(id)) {
       apiLinks.push(id);

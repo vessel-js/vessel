@@ -197,9 +197,10 @@ export function resolveServerRoutes(
   const serverLoaders: BuildData['server']['loaders'] = new Map();
 
   const routes = app.routes.toArray();
-
-  const serverLayouts: string[] = [];
-  const edgeLayouts: string[] = [];
+  const serverLayouts: AppRoute[] = [];
+  const edgeLayouts = new Set<string>();
+  const nodeLayouts = new Set<string>();
+  const deoptimized = new Map<AppRoute, AppRoute[]>();
 
   const hasEdgeExport = (exports: string[]) => exports.includes('EDGE');
 
@@ -228,19 +229,35 @@ export function resolveServerRoutes(
         if (isEdge) edge = true;
 
         if (type === 'layout') {
-          serverLayouts.push(route.id);
-          if (isEdge) edgeLayouts.push(route.id);
+          serverLayouts.push(route);
+          (isEdge ? edgeLayouts : nodeLayouts).add(route.id);
         }
       }
     }
 
-    if (server || serverLayouts.some((id) => route.id.startsWith(id))) {
+    const serverBranchLayouts = serverLayouts.filter((layout) =>
+      route.id.startsWith(layout.id),
+    );
+
+    if (server || serverBranchLayouts.length > 0) {
       serverLoaders.set(route.id, serverLoader);
-      if (edge || edgeLayouts.some((id) => route.id.startsWith(id))) {
-        edgeRoutes.add(route.id);
+
+      if (
+        edge ||
+        serverBranchLayouts.some((layout) => edgeLayouts.has(layout.id))
+      ) {
+        const nodeBranchLayouts = serverBranchLayouts.filter((layout) =>
+          nodeLayouts.has(layout.id),
+        );
+
+        if (nodeBranchLayouts.length > 0) {
+          deoptimized.set(route, nodeBranchLayouts);
+        } else {
+          edgeRoutes.add(route.id);
+        }
       }
     }
   }
 
-  return { edgeRoutes, serverLoaders };
+  return { edgeRoutes, serverLoaders, deoptimized };
 }

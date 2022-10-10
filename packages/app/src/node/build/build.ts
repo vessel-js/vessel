@@ -138,7 +138,7 @@ export async function build(
     },
   };
 
-  const { edgeRoutes, serverLoaders } = resolveServerRoutes(
+  const { edgeRoutes, serverLoaders, deoptimized } = resolveServerRoutes(
     app,
     serverRouteChunks,
   );
@@ -498,6 +498,27 @@ export async function build(
 
   logBadLinks(build.badLinks);
   await logRoutes(app, build);
+
+  if (deoptimized.size > 0) {
+    const edgeExport = kleur.cyan('export const EDGE = true;');
+    logger.warn(
+      kleur.bold('Deoptimized Routes'),
+      '\nThe following route files were deoptimized from edge to node because of a server loader or action in their branch:\n\n',
+      Array.from(deoptimized)
+        .map(
+          ([route, layouts]) =>
+            `- ${kleur.bold(
+              route.page?.path.route ?? route.id,
+            )}\n  ${layouts.map(
+              (route) => `  - ${kleur.red(route.layout!.path.route)}`,
+            )}`,
+        )
+        .join('\n'),
+      `\n\n${kleur.bold('You can fix this by either:')}`,
+      `\n\n- Removing ${edgeExport} from the listed page modules above.\n`,
+      `\n- Or, by ensuring all deoptimizing layouts listed below them use the edge runtime by adding the mentioned \`EDGE\` export.`,
+    );
+  }
 
   const icons = {
     10: '🤯',
