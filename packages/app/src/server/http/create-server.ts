@@ -15,7 +15,7 @@ import { handlePageRequest } from './handlers/handle-page-request';
 import { handleRPCRequest } from './handlers/handle-rpc-request';
 
 export function createServer(manifest: ServerManifest): RequestHandler {
-  if (manifest.production) initServerManifest(manifest);
+  initServerManifest(manifest);
 
   return async (request) => {
     const url = new URL(request.url);
@@ -73,7 +73,7 @@ function resolveTrailingSlashRedirect(url: URL, trailingSlash: boolean) {
   return false;
 }
 
-export function initServerManifest(manifest: ServerManifest) {
+function initServerManifest(manifest: ServerManifest) {
   initManifestURLPatterns(manifest);
   installServerConfigs(manifest);
 }

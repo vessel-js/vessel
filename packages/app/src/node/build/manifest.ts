@@ -20,6 +20,7 @@ export function buildServerManifests(app: App, build: BuildData) {
     app.vite.resolved!.base === '/' ? '/' : noendslash(app.vite.resolved!.base);
 
   const sharedInit: SharedSerializeManifestInit = {
+    production: !app.config.debug,
     baseUrl,
     trailingSlash: app.config.routes.trailingSlash,
     entry: build.bundles.server.entry.chunk.fileName,
@@ -159,6 +160,7 @@ function createManifestInit(
 }
 
 function serializeManifest({
+  production,
   baseUrl,
   trailingSlash,
   document,
@@ -173,6 +175,7 @@ function serializeManifest({
 
   return `${configImports}
 export default {
+  production: ${production},
   baseUrl: '${baseUrl}',
   trailingSlash: ${trailingSlash},
   entry: () => import('../${entry}'),
@@ -197,6 +200,7 @@ export default {
 }
 
 type SharedSerializeManifestInit = {
+  production: boolean;
   baseUrl: string;
   trailingSlash: boolean;
   entry: string;

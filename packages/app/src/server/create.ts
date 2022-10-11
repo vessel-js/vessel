@@ -29,7 +29,7 @@ export function createServerLoader<
   return loader;
 }
 
-export function createHttpRequestHandler<
+export function createApiRequestHandler<
   Params extends RequestParams = RequestParams,
   Response extends AnyResponse = AnyResponse,
 >(

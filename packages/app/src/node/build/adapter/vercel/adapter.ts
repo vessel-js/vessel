@@ -116,21 +116,21 @@ export function createVercelBuildAdapter(
         for (const route of serverRoutes) {
           routes.push({
             src: `^/${buildSrc(route.dir.route)}/?`,
-            dest: edgeRoutes.has(route.id) ? '/edge.func' : '/node.func',
+            dest: edgeRoutes.has(route.id) ? '/edge' : '/node',
           });
         }
 
         if (build.server.configs.edge) {
           const prefix = build.server.configs.edge.basePrefix;
           if (prefix.length > 0) {
-            routes.push({ src: `${prefix}/(.*?)`, dest: '/edge.func' });
+            routes.push({ src: `${prefix}/(.*?)`, dest: '/edge' });
           }
         }
 
         if (build.server.configs.node) {
           const prefix = build.server.configs.node.basePrefix;
           if (prefix.length > 0) {
-            routes.push({ src: `${prefix}/(.*?)`, dest: '/node.func' });
+            routes.push({ src: `${prefix}/(.*?)`, dest: '/node' });
           }
         }
 
@@ -142,7 +142,7 @@ export function createVercelBuildAdapter(
         if (rootRoute) {
           routes.push({
             src: '/(.*)',
-            dest: build.server.loaders.size > 0 ? '/node.func' : '/index.html',
+            dest: build.server.loaders.size > 0 ? '/node' : '/index.html',
           });
         }
 
@@ -207,7 +207,7 @@ async function bundleEdge(
     splitting: true,
     minify: !app.config.debug,
     treeShaking: true,
-    platform: 'neutral',
+    platform: 'node',
     format: 'esm',
     sourcemap: app.config.debug && 'external',
   });

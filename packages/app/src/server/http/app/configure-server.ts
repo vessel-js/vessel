@@ -27,16 +27,12 @@ export function installServerConfigs(manifest: ServerManifest) {
 
 function installServerConfig(manifest: ServerManifest, config: ServerConfig) {
   if (!manifest.middlewares) manifest.middlewares = [];
+  if (!manifest.errorHandlers) manifest.errorHandlers = {};
+
   manifest.middlewares.push(...config.middlewares);
 
-  if (!manifest.errorHandlers) {
-    manifest.errorHandlers = { page: [], api: [] };
-  }
-
   for (const type of ['page', 'api'] as const) {
-    if (!manifest.errorHandlers[type]) {
-      manifest.errorHandlers[type] = [];
-    }
+    if (!manifest.errorHandlers[type]) manifest.errorHandlers[type] = [];
 
     if (config.errorHandlers[type].length > 0) {
       manifest.errorHandlers[type]!.push(

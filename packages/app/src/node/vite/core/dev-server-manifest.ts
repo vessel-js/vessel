@@ -41,6 +41,9 @@ export async function updateDevServerManifestRoutes(
   app: App,
   manifest: ServerManifest,
 ) {
+  manifest.middlewares = [];
+  manifest.errorHandlers = {};
+
   manifest.routes = {
     pages: app.routes.toArray().map(toServerLoadable),
     api: app.routes.filterHasType('api').map((route) => ({

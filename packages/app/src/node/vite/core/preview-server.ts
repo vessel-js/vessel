@@ -4,7 +4,6 @@ import { installPolyfills } from 'node/polyfills';
 import fs from 'node:fs';
 import * as path from 'pathe';
 import { createServer } from 'server/http';
-import { initServerManifest } from 'server/http/create-server';
 import type { ServerManifest } from 'server/types';
 import { coerceError } from 'shared/utils/error';
 import type { PreviewServerHook } from 'vite';
@@ -22,7 +21,6 @@ export async function configurePreviewServer(
       ? 'https'
       : 'http';
 
-  const production = !app.config.debug;
   const manifestPath = app.dirs.server.resolve('.manifests/node.js');
 
   // Manifest won't exist if it's a completely static site.
@@ -30,10 +28,7 @@ export async function configurePreviewServer(
     fs.existsSync(manifestPath) ? (await import(manifestPath)).default : null
   ) as ServerManifest | null;
 
-  // Prod server won't init manifest if we're in dev mode.
-  if (manifest && !production) initServerManifest(manifest);
-
-  const handler = manifest ? createServer({ production, ...manifest }) : null;
+  const handler = manifest ? createServer(manifest) : null;
 
   return {
     pre: () => {
