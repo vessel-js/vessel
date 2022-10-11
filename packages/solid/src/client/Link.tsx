@@ -22,6 +22,7 @@ export type LinkProps = {
 const Link: ParentComponent<LinkProps> = (props) => {
   return (
     <a
+      {...props}
       href={props.href instanceof URL ? props.href.href : props.href}
       data-prefetch={props.prefetch !== false ? '' : null}
       data-replace={props.replace ? '' : null}
