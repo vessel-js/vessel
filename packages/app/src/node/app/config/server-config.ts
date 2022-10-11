@@ -8,10 +8,6 @@ export type ResolvedServerConfig = {
      * Globs used to discover node server configuration file.
      */
     node: string[];
-    /**
-     * Globs used to discover shared (edge/node) server configuration file.
-     */
-    shared: string[];
   };
 };
 

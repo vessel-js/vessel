@@ -1,5 +1,4 @@
 import type { App } from 'node/app/App';
-import type { ServerConfig } from 'server/http/app/configure-server';
 import { slash } from 'shared/utils/url';
 
 import type { BuildData } from './build-data';
@@ -56,22 +55,30 @@ export async function resolveAllRoutes(app: App, build: BuildData) {
     });
   }
 
-  const serverConfigTypes = Object.keys(
-    build.server.configs,
-  ) as (keyof typeof build.server.configs)[];
-
-  for (const type of serverConfigTypes) {
-    const config = build.server.configs[type] as ServerConfig;
-    const isEdge = type === 'edge';
-    const isNode = type === 'node';
+  if (build.server.configs.edge) {
     const file = app.dirs.app.relative(
-      build.bundles.server.configs[type]!.facadeModuleId!,
+      build.bundles.server.configs.edge!.facadeModuleId!,
     );
 
-    for (const route of config.apiRoutes) {
+    for (const route of build.server.configs.edge.apiRoutes) {
       api.set(route.id, {
         path: route.pathname,
-        type: isEdge ? 'edge' : isNode ? 'node' : 'server',
+        type: 'edge',
+        methods: route.methods!,
+        file,
+      });
+    }
+  }
+
+  if (build.server.configs.node) {
+    const file = app.dirs.app.relative(
+      build.bundles.server.configs.node!.facadeModuleId!,
+    );
+
+    for (const route of build.server.configs.node.apiRoutes) {
+      api.set(route.id, {
+        path: route.pathname,
+        type: 'node',
         methods: route.methods!,
         file,
       });

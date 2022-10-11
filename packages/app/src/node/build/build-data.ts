@@ -31,9 +31,8 @@ export type BuildBundles = {
     entry: { chunk: OutputChunk };
     app: { chunk: OutputChunk };
     configs: {
-      shared?: OutputChunk;
-      node?: OutputChunk;
       edge?: OutputChunk;
+      node?: OutputChunk;
     };
     routes: {
       /** Route ids and their respective server component chunks.  */
@@ -202,7 +201,6 @@ export type BuildData = {
      * Loaded server configuration files.
      */
     configs: {
-      shared?: ServerConfig;
       edge?: ServerConfig;
       node?: ServerConfig;
     };

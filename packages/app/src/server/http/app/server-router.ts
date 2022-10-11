@@ -194,6 +194,7 @@ export function createServerRouter() {
   return {
     app,
     router: createRouteManager(),
+    basePrefix,
     middlewares,
     errorHandlers,
     apiRoutes,

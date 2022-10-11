@@ -10,7 +10,6 @@ import {
   type RouteComponentType,
 } from 'shared/routing';
 import { stripImportQuotesFromJson } from 'shared/utils/json';
-import { isString } from 'shared/utils/unit';
 import { noendslash } from 'shared/utils/url';
 
 import type { BuildData } from './build-data';
@@ -32,6 +31,7 @@ export function buildServerManifests(app: App, build: BuildData) {
 
   const clientRoutes = app.routes.filterClientRoutes();
   const apiRoutes = app.routes.filterHasType('api');
+  const serverConfigs = build.bundles.server.configs;
 
   const inits = {
     node: createManifestInit(
@@ -39,19 +39,14 @@ export function buildServerManifests(app: App, build: BuildData) {
       clientRoutes,
       apiRoutes,
       sharedInit,
-      Object.values(build.bundles.server.configs).map(
-        (chunk) => chunk.fileName,
-      ),
+      Object.values(serverConfigs).map((chunk) => chunk.fileName),
     ),
     edge: createManifestInit(
       build,
       filterEdgePageRoutes(app, build, clientRoutes),
       apiRoutes.filter((route) => build.edge.routes.has(route.id)),
       sharedInit,
-      [
-        build.bundles.server.configs.shared?.fileName,
-        build.bundles.server.configs.edge?.fileName,
-      ].filter(isString) as string[],
+      serverConfigs.edge ? [serverConfigs.edge.fileName] : undefined,
     ),
   };
 
@@ -78,11 +73,11 @@ function createManifestInit(
   pageRoutes: AppRoute[],
   apiRoutes: AppRoute[],
   shared: SharedSerializeManifestInit,
-  serverConfigs: string[] = [],
+  serverConfigs?: string[],
 ): SerializeManifestInit | null {
   const hasPageRoutes = pageRoutes.length > 0;
   const hasApiRoutes = apiRoutes.length > 0;
-  const hasServerConfigs = serverConfigs.length > 0;
+  const hasServerConfigs = !!serverConfigs?.length;
 
   if (!hasPageRoutes && !hasApiRoutes && !hasServerConfigs) return null;
 
@@ -117,7 +112,7 @@ function createManifestInit(
 
   return {
     ...shared,
-    configs: serverConfigs,
+    configs: serverConfigs ?? [],
     document: {
       entry: hasPageRoutes ? shared.document.entry : '',
       template: hasPageRoutes ? shared.document.template : '',

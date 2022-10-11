@@ -42,9 +42,8 @@ export function resolveAppConfig(
 
   const __server: ResolvedServerConfig = {
     config: {
-      edge: ['**/+server.edge.{js,ts}', '**/server.edge.{js,ts}'],
+      edge: ['**/+server.{js,ts}', '**/server.{js,ts}'],
       node: ['**/+server.node.{js,ts}', '**/server.node.{js,ts}'],
-      shared: ['**/+server.{js,ts}', '**/server.{js,ts}'],
       ...server.config,
     },
   };

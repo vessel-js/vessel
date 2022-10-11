@@ -57,14 +57,12 @@ export function createVercelBuildAdapter(
           .filter((route) => route.api || build.server.loaders.has(route.id));
 
         const edgeRoutes = build.edge.routes;
+
         const hasEdgeRoutes =
-          edgeRoutes.size ||
-          build.server.configs.shared?.apiRoutes.length ||
-          build.server.configs.edge?.apiRoutes.length;
+          edgeRoutes.size || build.server.configs.edge?.apiRoutes.length;
 
         const hasNodeRoutes =
           build.server.loaders.size ||
-          build.server.configs.shared?.apiRoutes.length ||
           build.server.configs.node?.apiRoutes.length;
 
         if (!serverRoutes.length && !hasEdgeRoutes && !hasNodeRoutes) {
@@ -118,8 +116,22 @@ export function createVercelBuildAdapter(
         for (const route of serverRoutes) {
           routes.push({
             src: `^/${buildSrc(route.dir.route)}/?`,
-            dest: edgeRoutes.has(route.id) ? '/edge' : '/node',
+            dest: edgeRoutes.has(route.id) ? '/edge.func' : '/node.func',
           });
+        }
+
+        if (build.server.configs.edge) {
+          const prefix = build.server.configs.edge.basePrefix;
+          if (prefix.length > 0) {
+            routes.push({ src: `${prefix}/(.*?)`, dest: '/edge.func' });
+          }
+        }
+
+        if (build.server.configs.node) {
+          const prefix = build.server.configs.node.basePrefix;
+          if (prefix.length > 0) {
+            routes.push({ src: `${prefix}/(.*?)`, dest: '/node.func' });
+          }
         }
 
         const rootRoute = app.routes
@@ -187,6 +199,7 @@ async function bundleEdge(
       index: app.dirs.server.resolve('.manifests/vercel.edge.js'),
     },
     outdir,
+    logLevel: 'error',
     target: 'es2020',
     assetNames: 'assets/[name]-[hash]',
     chunkNames: 'chunks/[name]-[hash]',
@@ -240,6 +253,7 @@ async function bundleNode(
     entryPoints: { index: entry },
     outdir,
     target: 'es2020',
+    logLevel: 'error',
     legalComments: 'none',
     assetNames: 'assets/[name]-[hash]',
     chunkNames: 'chunks/[name]-[hash]',

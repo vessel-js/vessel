@@ -23,7 +23,6 @@ export class AppFiles {
 
   get serverConfigs() {
     const configFiles = [
-      this._app.dirs.app.glob(this._app.config.server.config.shared)[0],
       this._app.dirs.app.glob(this._app.config.server.config.node)[0],
       this._app.dirs.app.glob(this._app.config.server.config.edge)[0],
     ];
@@ -35,11 +34,7 @@ export class AppFiles {
         const absPath = this._app.dirs.app.resolve(filePath);
         return {
           path: absPath,
-          type: basename.includes('edge')
-            ? 'edge'
-            : basename.includes('node')
-            ? 'node'
-            : 'shared',
+          type: basename.includes('node') ? 'node' : 'edge',
           viteLoader: async () =>
             (await this._app.vite.server!.ssrLoadModule(absPath))
               .default as ServerConfig,
@@ -49,7 +44,6 @@ export class AppFiles {
 
   get serverConfigGlob() {
     return [
-      ...this._app.config.server.config.shared,
       ...this._app.config.server.config.node,
       ...this._app.config.server.config.edge,
     ];
