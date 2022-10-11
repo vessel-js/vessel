@@ -11,6 +11,7 @@ import { endslash, isLinkExternal, noendslash } from 'shared/utils/url';
 
 import { type BuildAdapterFactory } from '../build-adapter';
 import { createStaticBuildAdapter } from '../static/adapter';
+import { noopStaticLoader } from '../utils';
 import { trailingSlash } from './trailing-slash';
 
 const defaultFunctionsConfig = {
@@ -210,6 +211,7 @@ async function bundleEdge(
     platform: 'node',
     format: 'esm',
     sourcemap: app.config.debug && 'external',
+    plugins: [noopStaticLoader()],
   });
 
   await writeFile(
@@ -266,6 +268,7 @@ async function bundleNode(
     banner: {
       js: "import { createRequire } from 'module';const require = createRequire(import.meta.url);",
     },
+    plugins: [noopStaticLoader()],
   });
 
   fs.writeFileSync(

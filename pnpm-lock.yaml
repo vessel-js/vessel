@@ -64,6 +64,7 @@ importers:
       '@types/node': ^16.0.0
       '@types/react': ^18.0.21
       '@wooorm/starry-night': ^1.0.0
+      acorn: ^8.8.0
       cli-table3: ^0.6.3
       cookie: ^0.5.0
       es-module-lexer: ^1.0.3
@@ -96,6 +97,7 @@ importers:
       '@types/cookie': 0.5.1
       '@types/lru-cache': 5.1.1
       '@types/markdown-it': 12.2.3
+      acorn: 8.8.0
       cookie: 0.5.0
       es-module-lexer: 1.0.3
       esbuild: 0.15.10
@@ -810,6 +812,12 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
     dev: true
+
+  /acorn/8.8.0:
+    resolution: {integrity: sha512-QOxyigPVrpZ2GXT+PFyZTl6TtOFc5egxHIP9IlQ+RbupQuX4RkT/Bee4/kQuC02Xkzg84JcT7oLYtDIQxp+v7w==}
+    engines: {node: '>=0.4.0'}
+    hasBin: true
+    dev: false
 
   /add-stream/1.0.0:
     resolution: {integrity: sha512-qQLMr+8o0WC4FZGQTcJiKBVC59JylcPSrTtk6usvmIDFUOCKegapy1VHQwRbFMOFyb/inzUVqHs+eMYKDM1YeQ==}
