@@ -1,8 +1,8 @@
 import type {
   AnyResponse,
   FetchMiddleware,
+  InferResponseData,
   JSONData,
-  JSONResponse,
   RequestEvent,
   RequestEventInit,
   RequestParams,
@@ -136,15 +136,18 @@ export interface ServerApiRequestHandler<
   middleware?: (string | FetchMiddleware)[];
 }
 
-export type InferApiHandlerParams<Handler> =
-  Handler extends ServerApiRequestHandler<infer Params>
-    ? Params
-    : RequestParams;
+export type InferApiHandlerParams<T> = T extends ServerApiRequestHandler<
+  infer Params
+>
+  ? Params
+  : RequestParams;
 
-export type InferApiHandlerData<Handler> =
-  Handler extends ServerApiRequestHandler<never, infer Data>
-    ? InferResponseData<Data>
-    : InferResponseData<Handler>;
+export type InferApiHandlerData<T> = T extends ServerApiRequestHandler<
+  never,
+  infer Data
+>
+  ? InferResponseData<Data>
+  : InferResponseData<T>;
 
 // ---------------------------------------------------------------------------------------
 // API Routes
@@ -240,21 +243,13 @@ export interface ServerLoader<
   middleware?: (string | FetchMiddleware)[];
 }
 
-export type InferServerLoaderParams<Handler> = Handler extends ServerLoader<
-  infer Params
->
+export type InferServerLoaderParams<T> = T extends ServerLoader<infer Params>
   ? Params
   : RequestParams;
 
 export type InferServerLoaderData<T> = T extends ServerLoader<never, infer Data>
   ? InferResponseData<Data>
   : InferResponseData<T>;
-
-export type InferResponseData<T> = T extends Response
-  ? T extends JSONResponse<infer Data>
-    ? Data
-    : any
-  : T;
 
 // ---------------------------------------------------------------------------------------
 // Server Action
@@ -310,3 +305,11 @@ export type StaticLoaderResponse<Data = JSONData> = {
   readonly redirect?: string | { path: string; status?: number };
   readonly cache?: StaticLoaderCacheKeyBuilder;
 };
+
+export type InferStaticLoaderParams<T> = T extends StaticLoader<infer Params>
+  ? Params
+  : RequestParams;
+
+export type InferStaticLoaderData<T> = T extends StaticLoader<never, infer Data>
+  ? Data
+  : T;

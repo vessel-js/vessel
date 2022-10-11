@@ -16,7 +16,9 @@ import type {
 } from '@vessel-js/app/routing';
 import type {
   InferServerLoaderData,
+  InferStaticLoaderData,
   ServerLoader,
+  StaticLoader,
 } from '@vessel-js/app/server';
 import {
   computed,
@@ -90,12 +92,14 @@ export function useFrontmatter<
   return inject(FRONTMATTER_KEY)!;
 }
 
-export type StaticDataRef<T extends LoadedStaticData = LoadedStaticData> =
-  Readonly<Ref<T>>;
+export type StaticDataRef<
+  T extends StaticLoader | LoadedStaticData = LoadedStaticData,
+> = Readonly<Ref<InferStaticLoaderData<T>>>;
 
 export function useStaticData<
-  T extends LoadedStaticData = LoadedStaticData,
->(): StaticDataRef<T> {
+  T extends StaticLoader | LoadedStaticData = LoadedStaticData,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+>(loader?: T): StaticDataRef<InferStaticLoaderData<T>> {
   return inject(STATIC_DATA_KEY)!;
 }
 

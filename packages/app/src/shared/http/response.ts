@@ -149,6 +149,12 @@ export type AnyResponse<Data extends JSONData = JSONData> =
   | Response
   | JSONResponse<Data>;
 
+export type InferResponseData<T> = T extends Response
+  ? T extends JSONResponse<infer Data>
+    ? Data
+    : any
+  : T;
+
 export function coerceAnyResponse(response: AnyResponse): Response {
   return isResponse(response)
     ? response

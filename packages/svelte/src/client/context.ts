@@ -13,7 +13,9 @@ import type {
 } from '@vessel-js/app/routing';
 import type {
   InferServerLoaderData,
+  InferStaticLoaderData,
   ServerLoader,
+  StaticLoader,
 } from '@vessel-js/app/server';
 import { getContext } from 'svelte';
 import {
@@ -80,8 +82,9 @@ export function useFrontmatter<
 }
 
 export function useStaticData<
-  T extends LoadedStaticData = LoadedStaticData,
->(): StaticDataStore<T> {
+  T extends StaticLoader | LoadedStaticData = LoadedStaticData,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+>(loader?: T): StaticDataStore<InferStaticLoaderData<T>> {
   return getContext(STATIC_DATA_KEY);
 }
 

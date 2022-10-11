@@ -12,7 +12,9 @@ import type {
 } from '@vessel-js/app/routing';
 import type {
   InferServerLoaderData,
+  InferStaticLoaderData,
   ServerLoader,
+  StaticLoader,
 } from '@vessel-js/app/server';
 import type { Readable } from 'svelte/store';
 
@@ -49,8 +51,9 @@ export type FrontmatterStore<
 
 export const frontmatter: FrontmatterStore = toStore(useFrontmatter);
 
-export type StaticDataStore<T extends LoadedStaticData = LoadedStaticData> =
-  Readable<T>;
+export type StaticDataStore<
+  T extends StaticLoader | LoadedStaticData = LoadedStaticData,
+> = Readable<InferStaticLoaderData<T>>;
 
 export const staticData: StaticDataStore = toStore(useStaticData);
 
