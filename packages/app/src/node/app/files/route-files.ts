@@ -16,6 +16,7 @@ import {
 export type RouteFileType = RouteComponentType | 'api';
 
 export type RouteFile = SystemFileMeta & {
+  readonly routeId: string;
   readonly moduleId: string;
   readonly type: RouteFileType;
 };
@@ -71,9 +72,17 @@ export class RouteFiles extends SystemFiles<RouteFile> {
 
   add(filePath: string) {
     const file = this._createFile(filePath);
+
     const type = this.resolveFileRouteType(file.path.root);
     if (!type) return;
-    const routeFile = { ...file, type, moduleId: `/${file.path.root}` };
+
+    const routeFile = {
+      ...file,
+      type,
+      routeId: this._resolveRouteId(file, type),
+      moduleId: `/${file.path.root}`,
+    };
+
     this._addFile(routeFile);
     this._addToDir(routeFile);
   }
@@ -171,5 +180,24 @@ export class RouteFiles extends SystemFiles<RouteFile> {
         comparePathDepth(a.path.route, b.path.route),
       );
     }
+  }
+
+  protected _resolveRouteId(file: SystemFileMeta, type: RouteFileType) {
+    if (type !== 'page' && type !== 'api') {
+      const id = file.dir.route;
+      return id === '.' ? '/' : `/${id}`;
+    }
+
+    const basename = path.basename(file.path.absolute);
+    const isNamed = /\.(page|api)/.test(basename);
+
+    const id = isNamed
+      ? file.path.route.replace(
+          basename,
+          basename.match(/(\[?\[?[a-z].*?)\./)![1],
+        )
+      : file.dir.route;
+
+    return id === '.' ? '/' : `/${id}`;
   }
 }

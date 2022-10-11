@@ -116,7 +116,7 @@ export function createVercelBuildAdapter(
 
         for (const route of serverRoutes) {
           routes.push({
-            src: `^/${buildSrc(route.dir.route)}/?`,
+            src: `^/${buildSrc(route.id.slice(1))}/?`,
             dest: edgeRoutes.has(route.id) ? '/edge' : '/node',
           });
         }

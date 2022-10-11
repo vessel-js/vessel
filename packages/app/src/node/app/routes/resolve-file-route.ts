@@ -51,19 +51,19 @@ function normalizeTransformMatcher(value: RouteMatcher) {
 
 const PAGE_ORDER_RE = /^\[(\d+)\]/;
 export function resolveRouteFromFilePath(
-  routePath: string,
+  routeId: string,
   matchers: RouteMatcherConfig = [],
 ): Route {
-  const basename = path.basename(routePath);
+  const basename = path.basename(routeId);
   const orderMatch = basename.match(PAGE_ORDER_RE)?.[1];
   const order = orderMatch ? Number(orderMatch) : undefined;
   const { pathname, dynamic, score } = resolveRouteInfoFromFilePath(
-    routePath,
+    routeId,
     matchers,
   );
   const pattern = new URLPattern({ pathname });
   return {
-    id: routePath === '.' ? '/' : `/${routePath}`,
+    id: routeId,
     pathname,
     pattern,
     dynamic,

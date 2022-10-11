@@ -44,7 +44,7 @@ export async function resolveAllRoutes(app: App, build: BuildData) {
       type: build.edge.routes.has(route.id) ? 'edge' : 'node',
       path: route.pathname,
       methods: ['GET'],
-      file: route.page?.path.route ?? route.dir.route,
+      file: route.page?.path.route ?? route.id,
     });
   }
 

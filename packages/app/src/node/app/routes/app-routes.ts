@@ -1,3 +1,4 @@
+import kleur from 'kleur';
 import { sortedInsert } from 'node/utils';
 import type {
   ServerApiModule,
@@ -56,11 +57,22 @@ export class AppRoutes implements Iterable<AppRoute> {
 
   add(file: RouteFile) {
     const existingRoute = this._routes.find(
-      (route) => route.dir.route === file.dir.route,
+      (route) => route.id === file.routeId,
     );
 
+    if (
+      existingRoute &&
+      existingRoute[file.type] &&
+      existingRoute[file.type]!.path.route !== file.path.route
+    ) {
+      this._onDuplicateRoute(
+        file.path.root,
+        existingRoute[file.type]!.path.root,
+      );
+    }
+
     const route: AppRoute = existingRoute ?? {
-      ...resolveRouteFromFilePath(file.dir.route, this._matchers),
+      ...resolveRouteFromFilePath(file.routeId, this._matchers),
       dir: file.dir,
       client: file.type !== 'api',
     };
@@ -114,7 +126,7 @@ export class AppRoutes implements Iterable<AppRoute> {
 
   find(file: RouteFile) {
     return this._routes.find(
-      (route) => route.dir.route === file.dir.route && route[file.type],
+      (route) => route.id === file.routeId && route[file.type],
     );
   }
 
@@ -153,6 +165,21 @@ export class AppRoutes implements Iterable<AppRoute> {
     return () => {
       this._onRemove.delete(callback);
     };
+  }
+
+  protected _onDuplicateRoute(fileA: string, fileB: string) {
+    const title = 'Duplicate Route';
+    const message = [
+      '\nMultiple files are resolving to the same route, please remove one of them:',
+      `\nFile A: ${kleur.bold(fileA)}`,
+      `File B: ${kleur.bold(fileB)}\n`,
+    ].join('\n');
+    if (this._app.config.isBuild) {
+      this._app.logger.error(kleur.bold(title), message);
+      throw new Error('duplicate routes');
+    } else {
+      this._app.logger.warn(kleur.bold(title), message);
+    }
   }
 
   [Symbol.iterator]() {

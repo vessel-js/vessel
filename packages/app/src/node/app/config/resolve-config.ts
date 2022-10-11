@@ -66,22 +66,22 @@ export function resolveAppConfig(
     log: routes.log ?? 'table',
     edge: routes.edge ?? [],
     pages: {
-      include: [`**/+page.{${pageExts}}`, `**/page.{${pageExts}}`],
+      include: [`**/page.{${pageExts}}`, `**/*page.{${pageExts}}`],
       exclude: [],
       ...routes.pages,
     },
     layouts: {
-      include: [`**/+layout*.{${pageExts}}`, `**/layout*.{${pageExts}}`],
+      include: [`**/layout.{${pageExts}}`, `**/*layout.{${pageExts}}`],
       exclude: [],
       ...routes.pages,
     },
     errors: {
-      include: [`**/+error.{${pageExts}}`, `**/error.{${pageExts}}`],
+      include: [`**/error.{${pageExts}}`, `**/*error.{${pageExts}}`],
       exclude: [],
       ...routes.errors,
     },
     api: {
-      include: [`**/+api.{${apiExts}}`, `**/api.{${apiExts}}`],
+      include: [`**/api.{${apiExts}}`, `**/*api.{${apiExts}}`],
       exclude: [],
       ...routes.api,
     },
