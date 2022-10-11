@@ -39,9 +39,12 @@ export async function configureDevServer(app: App, server: ViteDevServer) {
   app.routes.onAdd(updateManifest);
   app.routes.onRemove(updateManifest);
 
-  const watcher = watch(app.files.serverConfigGlob).on('all', updateManifest);
+  const configWatchers = ['add', 'change', 'unlink'].map((event) =>
+    watch(app.files.serverConfigGlob).on(event, updateManifest),
+  );
+
   app.vite.server!.httpServer!.on('close', () => {
-    watcher.close();
+    for (const watcher of configWatchers) watcher.close();
   });
 
   return {
