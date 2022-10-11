@@ -1,6 +1,6 @@
 import { defineComponent, h, onMounted, ref, watchEffect } from 'vue';
 
-import { getRoute } from './context';
+import { useRoute } from './context';
 
 export default defineComponent({
   name: 'RouteAnnouncer',
@@ -8,7 +8,7 @@ export default defineComponent({
     const title = ref<string>();
     const mounted = ref(false);
     const navigated = ref(false);
-    const route = getRoute();
+    const route = useRoute();
 
     onMounted(() => {
       mounted.value = true;

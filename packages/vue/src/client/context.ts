@@ -39,43 +39,43 @@ import {
   STATIC_DATA_KEY,
 } from './context-keys';
 
-export function getRouter(): Router {
+export function useRouter(): Router {
   return inject(ROUTER_KEY)!;
 }
 
 export type RouteRef = Readonly<Ref<ClientLoadedRoute>>;
-export function getRoute(): RouteRef {
+export function useRoute(): RouteRef {
   return inject(ROUTE_KEY)!;
 }
 
 export type RouteMatchesRef = Readonly<Ref<ClientLoadedRoute[]>>;
-export function getRouteMatches(): RouteMatchesRef {
+export function useRouteMatches(): RouteMatchesRef {
   return inject(ROUTE_MATCHES_KEY)!;
 }
 
 export type RouteParamsRef<T extends RouteParams = RouteParams> = Readonly<
   Ref<T>
 >;
-export function getRouteParams<
+export function useRouteParams<
   T extends RouteParams = RouteParams,
 >(): RouteParamsRef<T> {
   return inject(ROUTE_PARAMS_KEY)!;
 }
 
 export type NavigationRef = Readonly<Ref<Navigation>>;
-export function getNavigation(): NavigationRef {
+export function useNavigation(): NavigationRef {
   return inject(NAVIGATION_KEY)!;
 }
 
 export type MarkdownRef = ComputedRef<MarkdownMeta | undefined>;
-export function getMarkdown(): MarkdownRef {
+export function useMarkdown(): MarkdownRef {
   return inject(MARKDOWN_KEY)!;
 }
 
 export type FrontmatterRef<
   T extends MarkdownFrontmatter = MarkdownFrontmatter,
 > = ComputedRef<T>;
-export function getFrontmatter<
+export function useFrontmatter<
   T extends MarkdownFrontmatter = MarkdownFrontmatter,
 >(): FrontmatterRef<T> {
   return inject(FRONTMATTER_KEY)!;
@@ -83,7 +83,7 @@ export function getFrontmatter<
 
 export type StaticDataRef<T extends LoadedStaticData = LoadedStaticData> =
   Readonly<Ref<T>>;
-export function getStaticData<
+export function useStaticData<
   T extends LoadedStaticData = LoadedStaticData,
 >(): StaticDataRef<T> {
   return inject(STATIC_DATA_KEY)!;
@@ -91,7 +91,7 @@ export function getStaticData<
 
 export type ServerDataRef<T extends LoadedServerData = LoadedServerData> =
   Readonly<Ref<T>>;
-export function getServerData<
+export function useServerData<
   T extends LoadedServerData = LoadedServerData,
 >(): ServerDataRef<T> {
   return inject(SERVER_DATA_KEY)!;
@@ -100,7 +100,7 @@ export function getServerData<
 export type ServerErrorRef<T extends HttpErrorData = HttpErrorData> = Readonly<
   Ref<HttpError<T>>
 >;
-export function getServerError<
+export function useServerError<
   T extends HttpErrorData = HttpErrorData,
 >(): ServerErrorRef<T> {
   return inject(SERVER_ERROR_KEY)!;

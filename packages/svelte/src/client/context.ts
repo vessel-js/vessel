@@ -44,50 +44,50 @@ import type {
   StaticDataStore,
 } from './stores';
 
-export function getRouter(): Router {
+export function useRouter(): Router {
   return getContext(ROUTER_KEY);
 }
 
-export function getRoute(): RouteStore {
+export function useRoute(): RouteStore {
   return getContext(ROUTE_KEY);
 }
-export function getRouteParams<
+export function useRouteParams<
   T extends RouteParams = RouteParams,
 >(): RouteParamsStore<T> {
   return getContext(ROUTE_PARAMS_KEY);
 }
 
-export function getRouteMatches(): RouteMatchesStore {
+export function useRouteMatches(): RouteMatchesStore {
   return getContext(ROUTE_MATCHES_KEY);
 }
 
-export function getNavigation(): NavigationStore {
+export function useNavigation(): NavigationStore {
   return getContext(NAVIGATION_KEY);
 }
 
-export function getMarkdown(): MarkdownStore {
+export function useMarkdown(): MarkdownStore {
   return getContext(MARKDOWN_KEY);
 }
 
-export function getFrontmatter<
+export function useFrontmatter<
   T extends MarkdownFrontmatter = MarkdownFrontmatter,
 >(): FrontmatterStore<T> {
   return getContext(FRONTMATTER_KEY);
 }
 
-export function getStaticData<
+export function useStaticData<
   T extends LoadedStaticData = LoadedStaticData,
 >(): StaticDataStore<T> {
   return getContext(STATIC_DATA_KEY);
 }
 
-export function getServerData<
+export function useServerData<
   T extends LoadedServerData = LoadedServerData,
 >(): ServerDataStore<T> {
   return getContext(SERVER_DATA_KEY);
 }
 
-export function getServerError<
+export function useServerError<
   T extends HttpErrorData = HttpErrorData,
 >(): ServerErrorStore<T> {
   return getContext(SERVER_ERROR_KEY);

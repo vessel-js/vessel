@@ -5,13 +5,13 @@
 
   import { onMount } from 'svelte';
 
-  import { getRoute } from './context';
+  import { useRoute } from './context';
 
   let title = null;
   let mounted = false;
   let navigated = false;
 
-  const route = getRoute();
+  const route = useRoute();
 
   onMount(() => {
     const unsubscribe = route.subscribe(() => {
