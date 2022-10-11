@@ -1,4 +1,6 @@
+import kleur from 'kleur';
 import type { App } from 'node/app/App';
+import { logger } from 'node/utils';
 import { slash } from 'shared/utils/url';
 
 import type { BuildData } from './build-data';
@@ -61,6 +63,17 @@ export async function resolveAllRoutes(app: App, build: BuildData) {
     );
 
     for (const route of build.server.configs.edge.apiRoutes) {
+      if (api.has(route.id)) {
+        const prev = api.get(route.id)!;
+        throw logger.error(
+          kleur.bold('Duplicate Route'),
+          `\nServer configuration tried to overwrite existing path.`,
+          `\n\nRoute: ${kleur.bold(route.pathname)}`,
+          `\nConfig: ${kleur.bold(file)}`,
+          `\nOriginal: ${kleur.bold(prev.file)}\n`,
+        );
+      }
+
       api.set(route.id, {
         path: route.pathname,
         type: 'edge',
@@ -76,6 +89,17 @@ export async function resolveAllRoutes(app: App, build: BuildData) {
     );
 
     for (const route of build.server.configs.node.apiRoutes) {
+      if (api.has(route.id)) {
+        const prev = api.get(route.id)!;
+        throw logger.error(
+          kleur.bold('Duplicate Route'),
+          `\nServer configuration tried to overwrite existing path.`,
+          `\n\nRoute: ${kleur.bold(route.pathname)}`,
+          `\nConfig: ${kleur.bold(file)}`,
+          `\nOriginal: ${kleur.bold(prev.file)}\n`,
+        );
+      }
+
       api.set(route.id, {
         path: route.pathname,
         type: 'node',
