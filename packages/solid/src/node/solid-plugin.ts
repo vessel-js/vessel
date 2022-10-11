@@ -29,6 +29,7 @@ export function solidPlugin(): VesselPlugins {
       config() {
         return {
           optimizeDeps: {
+            extensions: ['jsx', 'tsx'],
             include: ['solid-js', 'solid-js/web'],
           },
           resolve: {
