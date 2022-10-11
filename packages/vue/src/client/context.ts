@@ -14,6 +14,10 @@ import type {
   LoadedStaticData,
   RouteParams,
 } from '@vessel-js/app/routing';
+import type {
+  InferServerLoaderData,
+  ServerLoader,
+} from '@vessel-js/app/server';
 import {
   computed,
   type ComputedRef,
@@ -44,11 +48,13 @@ export function useRouter(): Router {
 }
 
 export type RouteRef = Readonly<Ref<ClientLoadedRoute>>;
+
 export function useRoute(): RouteRef {
   return inject(ROUTE_KEY)!;
 }
 
 export type RouteMatchesRef = Readonly<Ref<ClientLoadedRoute[]>>;
+
 export function useRouteMatches(): RouteMatchesRef {
   return inject(ROUTE_MATCHES_KEY)!;
 }
@@ -63,11 +69,13 @@ export function useRouteParams<
 }
 
 export type NavigationRef = Readonly<Ref<Navigation>>;
+
 export function useNavigation(): NavigationRef {
   return inject(NAVIGATION_KEY)!;
 }
 
 export type MarkdownRef = ComputedRef<MarkdownMeta | undefined>;
+
 export function useMarkdown(): MarkdownRef {
   return inject(MARKDOWN_KEY)!;
 }
@@ -75,6 +83,7 @@ export function useMarkdown(): MarkdownRef {
 export type FrontmatterRef<
   T extends MarkdownFrontmatter = MarkdownFrontmatter,
 > = ComputedRef<T>;
+
 export function useFrontmatter<
   T extends MarkdownFrontmatter = MarkdownFrontmatter,
 >(): FrontmatterRef<T> {
@@ -83,23 +92,28 @@ export function useFrontmatter<
 
 export type StaticDataRef<T extends LoadedStaticData = LoadedStaticData> =
   Readonly<Ref<T>>;
+
 export function useStaticData<
   T extends LoadedStaticData = LoadedStaticData,
 >(): StaticDataRef<T> {
   return inject(STATIC_DATA_KEY)!;
 }
 
-export type ServerDataRef<T extends LoadedServerData = LoadedServerData> =
-  Readonly<Ref<T>>;
+export type ServerDataRef<
+  T extends ServerLoader | LoadedServerData = LoadedServerData,
+> = Readonly<Ref<InferServerLoaderData<T>>>;
+
 export function useServerData<
-  T extends LoadedServerData = LoadedServerData,
->(): ServerDataRef<T> {
+  T extends ServerLoader | LoadedServerData = LoadedServerData,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+>(loader?: T): ServerDataRef<InferServerLoaderData<T>> {
   return inject(SERVER_DATA_KEY)!;
 }
 
 export type ServerErrorRef<T extends HttpErrorData = HttpErrorData> = Readonly<
   Ref<HttpError<T>>
 >;
+
 export function useServerError<
   T extends HttpErrorData = HttpErrorData,
 >(): ServerErrorRef<T> {

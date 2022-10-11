@@ -14,6 +14,10 @@ import type {
   LoadedStaticData,
   RouteParams,
 } from '@vessel-js/app/routing';
+import type {
+  InferServerLoaderData,
+  ServerLoader,
+} from '@vessel-js/app/server';
 import {
   type Accessor,
   createContext as createSolidContext,
@@ -54,27 +58,32 @@ export function useRouter() {
 }
 
 export type RouteSignal = Accessor<ClientLoadedRoute>;
+
 export function useRoute() {
   return useVesselContext().get(ROUTE_KEY) as RouteSignal;
 }
 
 export type RouteMatchesAccessor = Accessor<ClientLoadedRoute[]>;
+
 export function useRouteMatches() {
   return useVesselContext().get(ROUTE_MATCHES_KEY) as RouteMatchesAccessor;
 }
 
 export type RouteParamsAccessor<T extends RouteParams = RouteParams> =
   Accessor<T>;
+
 export function useRouteParams<T extends RouteParams = RouteParams>() {
   return useVesselContext().get(ROUTE_PARAMS_KEY) as RouteParamsAccessor<T>;
 }
 
 export type NavigationAccessor = Accessor<Navigation>;
+
 export function useNavigation() {
   return useVesselContext().get(NAVIGATION_KEY) as NavigationAccessor;
 }
 
 export type MarkdownAccessor = Accessor<MarkdownMeta | undefined>;
+
 export function useMarkdown() {
   return useVesselContext().get(MARKDOWN_KEY) as MarkdownAccessor;
 }
@@ -82,6 +91,7 @@ export function useMarkdown() {
 export type FrontmatterAccessor<
   T extends MarkdownFrontmatter = MarkdownFrontmatter,
 > = Accessor<T>;
+
 export function useFrontmatter<
   T extends MarkdownFrontmatter = MarkdownFrontmatter,
 >() {
@@ -90,18 +100,25 @@ export function useFrontmatter<
 
 export type StaticDataAccessor<T extends LoadedStaticData = LoadedStaticData> =
   Accessor<T>;
+
 export function useStaticData<T extends LoadedStaticData = LoadedStaticData>() {
   return useVesselContext().get(STATIC_DATA_KEY) as StaticDataAccessor<T>;
 }
 
-export type ServerDataAccessor<T extends LoadedServerData = LoadedServerData> =
-  Accessor<T>;
-export function useServerData<T extends LoadedServerData = LoadedServerData>() {
-  return useVesselContext().get(SERVER_DATA_KEY) as ServerDataAccessor<T>;
+export type ServerDataAccessor<
+  T extends ServerLoader | LoadedServerData = LoadedServerData,
+> = Accessor<InferServerLoaderData<T>>;
+
+export function useServerData<
+  T extends ServerLoader | LoadedServerData = LoadedServerData,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+>(loader?: T): ServerDataAccessor<InferServerLoaderData<T>> {
+  return useVesselContext().get(SERVER_DATA_KEY) as any;
 }
 
 export type ServerErrorAccessor<T extends HttpErrorData = HttpErrorData> =
   Accessor<HttpError<T>>;
+
 export function useServerError<T extends HttpErrorData = HttpErrorData>() {
   return useVesselContext().get(SERVER_ERROR_KEY) as ServerErrorAccessor<T>;
 }

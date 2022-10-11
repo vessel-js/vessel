@@ -137,17 +137,14 @@ export interface ServerApiRequestHandler<
 }
 
 export type InferApiHandlerParams<Handler> =
-  Handler extends ServerApiRequestHandler<infer T> ? T : RequestParams;
+  Handler extends ServerApiRequestHandler<infer Params>
+    ? Params
+    : RequestParams;
 
 export type InferApiHandlerData<Handler> =
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  Handler extends ServerApiRequestHandler<{}, infer T>
-    ? T extends Response
-      ? T extends JSONResponse<infer Data>
-        ? Data
-        : unknown
-      : T
-    : unknown;
+  Handler extends ServerApiRequestHandler<never, infer Data>
+    ? InferResponseData<Data>
+    : InferResponseData<Handler>;
 
 // ---------------------------------------------------------------------------------------
 // API Routes
@@ -242,6 +239,22 @@ export interface ServerLoader<
   (event: ServerPageRequestEvent<Params>): Response | Promise<Response>;
   middleware?: (string | FetchMiddleware)[];
 }
+
+export type InferServerLoaderParams<Handler> = Handler extends ServerLoader<
+  infer Params
+>
+  ? Params
+  : RequestParams;
+
+export type InferServerLoaderData<T> = T extends ServerLoader<never, infer Data>
+  ? InferResponseData<Data>
+  : InferResponseData<T>;
+
+export type InferResponseData<T> = T extends Response
+  ? T extends JSONResponse<infer Data>
+    ? Data
+    : any
+  : T;
 
 // ---------------------------------------------------------------------------------------
 // Server Action

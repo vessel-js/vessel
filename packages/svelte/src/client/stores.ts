@@ -10,6 +10,10 @@ import type {
   LoadedStaticData,
   RouteParams,
 } from '@vessel-js/app/routing';
+import type {
+  InferServerLoaderData,
+  ServerLoader,
+} from '@vessel-js/app/server';
 import type { Readable } from 'svelte/store';
 
 import {
@@ -42,18 +46,23 @@ export const markdown: MarkdownStore = toStore(useMarkdown);
 export type FrontmatterStore<
   T extends MarkdownFrontmatter = MarkdownFrontmatter,
 > = Readable<T>;
+
 export const frontmatter: FrontmatterStore = toStore(useFrontmatter);
 
 export type StaticDataStore<T extends LoadedStaticData = LoadedStaticData> =
   Readable<T>;
+
 export const staticData: StaticDataStore = toStore(useStaticData);
 
-export type ServerDataStore<T extends LoadedServerData = LoadedServerData> =
-  Readable<T>;
+export type ServerDataStore<
+  T extends ServerLoader | LoadedServerData = LoadedServerData,
+> = Readable<InferServerLoaderData<T>>;
+
 export const serverData: ServerDataStore = toStore(useServerData);
 
 export type ServerErrorStore<T extends HttpErrorData = HttpErrorData> =
   Readable<HttpError<T>>;
+
 export const serverError: ServerErrorStore = toStore(useServerError);
 
 function toStore<T>(getContext: () => Readable<T>): Readable<T> {
