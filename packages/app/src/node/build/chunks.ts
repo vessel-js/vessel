@@ -1,6 +1,7 @@
 import type { App } from 'node/app/App';
 import { getRouteFileTypes, type RouteFileType } from 'node/app/files';
 import { AppRoute } from 'node/app/routes';
+import * as path from 'pathe';
 import type {
   GetManualChunk,
   OutputAsset,
@@ -202,7 +203,16 @@ export function resolveServerRoutes(
   const nodeLayouts = new Set<string>();
   const deoptimized = new Map<AppRoute, AppRoute[]>();
 
-  const hasEdgeExport = (exports: string[]) => exports.includes('EDGE');
+  const hasEdgeExport = (id: string, exports: string[]) =>
+    edgeRoutes.has(id) || exports.includes('EDGE');
+
+  if (app.config.routes.edge.length > 0) {
+    const validId = new Set<string>(routes.map((route) => route.id));
+    for (const file of app.dirs.app.glob(app.config.routes.edge)) {
+      const id = `/${path.dirname(file)}`;
+      if (validId.has(id)) edgeRoutes.add(id);
+    }
+  }
 
   for (let i = routes.length - 1; i >= 0; i--) {
     const route = routes[i];
@@ -220,12 +230,14 @@ export function resolveServerRoutes(
       if (!route[type]) continue;
 
       if (type === 'api') {
-        if (hasEdgeExport(chunk.api!.exports)) edgeRoutes.add(route.id);
+        if (hasEdgeExport(route.id, chunk.api!.exports)) {
+          edgeRoutes.add(route.id);
+        }
       } else if (chunk[type]!.exports.includes('serverLoader')) {
         server = true;
         serverLoader[type] = true;
 
-        const isEdge = hasEdgeExport(chunk[type]!.exports);
+        const isEdge = hasEdgeExport(route.id, chunk[type]!.exports);
         if (isEdge) edge = true;
 
         if (type === 'layout') {

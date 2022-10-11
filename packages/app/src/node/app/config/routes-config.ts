@@ -41,6 +41,14 @@ export type ResolvedRoutesConfig = {
    */
   log: RoutesLogStyle;
   /**
+   * Globs indicating route segments (i.e., system directories) whose contents should be rendered
+   * at the edge. You can target page or API system files in your glob for convenience but keep
+   * in mind that the directory will marked for edge rendering.
+   *
+   * The globs are processed relative to the `<app>` directory.
+   */
+  edge: string[];
+  /**
    * Page routing configuration object.
    */
   pages: {
