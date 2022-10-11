@@ -36,6 +36,7 @@
   },
   "dependencies": {
     "enquirer": "^2.3.6",
+    "globby": "^13.1.1",
     "kleur": "^4.1.4",
     "minimist": "^1.2.5",
     "pathe": "^0.3.8"

@@ -1,3 +1,4 @@
+import { globbySync } from 'globby';
 import kleur from 'kleur';
 import minimist from 'minimist';
 import { existsSync } from 'node:fs';
@@ -133,9 +134,21 @@ export async function run() {
   // -------------------------------------------------------------------------------------------
 
   await builder.dirs.template.copy(
+    `./template-shared`,
+    builder.dirs.target.path,
+  );
+
+  await builder.dirs.template.copy(
     `./template-${builder.framework}`,
     builder.dirs.target.path,
   );
+
+  const tsFiles = globbySync(
+    !builder.hasAddon('typescript') ? '**/*.{ts,tsx}' : '**/*.{js,jsx}',
+    { cwd: builder.dirs.app.path },
+  );
+
+  await Promise.all(tsFiles.map(async (file) => builder.dirs.app.unlink(file)));
 
   // -------------------------------------------------------------------------------------------
   // Finish

@@ -132,6 +132,7 @@ importers:
       '@types/node': ^16.0.0
       enquirer: ^2.3.6
       fast-glob: ^3.2.11
+      globby: ^13.1.1
       kleur: ^4.1.4
       minimist: ^1.2.5
       pathe: ^0.3.8
@@ -139,6 +140,7 @@ importers:
       typescript: ^4.7.4
     dependencies:
       enquirer: 2.3.6
+      globby: 13.1.2
       kleur: 4.1.5
       minimist: 1.2.6
       pathe: 0.3.8
