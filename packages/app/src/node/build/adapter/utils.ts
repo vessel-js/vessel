@@ -1,43 +1,37 @@
-import * as acorn from 'acorn';
+import * as lexer from 'es-module-lexer';
 import { Plugin as EsBuildPlugin } from 'esbuild';
-import fs from 'node:fs';
+import { parseAndReplaceVars } from 'node/utils/acorn';
+import fs from 'node:fs/promises';
 
 export function noopStaticLoader(): EsBuildPlugin {
+  let installed = false;
+
+  const noop = () => '() => {}',
+    loaders = new Set(['staticLoader']);
+
   return {
     name: 'noop-static-loader',
     setup(build) {
-      build.onLoad({ filter: /\.vessel\/server\/nodes/ }, (args) => {
-        let contents = fs.readFileSync(args.path, 'utf-8');
-
-        const ast = acorn.parse(contents, {
-          ecmaVersion: 'latest',
-          sourceType: 'module',
-        }) as any;
-
-        for (const node of ast.body) {
-          if (
-            node.type === 'FunctionDeclaration' &&
-            node.id.name === 'staticLoader'
-          ) {
-            contents = replaceStaticLoader(contents, node.start, node.end);
-          } else if (
-            node.type === 'VariableDeclaration' &&
-            node.declarations[0].id.name === 'staticLoader'
-          ) {
-            contents = replaceStaticLoader(contents, node.start, node.end);
-          }
+      build.onStart(async () => {
+        if (!installed) {
+          await lexer.init;
+          installed = true;
         }
 
-        return { contents };
+        return null;
+      });
+
+      build.onLoad({ filter: /\.vessel\/server\/nodes/ }, async (args) => {
+        const code = await fs.readFile(args.path, 'utf-8'),
+          [, exports] = lexer.parse(code, args.path);
+
+        if (!exports.some((specifier) => loaders.has(specifier.n))) {
+          return { contents: code };
+        }
+
+        const result = parseAndReplaceVars(code, loaders, noop);
+        return { contents: result.toString() };
       });
     },
   };
-}
-
-function replaceStaticLoader(contents: string, start: number, end: number) {
-  return (
-    contents.slice(0, start) +
-    '\nconst staticLoader = () => {};\n' +
-    contents.slice(end)
-  );
 }
