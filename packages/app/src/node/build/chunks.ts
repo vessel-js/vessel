@@ -10,6 +10,7 @@ import type {
 } from 'rollup';
 import { ALL_HTTP_METHODS, resolveHandlerHttpMethod } from 'shared/http';
 import { type RouteComponentType } from 'shared/routing';
+import { noslash } from 'shared/utils/url';
 import type { Manifest as ViteManifest } from 'vite';
 
 import type { BuildBundles, BuildData } from './build-data';
@@ -31,7 +32,7 @@ export function resolveEntryChunkInfo(
       )!,
     },
     server: {
-      path: app.dirs.server.resolve('entry.js'),
+      path: app.dirs.vessel.server.resolve('entry.js'),
       chunk: serverChunks.find(
         (chunk) => chunk.isEntry && chunk.fileName === 'entry.js',
       )!,
@@ -48,7 +49,7 @@ export function resolveAppChunkInfo(
   clientChunks: OutputChunk[],
   serverChunks: OutputChunk[],
 ) {
-  const rootPath = app.dirs.root.relative(app.config.client.app);
+  const rootPath = app.dirs.root.relative(noslash(app.config.client.app));
   const clientFileName = clientManifest[rootPath].file;
   return {
     rootPath,
@@ -112,7 +113,7 @@ export function resolveServerRouteChunks(
         );
         if (chunk) {
           chunks[type] = chunk;
-          files[type] = app.dirs.server.resolve(chunk.fileName);
+          files[type] = app.dirs.vessel.server.resolve(chunk.fileName);
         }
       }
     }

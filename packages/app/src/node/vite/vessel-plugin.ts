@@ -65,7 +65,7 @@ export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
                 app.dirs.app.path,
                 app.dirs.public.path,
                 app.dirs.build.path,
-                app.dirs.tmp.path,
+                app.dirs.vessel.root.path,
                 app.dirs.cwd.resolve('node_modules'),
                 app.dirs.workspace.resolve('node_modules'),
               ],
@@ -135,7 +135,8 @@ export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
         clientBundle = null;
 
         if (app.config.isBuild) {
-          rimraf(app.dirs.tmp.path);
+          rimraf(app.dirs.vessel.client.path);
+          rimraf(app.dirs.vessel.server.path);
           rimraf(app.dirs.build.path);
 
           // Skip first build because $app is initialized in `configResolved` hook.

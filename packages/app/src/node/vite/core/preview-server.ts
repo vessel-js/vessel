@@ -21,7 +21,7 @@ export async function configurePreviewServer(
       ? 'https'
       : 'http';
 
-  const manifestPath = app.dirs.server.resolve('.manifests/node.js');
+  const manifestPath = app.dirs.vessel.server.resolve('.manifests/node.js');
 
   // Manifest won't exist if it's a completely static site.
   const manifest = (

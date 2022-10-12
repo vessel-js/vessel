@@ -185,27 +185,27 @@ export function createStaticBuildAdapter({
 
         await writeFiles(
           htmlFiles,
-          (filename) => app.dirs.client.resolve(filename),
+          (filename) => app.dirs.vessel.client.resolve(filename),
           (count) => formatWritingFilesTitle('HTML', 'file', count),
           (count) => formatCommittedFilesTitle('HTML', 'file', count),
         );
 
         await writeFiles(
           redirectFiles,
-          (filename) => app.dirs.client.resolve(filename),
+          (filename) => app.dirs.vessel.client.resolve(filename),
           (count) => formatWritingFilesTitle('HTML redirect', 'file', count),
           (count) => formatCommittedFilesTitle('HTML redirect', 'file', count),
         );
 
         await writeFiles(
           dataFiles,
-          (filename) => app.dirs.client.resolve(filename),
+          (filename) => app.dirs.vessel.client.resolve(filename),
           (count) => formatWritingFilesTitle('static data', 'file', count),
           (count) => formatCommittedFilesTitle('static data', 'file', count),
         );
 
         if (output) {
-          copyDir(app.dirs.client.path, app.dirs.build.path);
+          copyDir(app.dirs.vessel.client.path, app.dirs.build.path);
         }
       },
     };

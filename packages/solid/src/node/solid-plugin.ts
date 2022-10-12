@@ -44,14 +44,13 @@ export function solidPlugin(): VesselPlugins {
         enforce: 'pre',
         config(config) {
           appDir = config.dirs.app;
-          const appId = resolveAppId().id;
           return {
             entry: {
               client: require.resolve('@vessel-js/solid/entry-client.ts'),
               server: require.resolve('@vessel-js/solid/entry-server.ts'),
             },
             client: {
-              app: appId,
+              app: resolveAppId().id,
             },
             markdown: {
               markdoc: { tags: solidMarkdocTags },

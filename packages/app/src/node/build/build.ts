@@ -72,13 +72,13 @@ export async function build(
   const entries = createAppEntries(app, { isSSR: true });
 
   const template = await fs.readFileSync(
-    app.dirs.client.resolve('app/index.html'),
+    app.dirs.vessel.client.resolve('app/index.html'),
     'utf-8',
   );
 
-  rimraf(app.dirs.client.resolve('app'));
+  rimraf(app.dirs.vessel.client.resolve('app'));
 
-  const viteManifestPath = app.dirs.client.resolve('vite-manifest.json');
+  const viteManifestPath = app.dirs.vessel.client.resolve('vite-manifest.json');
   const clientManifest = JSON.parse(
     await fs.promises.readFile(viteManifestPath, 'utf-8'),
   ) as ViteManifest;
@@ -148,7 +148,9 @@ export async function build(
   await Promise.all(
     Object.keys(serverConfigChunks).map(async (key) => {
       serverConfigs[key] = (
-        await import(app.dirs.server.resolve(serverConfigChunks[key].fileName))
+        await import(
+          app.dirs.vessel.server.resolve(serverConfigChunks[key].fileName)
+        )
       ).default;
     }),
   );
@@ -434,7 +436,7 @@ export async function build(
           `Committed ${kleur.underline(seen.size)} server data files`,
       });
 
-      const dataDir = app.dirs.server.resolve('.data');
+      const dataDir = app.dirs.vessel.server.resolve('.data');
       mkdirp(dataDir);
 
       await dataSpinner(async () => {
@@ -460,13 +462,16 @@ export async function build(
       successTitle: `Committed ${manifestCount} server manifests`,
     });
 
-    const manifestsDir = app.dirs.server.resolve('.manifests');
+    const manifestsDir = app.dirs.vessel.server.resolve('.manifests');
     mkdirp(manifestsDir);
 
     await manifestSpinner(async () => {
       await Promise.all(
         manifestNames.map(async (name) => {
-          app.dirs.server.write(`${manifestsDir}/${name}.js`, manifests[name]!);
+          app.dirs.vessel.server.write(
+            `${manifestsDir}/${name}.js`,
+            manifests[name]!,
+          );
         }),
       );
     });
@@ -489,8 +494,8 @@ export async function build(
       }
     }
 
-    const content = app.dirs.client.read(appChunkInfo.client.fileName);
-    app.dirs.client.write(
+    const content = app.dirs.vessel.client.read(appChunkInfo.client.fileName);
+    app.dirs.vessel.client.write(
       appChunkInfo.client.fileName,
       content.replace('"__VSL_SERVER_FETCH__"', `[${canFetch.join(',')}]`),
     );

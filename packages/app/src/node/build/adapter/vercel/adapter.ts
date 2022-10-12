@@ -72,7 +72,7 @@ export function createVercelBuildAdapter(
 
         console.log(kleur.magenta('\n+ vercel\n'));
 
-        copyDir(app.dirs.client.path, vercelDirs.static.path);
+        copyDir(app.dirs.vessel.client.path, vercelDirs.static.path);
 
         const redirects = Array.from(build.static.redirects.values()).map(
           (redirect) => ({
@@ -183,7 +183,7 @@ async function bundleEdge(
   const spinner = ora();
   spinner.start(kleur.bold(`Bundling edge functions...`));
 
-  app.dirs.server.write(
+  app.dirs.vessel.server.write(
     '.manifests/vercel.edge.js',
     [
       'import manifest from "./edge.js";',
@@ -197,7 +197,7 @@ async function bundleEdge(
   // eslint-disable-next-line import/no-named-as-default-member
   await esbuild.build({
     entryPoints: {
-      index: app.dirs.server.resolve('.manifests/vercel.edge.js'),
+      index: app.dirs.vessel.server.resolve('.manifests/vercel.edge.js'),
     },
     outdir,
     logLevel: 'error',
@@ -238,7 +238,7 @@ async function bundleNode(
   const spinner = ora();
   spinner.start(kleur.bold(`Bundling node functions...`));
 
-  app.dirs.server.write(
+  app.dirs.vessel.server.write(
     '.manifests/vercel.node.js',
     [
       'import manifest from "./node.js";',
@@ -247,7 +247,7 @@ async function bundleNode(
     ].join('\n'),
   );
 
-  const entry = app.dirs.server.resolve('.manifests/vercel.node.js');
+  const entry = app.dirs.vessel.server.resolve('.manifests/vercel.node.js');
   const outdir = outputDir.resolve('functions/node.func');
 
   // eslint-disable-next-line import/no-named-as-default-member

@@ -17,20 +17,20 @@ export function createAppDirectories(
   );
   const appDir = createDirectory(config.dirs.app);
   const buildDir = createDirectory(config.dirs.build);
-  const tmpDir = createDirectory(rootDir.resolve('.vessel'));
-  const clientDir = createDirectory(rootDir.resolve('.vessel/client'));
-  const serverDir = createDirectory(rootDir.resolve('.vessel/server'));
   const publicDir = createDirectory(config.dirs.public);
+  const vesselDir = createDirectory(rootDir.resolve('.vessel'));
   return {
     cwd: cwdDir,
     workspace: workspaceDir,
     root: rootDir,
     app: appDir,
-    tmp: tmpDir,
     build: buildDir,
-    client: clientDir,
-    server: serverDir,
     public: publicDir,
+    vessel: {
+      root: vesselDir,
+      client: createDirectory(vesselDir.resolve('client')),
+      server: createDirectory(vesselDir.resolve('server')),
+    },
   };
 }
 

@@ -50,8 +50,8 @@ export function resolveBuildConfig(app: App): ViteConfig {
       minify: !ssr && !app.config.debug,
       polyfillModulePreload: true,
       outDir: ssr
-        ? app.dirs.root.relative(app.dirs.server.path)
-        : app.dirs.root.relative(app.dirs.client.path),
+        ? app.dirs.root.relative(app.dirs.vessel.server.path)
+        : app.dirs.root.relative(app.dirs.vessel.client.path),
       rollupOptions: {
         input,
         output: {

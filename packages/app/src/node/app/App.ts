@@ -48,11 +48,13 @@ export type AppDirectories = {
   root: Directory;
   workspace: Directory;
   app: Directory;
-  tmp: Directory;
   build: Directory;
-  client: Directory;
-  server: Directory;
   public: Directory;
+  vessel: {
+    root: Directory;
+    client: Directory;
+    server: Directory;
+  };
 };
 
 export type Directory = {

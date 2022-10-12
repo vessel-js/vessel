@@ -64,14 +64,13 @@ export function vuePlugin(): VesselPlugins {
         enforce: 'pre',
         config(config) {
           appDir = config.dirs.app;
-          const appId = resolveAppId().id;
           return {
             entry: {
               client: require.resolve('@vessel-js/vue/entry-client.js'),
               server: require.resolve('@vessel-js/vue/entry-server.js'),
             },
             client: {
-              app: appId,
+              app: resolveAppId().id,
             },
             markdown: {
               markdoc: { tags: vueMarkdocTags },
