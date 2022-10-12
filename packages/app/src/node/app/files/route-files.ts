@@ -7,6 +7,7 @@ import {
 } from 'shared/routing';
 
 import type { App } from '../App';
+import { resolveRouteIdFromFilePath } from './resolve-route';
 import {
   type SystemDirPath,
   type SystemFileMeta,
@@ -79,7 +80,10 @@ export class RouteFiles extends SystemFiles<RouteFile> {
     const routeFile = {
       ...file,
       type,
-      routeId: this._resolveRouteId(file, type),
+      routeId: resolveRouteIdFromFilePath(
+        this._app.dirs.app.path,
+        file.path.absolute,
+      ),
       moduleId: `/${file.path.root}`,
     };
 
@@ -90,12 +94,14 @@ export class RouteFiles extends SystemFiles<RouteFile> {
   remove(filePath: string) {
     const type = this.resolveFileRouteType(filePath);
     const dir = this.findDir(filePath);
+
     if (dir && type) {
       delete dir[type];
       if (!getRouteFileTypes().some((type) => dir[type])) {
         this._dirs = this._dirs.filter((d) => dir !== d);
       }
     }
+
     return super.remove(filePath);
   }
 
@@ -161,8 +167,8 @@ export class RouteFiles extends SystemFiles<RouteFile> {
   }
 
   getDirBranch(filePath: string) {
-    const routeDir = path.dirname(this._getRoutePath(filePath));
-    return this._dirs.filter((dir) => routeDir.startsWith(dir.path.route));
+    const rootPath = this._getRootPath(filePath);
+    return this._dirs.filter((dir) => rootPath.startsWith(dir.path.root));
   }
 
   toArray(type?: RouteFileType): RouteFile[] {
@@ -180,21 +186,5 @@ export class RouteFiles extends SystemFiles<RouteFile> {
         comparePathDepth(a.path.route, b.path.route),
       );
     }
-  }
-
-  protected _resolveRouteId(file: SystemFileMeta, type: RouteFileType) {
-    if (type !== 'page' && type !== 'api') {
-      const id = file.dir.route;
-      return id === '.' ? '/' : `/${id}`;
-    }
-
-    const basename = path.basename(file.path.absolute);
-    const isNamed = /\.(page|api)/.test(basename);
-
-    const id = isNamed
-      ? file.path.route.replace(basename, basename.match(/(\[?\[?\w.*?)\./)![1])
-      : file.dir.route;
-
-    return id === '.' ? '/' : `/${id}`;
   }
 }

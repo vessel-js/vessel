@@ -1,8 +1,6 @@
 import type { App } from 'node/app/App';
-import { stripRouteMeta } from 'node/app/routes';
 import { existsSync } from 'node:fs';
 import fs from 'node:fs/promises';
-import * as path from 'pathe';
 
 export async function watchRoutesTypes(app: App) {
   await updateRoutesTypes(app);
@@ -41,12 +39,8 @@ async function updateRoutesTypes(app: App) {
       const routes = app.routes
         .filterHasType('page')
         .map((route) =>
-          stripRouteMeta(
-            route.page!.path.route.replace(
-              path.basename(route.page!.path.route),
-              '',
-            ),
-          )
+          route.cleanId
+            .slice(1)
             .replace(optionalRestParamRE, '${string}')
             .replace(restParamRE, '${string}')
             .replace(paramRE, '${string}')

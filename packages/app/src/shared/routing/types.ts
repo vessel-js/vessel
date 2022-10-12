@@ -6,10 +6,6 @@ export type Route = {
    */
   readonly id: string;
   /**
-   * Order number if declared (e.g., `[1]blog/[3]products/+page.md` would be 3).
-   */
-  readonly order?: number;
-  /**
    * A positive integer representing the path match ranking. The route with the highest score
    * will win if the path matches multiple routes.
    */

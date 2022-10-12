@@ -3,7 +3,12 @@ import { readFile } from 'fs/promises';
 import { toHtml } from 'hast-util-to-html';
 import kleur from 'kleur';
 import type { App } from 'node/app/App';
-import type { RouteDir, RouteFile, RouteFileType } from 'node/app/files';
+import {
+  resolveRouteIdFromFilePath,
+  RouteDir,
+  RouteFile,
+  RouteFileType,
+} from 'node/app/files';
 import {
   clearMarkdownCache,
   type HighlightCodeBlock,
@@ -139,6 +144,7 @@ export function markdownPlugin(): VesselPlugin {
 
             handleMarkdownMetaHMR(
               server,
+              app.dirs.app.path,
               currentFile.path.absolute,
               currentFile.type,
               meta,
@@ -151,7 +157,9 @@ export function markdownPlugin(): VesselPlugin {
 
         if (!layout) {
           const type = app.files.routes.resolveFileRouteType(file);
-          if (type) handleMarkdownMetaHMR(server, file, type, meta);
+          if (type) {
+            handleMarkdownMetaHMR(server, app.dirs.app.path, file, type, meta);
+          }
         }
       }
     },
@@ -160,6 +168,7 @@ export function markdownPlugin(): VesselPlugin {
 
 function handleMarkdownMetaHMR(
   server: ViteDevServer,
+  appDir: string,
   filePath: string,
   type: RouteFileType,
   meta: MarkdownMeta,
@@ -167,6 +176,6 @@ function handleMarkdownMetaHMR(
   server.ws.send({
     type: 'custom',
     event: 'vessel::md_meta',
-    data: { filePath, type, meta },
+    data: { id: resolveRouteIdFromFilePath(appDir, filePath), type, meta },
   });
 }

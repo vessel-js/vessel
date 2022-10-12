@@ -44,20 +44,17 @@ export async function init({ frameworkDelegate }: ClientInitOptions) {
     import.meta.hot.on(
       'vessel::md_meta',
       ({
-        filePath,
+        id,
         type,
         meta,
       }: {
-        filePath: string;
+        id: string;
         type: RouteComponentType;
         meta: MarkdownMeta;
       }) => {
         const route = frameworkDelegate.route.get();
         if (!route[type]) return;
-        if (
-          isMarkdownModule(route[type]!.module) &&
-          filePath.endsWith(route.id)
-        ) {
+        if (isMarkdownModule(route[type]!.module) && route.id === id) {
           const component = route[type]!;
           frameworkDelegate.route.set({
             ...route,

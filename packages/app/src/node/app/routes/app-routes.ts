@@ -1,5 +1,5 @@
 import kleur from 'kleur';
-import { sortedInsert } from 'node/utils';
+import { sortedInsert, trimExt } from 'node/utils';
 import type {
   ServerApiModule,
   ServerLoadablePageRoute,
@@ -12,15 +12,17 @@ import type { App } from '../App';
 import type { RouteMatcherConfig } from '../config';
 import {
   getRouteFileTypes,
+  resolveRouteFromFilePath,
   type RouteFile,
   type RouteFileType,
   type SystemDirPath,
 } from '../files';
-import { resolveRouteFromFilePath } from './resolve-file-route';
 
 export type AppRoute = Route & {
   dir: SystemDirPath;
   client: boolean;
+  /** Route id without any file ext. */
+  cleanId: string;
 } & {
   [P in RouteFileType]?: RouteFile & {
     viteLoader: () => Promise<
@@ -71,8 +73,15 @@ export class AppRoutes implements Iterable<AppRoute> {
       );
     }
 
+    const routeInfo = resolveRouteFromFilePath(
+      this._app.dirs.app.path,
+      file.path.absolute,
+      this._matchers,
+    );
+
     const route: AppRoute = existingRoute ?? {
-      ...resolveRouteFromFilePath(file.routeId, this._matchers),
+      ...routeInfo,
+      cleanId: trimExt(routeInfo.id),
       dir: file.dir,
       client: file.type !== 'api',
     };
@@ -131,8 +140,8 @@ export class AppRoutes implements Iterable<AppRoute> {
   }
 
   getBranch(route: RouteFile | AppRoute) {
-    const routeDir = route.dir.route;
-    return this._routes.filter((group) => routeDir.startsWith(group.dir.route));
+    const id = 'routeId' in route ? route.routeId : route.id;
+    return this._routes.filter((route) => id.startsWith(route.id));
   }
 
   getLayoutBranch(route: RouteFile | AppRoute) {
@@ -198,7 +207,6 @@ export class AppRoutes implements Iterable<AppRoute> {
 
 const validRouteKeys: (keyof Route)[] = [
   'id',
-  'order',
   'score',
   'pathname',
   'pattern',

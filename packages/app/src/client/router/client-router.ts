@@ -418,11 +418,6 @@ export class Router {
   }
 
   async navigate(url: URL, nav: NavigationOptions) {
-    if (this.listening && url.href === location.href) {
-      nav.blocked?.();
-      return;
-    }
-
     const token = (navigationToken = {});
     nav.state = nav.state ?? {};
     nav.redirects = nav.redirects ?? [];
@@ -459,6 +454,7 @@ export class Router {
         matches,
         redirect,
         blocked: cancel,
+        replace: nav.replace ?? url.href === location.href,
       });
 
     if (nav.redirects.includes(url.href) || nav.redirects.length > 10) {
@@ -507,7 +503,8 @@ export class Router {
     const match = matches[0];
 
     if (this.listening && match?.id === this._fw.route.get()?.id) {
-      cancel();
+      nav.canHandle?.();
+      nav.accepted?.();
       return;
     }
 

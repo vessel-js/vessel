@@ -93,13 +93,13 @@ export function filterMatchingRouteSegments<T extends Route>(
       url,
     );
 
-    const match = routes.slice(start).findIndex(
-      (route) =>
-        testRoute(segmentURL, route) &&
-        // TODO: hacky fix right now to ensure FS hierarchy holds. Dynamic routes are matching
-        // which we probably don't want.
-        (!segments[0] || segments[0][1].id.startsWith(route.id)),
-    );
+    const match = routes
+      .slice(start)
+      .findIndex(
+        (route) =>
+          testRoute(segmentURL, route) &&
+          (!segments[0] || segments[0][1].id.startsWith(route.id)),
+      );
 
     if (match >= 0) {
       segments.push([segmentURL, routes[start + match]]);

@@ -13,7 +13,7 @@ export async function resolveAllRoutes(app: App, build: BuildData) {
   for (const [link, route] of build.links) {
     pages.set(slash(link), {
       type: 'static',
-      path: route.id,
+      path: link,
       methods: ['GET'],
       file: route.page!.path.route,
     });
@@ -40,21 +40,27 @@ export async function resolveAllRoutes(app: App, build: BuildData) {
   }
 
   for (const route of build.server.pages) {
-    pages.set(route.id, {
-      type: build.edge.routes.has(route.id) ? 'edge' : 'node',
+    pages.set(route.cleanId, {
       path: route.pathname,
+      type: build.edge.routes.has(route.id) ? 'edge' : 'node',
       methods: ['GET'],
       file: route.page?.path.route ?? route.id,
     });
   }
 
+  const seenApiPaths = new Set<string>();
+
   for (const route of build.server.api) {
-    api.set(route.id, {
+    const path = route.pathname.replace('{/}?{index}?{.html}?', '');
+
+    api.set(route.cleanId, {
+      path,
       type: build.edge.routes.has(route.id) ? 'edge' : 'node',
-      path: route.pathname,
       methods: resolveApiChunkMethods(route, build),
       file: route.api!.path.route,
     });
+
+    seenApiPaths.add(path);
   }
 
   if (build.server.configs.edge) {
@@ -63,7 +69,7 @@ export async function resolveAllRoutes(app: App, build: BuildData) {
     );
 
     for (const route of build.server.configs.edge.apiRoutes) {
-      if (api.has(route.id)) {
+      if (seenApiPaths.has(route.pathname)) {
         const prev = api.get(route.id)!;
         throw logger.error(
           kleur.bold('Duplicate Route'),
@@ -80,6 +86,8 @@ export async function resolveAllRoutes(app: App, build: BuildData) {
         methods: route.methods!,
         file,
       });
+
+      seenApiPaths.add(route.pathname);
     }
   }
 
@@ -89,7 +97,7 @@ export async function resolveAllRoutes(app: App, build: BuildData) {
     );
 
     for (const route of build.server.configs.node.apiRoutes) {
-      if (api.has(route.id)) {
+      if (seenApiPaths.has(route.pathname)) {
         const prev = api.get(route.id)!;
         throw logger.error(
           kleur.bold('Duplicate Route'),
@@ -106,6 +114,8 @@ export async function resolveAllRoutes(app: App, build: BuildData) {
         methods: route.methods!,
         file,
       });
+
+      seenApiPaths.add(route.pathname);
     }
   }
 

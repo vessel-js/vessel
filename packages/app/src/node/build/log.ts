@@ -46,10 +46,15 @@ function logPagesTable(build: BuildData) {
     .sort(naturalCompare)
     .sort(comparePathDepth);
 
+  const dynamicRE = /\[(.*?)\]/;
+
   for (const link of links) {
     const route = pages.get(link)!;
 
-    let uri = noslash(route.path).replace('{/}?{index}?{.html}?', '');
+    let uri = dynamicRE.test(link)
+      ? link.slice(1)
+      : noslash(route.path).replace('{/}?{index}?{.html}?', '');
+
     if (uri === '') uri = '/';
 
     const typeColor = route.notFound
@@ -88,10 +93,15 @@ function logApiTable(build: BuildData) {
     .sort(naturalCompare)
     .sort(comparePathDepth);
 
+  const dynamicRE = /\[(.*?)\]/;
+
   for (const link of links) {
     const route = api.get(link)!;
 
-    let uri = noslash(route.path).replace('{/}?{index}?{.html}?', '');
+    let uri = dynamicRE.test(link)
+      ? link.slice(1)
+      : noslash(route.path).replace('{/}?{index}?{.html}?', '');
+
     if (uri === '') uri = '/';
 
     const typeColor = TYPE_COLOR[route.type.toUpperCase()];

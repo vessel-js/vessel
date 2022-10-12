@@ -110,6 +110,8 @@ export function listen(router: Router) {
     // which means we end up back here.
     if (event.state[router.historyKey] === router.historyIndex) return;
 
+    const delta = event.state[router.historyKey] - router.historyIndex;
+
     router.navigate(new URL(location.href), {
       scroll: () => router.scrollDelegate.getSavedPosition?.(event.state),
       keepfocus: false,
@@ -117,8 +119,7 @@ export function listen(router: Router) {
         router.historyIndex = event.state[router.historyKey];
       },
       blocked: () => {
-        const delta = router.historyIndex - event.state[router.historyKey];
-        history.go(delta);
+        history.go(-delta);
       },
     });
   });

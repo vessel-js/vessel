@@ -81,7 +81,7 @@ export async function handlePageRequest(
     console.error(
       kleur.bold(kleur.red(`\n🚨 Page Render Error`)),
       `\n\n${kleur.bold('Messsage:')} ${error.message}`,
-      url ? `\n${kleur.bold('URL:')} ${url?.pathname}${url?.search}` : '',
+      `\n${kleur.bold('URL:')} ${url.pathname}${url?.search}`,
       error.stack ? `\n\n${error.stack}` : '',
       '\n',
     );
