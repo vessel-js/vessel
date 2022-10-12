@@ -7,7 +7,7 @@ export const virtualModuleId = {
   noop: `${VM_PREFIX}/noop`,
   manifest: `${VM_PREFIX}/manifest`,
   client: `${VM_PREFIX}/client`,
-  app: `${VM_PREFIX}/app`,
+  config: `${VM_PREFIX}/config`,
 } as const;
 
 export const virtualModuleRequestPath = Object.keys(virtualModuleId).reduce(

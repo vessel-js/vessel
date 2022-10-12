@@ -6,7 +6,7 @@
     "declarationDir": "types",
     "tsBuildInfoFile": ".tsbuildinfo",
     "paths": {
-      ":virtual/vessel/app": ["virtual/app"],
+      ":virtual/vessel/config": ["virtual/config"],
       ":virtual/vessel/manifest": ["virtual/manifest"]
     }
   },

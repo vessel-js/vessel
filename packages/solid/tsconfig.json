@@ -8,7 +8,7 @@
     "jsxImportSource": "solid-js",
     "tsBuildInfoFile": ".tsbuildinfo",
     "paths": {
-      ":virtual/vessel/app": ["src/virtual/app"]
+      ":virtual/vessel/solid/app": ["src/virtual/app"]
     }
   },
   "include": ["src"]

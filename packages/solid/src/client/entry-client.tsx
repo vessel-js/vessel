@@ -1,8 +1,7 @@
 import { init, tick } from '@vessel-js/app';
-import { type JSX } from 'solid-js';
 import { hydrate } from 'solid-js/web';
 
-import VesselApp from ':virtual/vessel/app';
+import App from ':virtual/vessel/solid/app';
 
 import { createContext, VesselContext } from './context';
 import { ROUTER_KEY } from './context-keys';
@@ -20,15 +19,12 @@ async function main() {
   context.set(ROUTER_KEY, router);
 
   await router.start((target) => {
-    const App = VesselApp.module.default as () => JSX.Element;
     hydrate(
-      () =>
-        VesselContext.Provider({
-          value: context,
-          get children() {
-            return App();
-          },
-        }),
+      () => (
+        <VesselContext.Provider value={context}>
+          <App />
+        </VesselContext.Provider>
+      ),
       target,
     );
   });

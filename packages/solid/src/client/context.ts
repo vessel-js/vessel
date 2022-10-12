@@ -45,7 +45,7 @@ import {
 } from './context-keys';
 
 /** @internal */
-export type VesselContextMap = Map<symbol, unknown>;
+export type VesselContextMap = Map<string | symbol, unknown>;
 
 /** @internal */
 export const VesselContext = createSolidContext<VesselContextMap>();
@@ -143,7 +143,8 @@ export function createContext() {
   signals[MARKDOWN_KEY] = createMarkdownSignal(signals[ROUTE_KEY][0]);
   signals[FRONTMATTER_KEY] = createFrontmatterSignal(signals[MARKDOWN_KEY]);
 
-  const context = new Map<symbol, unknown>();
+  const context: VesselContextMap = new Map();
+
   for (const key of Object.getOwnPropertySymbols(signals)) {
     context.set(
       key,

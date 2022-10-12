@@ -6,7 +6,7 @@
     "declarationDir": "types",
     "tsBuildInfoFile": ".tsbuildinfo",
     "paths": {
-      ":virtual/vessel/app": ["src/virtual/app"]
+      ":virtual/vessel/vue/app": ["src/virtual/app"]
     }
   },
   "include": ["src"]

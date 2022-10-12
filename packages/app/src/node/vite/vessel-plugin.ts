@@ -54,7 +54,7 @@ export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
             include: ['cookie'],
             exclude: clientPackages,
           },
-          ssr: { noExternal: clientPackages },
+          ssr: { external: ['cookie'], noExternal: clientPackages },
           server: {
             fs: {
               allow: [
@@ -99,8 +99,8 @@ export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
         }
 
         if (
-          id === virtualModuleRequestPath.app ||
-          id === virtualModuleRequestPath.noop
+          id === virtualModuleRequestPath.noop ||
+          id === virtualModuleRequestPath.config
         ) {
           return id;
         }
@@ -108,16 +108,13 @@ export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
         return null;
       },
       async load(id) {
-        if (id === virtualModuleRequestPath.app) {
+        if (id === virtualModuleRequestPath.config) {
           const id = app.config.client.app;
           const baseUrl = app.vite.resolved!.base;
           return [
-            `import * as App from "${id}";`,
-            '',
             'export default {',
             `  id: "${id}",`,
             `  baseUrl: "${baseUrl}",`,
-            `  module: App,`,
             `};`,
           ].join('\n');
         }

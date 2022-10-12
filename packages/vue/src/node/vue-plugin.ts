@@ -1,7 +1,8 @@
 import { type VesselPlugins, VM_PREFIX } from '@vessel-js/app/node';
 import { globbySync } from 'globby';
 import fs from 'node:fs';
-import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+import * as path from 'pathe';
 
 import { renderMarkdoc, transformTreeNode, vueMarkdocTags } from './markdoc';
 
@@ -10,16 +11,17 @@ const VIRTUAL_APP_ID = `${VM_PREFIX}/vue/app` as const;
 export function vuePlugin(): VesselPlugins {
   let appDir: string;
 
-  const require = createRequire(import.meta.url);
+  const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
   function resolveAppId() {
     const exts = ['vue', 'ts', 'js'].join(', ');
     const file = globbySync([`app.{${exts}}`, `+app.{${exts}}`], {
       cwd: appDir,
     })[0];
-    return file && fs.existsSync(file)
-      ? { id: file }
-      : { id: require.resolve('@vessel-js/vue/+app.js') };
+    const filePath = file && path.resolve(appDir, file);
+    return filePath && fs.existsSync(filePath)
+      ? { id: filePath }
+      : { id: path.resolve(__dirname, '../client/+app.js') };
   }
 
   return [
@@ -66,8 +68,8 @@ export function vuePlugin(): VesselPlugins {
           appDir = config.dirs.app;
           return {
             entry: {
-              client: require.resolve('@vessel-js/vue/entry-client.js'),
-              server: require.resolve('@vessel-js/vue/entry-server.js'),
+              client: path.resolve(__dirname, '../client/entry-client.js'),
+              server: path.resolve(__dirname, '../client/entry-server.js'),
             },
             client: {
               app: resolveAppId().id,

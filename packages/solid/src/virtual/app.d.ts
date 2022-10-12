@@ -1,4 +1,4 @@
-declare module ':virtual/vessel/app' {
-  declare const app: import('@vessel-js/app').AppConfig;
-  export default app;
+declare module ':virtual/vessel/solid/app' {
+  declare const App: () => import('solid-js').JSX.Element;
+  export default App;
 }

@@ -37,6 +37,8 @@ export async function logRoutesTable(app: App, build: BuildData) {
 }
 
 function logPagesTable(build: BuildData) {
+  if (build.routes.pages.size === 0) return;
+
   const table = createRoutesTable({ sizes: true });
   const pages = build.routes.pages;
 
@@ -77,6 +79,8 @@ function logPagesTable(build: BuildData) {
 }
 
 function logApiTable(build: BuildData) {
+  if (build.routes.api.size === 0) return;
+
   const table = createRoutesTable();
   const api = build.routes.api;
 

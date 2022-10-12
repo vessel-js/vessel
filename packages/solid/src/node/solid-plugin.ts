@@ -1,7 +1,8 @@
 import { type VesselPlugins, VM_PREFIX } from '@vessel-js/app/node';
 import { globbySync } from 'globby';
 import fs from 'node:fs';
-import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+import * as path from 'pathe';
 
 import { renderMarkdoc, solidMarkdocTags, transformTreeNode } from './markdoc';
 
@@ -10,16 +11,17 @@ const VIRTUAL_APP_ID = `${VM_PREFIX}/solid/app` as const;
 export function solidPlugin(): VesselPlugins {
   let appDir: string;
 
-  const require = createRequire(import.meta.url);
+  const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
   function resolveAppId() {
     const exts = ['tsx', 'jsx', 'ts', 'js'].join(', ');
     const file = globbySync([`app.{${exts}}`, `+app.{${exts}}`], {
       cwd: appDir,
     })[0];
-    return file && fs.existsSync(file)
-      ? { id: file }
-      : { id: require.resolve(`@vessel-js/solid/+app.tsx`) };
+    const filePath = file && path.resolve(appDir, file);
+    return filePath && fs.existsSync(filePath)
+      ? { id: filePath }
+      : { id: path.resolve(__dirname, '../client/+app.tsx') };
   }
 
   return [
@@ -29,8 +31,8 @@ export function solidPlugin(): VesselPlugins {
       config() {
         return {
           optimizeDeps: {
-            extensions: ['jsx', 'tsx'],
             include: ['solid-js', 'solid-js/web'],
+            extensions: ['jsx', 'tsx'],
           },
           resolve: {
             alias: {
@@ -46,8 +48,8 @@ export function solidPlugin(): VesselPlugins {
           appDir = config.dirs.app;
           return {
             entry: {
-              client: require.resolve('@vessel-js/solid/entry-client.ts'),
-              server: require.resolve('@vessel-js/solid/entry-server.ts'),
+              client: path.resolve(__dirname, '../client/entry-client.tsx'),
+              server: path.resolve(__dirname, '../client/entry-server.tsx'),
             },
             client: {
               app: resolveAppId().id,

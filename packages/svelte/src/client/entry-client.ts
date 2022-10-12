@@ -1,7 +1,7 @@
 import { init } from '@vessel-js/app';
 import { tick } from 'svelte';
 
-import App from ':virtual/vessel/app';
+import App from ':virtual/vessel/svelte/app';
 
 import { type SvelteModule } from '../shared';
 import { createContext } from './context';
@@ -17,8 +17,7 @@ async function main() {
   context.set(ROUTER_KEY, router);
 
   await router.start((target) => {
-    const mod = App.module as SvelteModule;
-    new mod.default({ target, context, hydrate: true });
+    new (App as SvelteModule['default'])({ target, context, hydrate: true });
   });
 }
 

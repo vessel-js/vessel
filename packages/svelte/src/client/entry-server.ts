@@ -1,7 +1,7 @@
 import type { ServerRenderer } from '@vessel-js/app/server';
 import type { SvelteServerModule } from 'node';
 
-import App from ':virtual/vessel/app';
+import App from ':virtual/vessel/svelte/app';
 
 import { createContext } from './context';
 import { ROUTER_KEY } from './context-keys';
@@ -13,8 +13,7 @@ export const render: ServerRenderer = async ({ route, matches, router }) => {
   delegate.route.set(route);
   delegate.matches.set(matches);
 
-  const mod = App.module as SvelteServerModule;
-  const ssr = mod.default.render({}, { context });
+  const ssr = (App as SvelteServerModule['default']).render({}, { context });
 
   return {
     head: ssr.head,

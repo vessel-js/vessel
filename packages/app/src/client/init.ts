@@ -6,7 +6,7 @@ import {
   type RouteComponentType,
 } from 'shared/routing';
 
-import app from ':virtual/vessel/app';
+import config from ':virtual/vessel/config';
 import manifest from ':virtual/vessel/manifest';
 
 import {
@@ -25,7 +25,7 @@ export async function init({ frameworkDelegate }: ClientInitOptions) {
   await installURLPattern();
 
   const router = new Router({
-    baseUrl: app.baseUrl,
+    baseUrl: config.baseUrl,
     trailingSlash: window['__VSL_TRAILING_SLASH__'],
     frameworkDelegate,
   });

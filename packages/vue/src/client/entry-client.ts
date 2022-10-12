@@ -1,7 +1,7 @@
 import { init } from '@vessel-js/app';
-import { createSSRApp, type DefineComponent, nextTick } from 'vue';
+import { createSSRApp, nextTick } from 'vue';
 
-import App from ':virtual/vessel/app';
+import App from ':virtual/vessel/vue/app';
 
 import { createContext } from './context';
 import { ROUTER_KEY } from './context-keys';
@@ -19,8 +19,7 @@ async function main() {
   context.set(ROUTER_KEY, router);
 
   await router.start((target) => {
-    const mod = App.module as { default: DefineComponent };
-    const app = createSSRApp(mod.default);
+    const app = createSSRApp(App);
     for (const [key, value] of context) app.provide(key, value);
     app.mount(target, true);
   });
