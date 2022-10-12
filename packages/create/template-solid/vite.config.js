@@ -9,7 +9,7 @@ export default defineConfig({
     vesselSolid(),
     solid({
       ssr: true,
-      extensions: ['.tsx', '.jsx', '.md'],
+      extensions: ['.md'],
     }),
   ],
 });
