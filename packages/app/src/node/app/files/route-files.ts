@@ -192,10 +192,7 @@ export class RouteFiles extends SystemFiles<RouteFile> {
     const isNamed = /\.(page|api)/.test(basename);
 
     const id = isNamed
-      ? file.path.route.replace(
-          basename,
-          basename.match(/(\[?\[?[a-z].*?)\./)![1],
-        )
+      ? file.path.route.replace(basename, basename.match(/(\[?\[?\w.*?)\./)![1])
       : file.dir.route;
 
     return id === '.' ? '/' : `/${id}`;
