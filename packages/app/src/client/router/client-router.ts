@@ -434,7 +434,7 @@ export class Router {
 
       if (!cancelled) {
         if (import.meta.env.DEV) {
-          console.log(`[vessel] cancelled navigation to: \`${fURL(url)}\``);
+          console.debug(`[vessel] cancelled navigation to: \`${fURL(url)}\``);
         }
         nav.blocked?.();
       }
@@ -475,7 +475,7 @@ export class Router {
 
     const handleRedirect = (to: URL) => {
       if (import.meta.env.DEV) {
-        console.log(
+        console.debug(
           `[vessel] redirecting from \`${fURL(url)}\` to \`${fURL(to)}\``,
         );
       }
@@ -563,7 +563,7 @@ export class Router {
     this._fw.navigation.set({ from: this._url, to: url });
 
     if (import.meta.env.DEV && from) {
-      console.log(
+      console.debug(
         `[vessel] navigating from \`${fURL(this._url)}\` to \`${fURL(url)}\``,
       );
     }

@@ -113,7 +113,7 @@ export async function loadStaticData(
       try {
         return { data: await response.json() };
       } catch (e) {
-        console.log(
+        console.error(
           `[vessel] received malformed static JSON data from server.\n\nRoute ID:${route.id}\nURL:${url.href}`,
         );
       }
@@ -237,7 +237,7 @@ export function checkForLoadedRedirect(route: ClientLoadRouteResult) {
       for (const dataType of dataTypes) {
         const value = resolveSettledPromiseValue(route[type]?.[dataType]);
         if (value?.redirect) {
-          console.log(
+          console.debug(
             [
               `[vessel] data requested a redirect`,
               `\nRoute ID: \`${route.id}\``,
