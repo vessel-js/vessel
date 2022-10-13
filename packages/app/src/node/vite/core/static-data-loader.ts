@@ -46,7 +46,6 @@ export function createStaticLoaderFetch(
 ): ServerFetch {
   const ssrOrigin = getDevServerOrigin(app);
   const ssrURL = new URL(ssrOrigin);
-
   return async (input, init) => {
     const request = coerceFetchInput(input, init, ssrURL);
     const requestURL = new URL(request.url);

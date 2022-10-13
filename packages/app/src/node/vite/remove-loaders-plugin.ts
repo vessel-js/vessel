@@ -9,11 +9,7 @@ export function removeLoadersPlugin(): VesselPlugin {
   let app: App,
     installed = false;
 
-  const validLoaders = new Set([
-    'staticLoader',
-    'serverLoader',
-    'serverAction',
-  ]);
+  const validLoaders = new Set(['staticLoader', 'serverLoader']);
 
   return {
     name: '@vessel/remove-loaders',

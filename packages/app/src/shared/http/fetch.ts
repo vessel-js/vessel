@@ -1,8 +1,10 @@
 import type {
   InferApiHandlerData,
   InferApiHandlerParams,
-  ServerApiRequestHandler,
+  SerializedServerRPC,
+  ServerRPC,
 } from 'server/types';
+import { isArray, isFunction } from 'shared/utils/unit';
 
 import { type FetchMiddleware, withMiddleware } from './middleware';
 import { type RequestParams, type VesselRequest } from './request';
@@ -12,7 +14,7 @@ import {
   resolveResponseData,
 } from './response';
 
-export type VesselFetch<RPC = unknown> = (
+export type VesselFetch<RPC extends ServerRPC = any> = (
   init?: VesselFetchInit<InferApiHandlerParams<RPC>>,
 ) => Promise<InferApiHandlerData<RPC>>;
 
@@ -23,7 +25,7 @@ export type VesselFetchInit<Params = RequestParams> = RequestInit & {
   onError?: (error: unknown) => void;
 };
 
-export function createFetch<RPC extends ServerApiRequestHandler>(
+export function createFetch<RPC extends ServerRPC = any>(
   input: string | Request | URL | RPC,
   init?: { middleware?: FetchMiddleware[] },
 ): VesselFetch<RPC> {
@@ -35,24 +37,12 @@ export function createFetch<RPC extends ServerApiRequestHandler>(
     };
   }
 
-  if (typeof input === 'function') {
-    throw new Error('[vessel] fetch RPC call was not transformed');
-  }
-
   return async (fetchInit) => {
     try {
       fetchInit?.onLoading?.(true);
 
       const baseURL = new URL(location.origin);
-
-      // Array = transformed server RPC call [method: string, path: string]
-      const request = Array.isArray(input)
-        ? new Request(new URL(input[1], baseURL), {
-            method: input[0],
-            ...fetchInit,
-          })
-        : coerceFetchInput(input, fetchInit, baseURL);
-
+      const request = coerceFetchInput(input, fetchInit, baseURL);
       const url = new URL(request.url);
 
       if (fetchInit?.searchParams) {
@@ -96,12 +86,18 @@ export function createFetch<RPC extends ServerApiRequestHandler>(
 }
 
 export function coerceFetchInput(
-  input: RequestInfo | URL,
+  input: RequestInfo | URL | ServerRPC | SerializedServerRPC,
   init: RequestInit | undefined,
   baseURL: URL,
 ) {
+  if (isFunction(input)) {
+    throw Error('[vessel] fetch RPC call was not transformed');
+  }
+
   return input instanceof Request
     ? input
+    : isArray(input)
+    ? new Request(new URL(input[1], baseURL), { ...init, method: input[0] })
     : new Request(
         typeof input === 'string' ? new URL(input, baseURL) : input,
         init,

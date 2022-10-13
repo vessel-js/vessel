@@ -47,9 +47,8 @@ export function loadClientManifestModule(app: App) {
       .filter((str) => str.length > 0),
   );
 
-  // We'll replace production version after chunks are built so we can be sure `serverLoader`
-  // exists for a given chunk. This is not used during dev.
-  const fetch = app.config.isBuild ? '__VSL_SERVER_FETCH__' : [];
+  // We'll replace production version after chunks are built so we can be sure `serverLoader` exists.
+  const fetch = app.config.isBuild ? '__VSL_CAN_FETCH__' : [];
 
   const routes: ClientManifest['routes'] = [];
 

@@ -94,6 +94,7 @@ export type ClientManifest = {
   loaders: ClientModuleLoader[];
   /** Contains loader indicies ^ who can fetch data from the server. */
   fetch: number[];
+  /** Client routes that were discovered by the build process. */
   routes: {
     /** URL pathname used to construct `URLPattern` and it's route score. */
     u: [id: string, pathname: string, score: number];

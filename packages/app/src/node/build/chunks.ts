@@ -194,14 +194,15 @@ export function resolveServerRoutes(
   app: App,
   chunks: BuildBundles['server']['routes']['chunks'],
 ) {
-  const edgeRoutes: BuildData['edge']['routes'] = new Set();
-  const serverLoaders: BuildData['server']['loaders'] = new Map();
-
   const routes = app.routes.toArray();
-  const serverLayouts: AppRoute[] = [];
   const edgeLayouts = new Set<string>();
   const nodeLayouts = new Set<string>();
+  const serverLayouts: AppRoute[] = [];
+
   const deoptimized = new Map<AppRoute, AppRoute[]>();
+
+  const edgeRoutes: BuildData['edge']['routes'] = new Set();
+  const serverLoaders: BuildData['server']['loaders'] = new Map();
 
   const hasEdgeExport = (id: string, exports: string[]) =>
     edgeRoutes.has(id) || exports.includes('EDGE');
@@ -227,12 +228,13 @@ export function resolveServerRoutes(
     const chunk = chunks.get(route.id)!;
 
     for (const type of getRouteFileTypes()) {
-      if (!route[type]) continue;
-
-      if (type === 'api') {
-        if (hasEdgeExport(route.id, chunk.api!.exports)) {
-          edgeRoutes.add(route.id);
-        }
+      if (!route[type]) {
+        continue;
+      } else if (
+        type === 'api' &&
+        hasEdgeExport(route.id, chunk.api!.exports)
+      ) {
+        edgeRoutes.add(route.id);
       } else if (chunk[type]!.exports.includes('serverLoader')) {
         server = true;
         serverLoader[type] = true;
@@ -247,18 +249,18 @@ export function resolveServerRoutes(
       }
     }
 
-    const serverBranchLayouts = serverLayouts.filter((layout) =>
+    const serverLayoutsBranch = serverLayouts.filter((layout) =>
       route.id.startsWith(layout.id),
     );
 
-    if (server || serverBranchLayouts.length > 0) {
+    if (server || serverLayoutsBranch.length > 0) {
       serverLoaders.set(route.id, serverLoader);
 
       if (
         edge ||
-        serverBranchLayouts.some((layout) => edgeLayouts.has(layout.id))
+        serverLayoutsBranch.some((layout) => edgeLayouts.has(layout.id))
       ) {
-        const nodeBranchLayouts = serverBranchLayouts.filter((layout) =>
+        const nodeBranchLayouts = serverLayoutsBranch.filter((layout) =>
           nodeLayouts.has(layout.id),
         );
 

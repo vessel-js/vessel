@@ -13,6 +13,11 @@ export type VesselResponseInit = {
   cookies?: Cookies;
 };
 
+export type VesselJSONResponse<T extends JSONData = JSONData> = Omit<
+  VesselResponse,
+  'json'
+> & { json(): Promise<T> };
+
 const VESSEL_RESPONSE = Symbol();
 
 export function createVesselResponse(
@@ -48,11 +53,12 @@ export function appendResponseHeaders(response: Response, headers: Headers) {
   }
 }
 
-export type JSONData = Record<string, unknown>;
+export type JSONData = Record<string, any>;
 
-export type JSONResponse<T extends JSONData = JSONData> = Response & {
-  json(): Promise<T>;
-};
+export type JSONResponse<T extends JSONData = JSONData> = Omit<
+  Response,
+  'json'
+> & { json(): Promise<T> };
 
 /**
  * This is a shortcut for creating `application/json` responses. Converts `data` to JSON and sets

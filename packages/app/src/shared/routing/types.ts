@@ -39,9 +39,9 @@ export type LoadableRouteComponent<Module extends RouteModule = RouteModule> = {
    * module.
    */
   readonly loader: () => Promise<Module>;
-  /**
-   * Whether this route can fetch data from the server. This is is `true` if a page has defined a
-   * `serverLoader`. In dev mode it will attempt a fetch regardless.
+  /*
+   * Whether this component can fetch data from the server. In dev mode it will attempt a fetch
+   * regardless.
    */
   readonly canFetch?: boolean;
   /**

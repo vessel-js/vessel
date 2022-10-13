@@ -25,7 +25,6 @@ export function rpcPlugin(): VesselPlugin {
       const filePath = path.normalize(id);
 
       if (
-        !ssr &&
         filePath.startsWith(app.dirs.app.path) &&
         app.files.routes.isApiFile(filePath)
       ) {
@@ -34,7 +33,7 @@ export function rpcPlugin(): VesselPlugin {
           installed = true;
         }
 
-        const handlers: string[] = [];
+        const handlers: [id: string, method: string, path: string][] = [];
         const routeFile = app.files.routes.find(filePath)!;
         const routeId = app.routes.find(routeFile)!.id;
 
@@ -44,15 +43,16 @@ export function rpcPlugin(): VesselPlugin {
             const isNamedHandler = !HTTP_METHODS.has(handlerId);
 
             const rpcHandlerId = isNamedHandler
-              ? `&rpc_handler_id=${handlerId}`
+              ? `&rpc_handler_id=${encodeURIComponent(handlerId)}`
               : '';
 
-            const rpcIdExport = `export const ${handlerId} = [${[
-              `'${method.toUpperCase()}'`,
-              `'/__rpc?rpc_route_id=${routeId}${rpcHandlerId}'`,
-            ].join(', ')}];`;
-
-            handlers.push(rpcIdExport);
+            handlers.push([
+              handlerId,
+              method.toUpperCase(),
+              `/__rpc?rpc_route_id=${encodeURIComponent(
+                routeId,
+              )}${rpcHandlerId}`,
+            ]);
           }
         };
 
@@ -64,7 +64,21 @@ export function rpcPlugin(): VesselPlugin {
           }
         }
 
-        return handlers.join('\n\n');
+        return !ssr
+          ? handlers
+              .map(
+                ([handlerId, method, path]) =>
+                  `export const ${handlerId} = ['${method}', '${path}'];`,
+              )
+              .join('\n')
+          : code +
+              '\n\n' +
+              handlers
+                .map(
+                  ([handlerId, method, path]) =>
+                    `${handlerId}.rpc = ['${method}', '${path}'];`,
+                )
+                .join('\n');
       }
 
       return null;

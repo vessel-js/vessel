@@ -3,6 +3,7 @@ import {
   coerceAnyResponse,
   createVesselRequest,
   createVesselResponse,
+  HTTP_METHOD_RE,
   httpError,
   type HttpMethod,
   isRedirectResponse,
@@ -10,6 +11,7 @@ import {
   resolveHandlerHttpMethod,
   withMiddleware,
 } from 'shared/http';
+import { isString } from 'shared/utils/unit';
 
 import { createApiRequestEvent } from '../create-request-event';
 import { resolveMiddleware } from '../middleware';
@@ -29,13 +31,19 @@ export async function handleApiRequest(
       throw httpError('route not found', 404);
     }
 
-    const methodOverride =
-      request.method === 'POST'
-        ? (await request.formData()).get('_method')
-        : null;
+    let methodOverride: any;
+    if (request.method === 'POST') {
+      try {
+        methodOverride = (await request.formData()).get('_method');
+      } catch (error) {
+        // no-op
+      }
+    }
 
     const method = (
-      typeof methodOverride === 'string' ? methodOverride : request.method
+      isString(methodOverride) && HTTP_METHOD_RE.test(methodOverride)
+        ? methodOverride
+        : request.method
     ) as HttpMethod;
 
     const handlerId = url.searchParams.get('rpc_handler_id') ?? method;

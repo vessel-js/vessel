@@ -139,10 +139,7 @@ export async function build(
     },
   };
 
-  const { edgeRoutes, serverLoaders, deoptimized } = resolveServerRoutes(
-    app,
-    serverRouteChunks,
-  );
+  const serverChunkInfo = resolveServerRoutes(app, serverRouteChunks);
 
   const serverConfigs: Record<string, ServerConfig> = {};
   await Promise.all(
@@ -177,11 +174,11 @@ export async function build(
     server: {
       pages: new Set(),
       api: new Set(apiRoutes),
-      loaders: serverLoaders,
+      loaders: serverChunkInfo.serverLoaders,
       configs: serverConfigs,
     },
     edge: {
-      routes: edgeRoutes,
+      routes: serverChunkInfo.edgeRoutes,
     },
     resources: resolveDocumentResourcesFromManifest(app, bundles),
   };
@@ -332,7 +329,6 @@ export async function build(
       return;
     }
 
-    // Pages that are dynamically rendered on the server (i.e., has `serverLoader` in branch).
     if (!build.static.pages.has(pageRoute)) return;
 
     const ssr = await render({
@@ -497,7 +493,7 @@ export async function build(
     const content = app.dirs.vessel.client.read(appChunkInfo.client.fileName);
     app.dirs.vessel.client.write(
       appChunkInfo.client.fileName,
-      content.replace('"__VSL_SERVER_FETCH__"', `[${canFetch.join(',')}]`),
+      content.replace('"__VSL_CAN_FETCH__"', `[${canFetch.join(',')}]`),
     );
   }
 
@@ -511,21 +507,23 @@ export async function build(
   logBadLinks(build.badLinks);
   await logRoutes(app, build);
 
+  const { deoptimized } = serverChunkInfo;
+
   if (deoptimized.size > 0) {
     const edgeExport = kleur.cyan('export const EDGE = true;');
     logger.warn(
       kleur.bold('Deoptimized Routes'),
-      '\nThe following route files were deoptimized from edge to node because of a server loader or action in their branch:\n\n',
+      '\nThe following route files were deoptimized from edge to node because of a server loader or action in their branch:\n',
       Array.from(deoptimized)
         .map(
           ([route, layouts]) =>
-            `- ${kleur.bold(
+            `\n- ${kleur.bold(
               route.page?.path.route ?? route.id,
             )}\n  ${layouts.map(
               (route) => `  - ${kleur.red(route.layout!.path.route)}`,
             )}`,
         )
-        .join('\n'),
+        .join(''),
       `\n\n${kleur.bold('You can fix this by either:')}`,
       `\n\n- Removing ${edgeExport} from the listed page modules above.\n`,
       `\n- Or, by ensuring all deoptimizing layouts listed below them use the edge runtime by adding the mentioned \`EDGE\` export.`,

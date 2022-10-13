@@ -2,6 +2,8 @@
  * Credit: https://github.com/vueuse/head
  */
 
+import { isFunction, isString } from 'shared/utils/unit';
+
 import type {
   AttrValue,
   AttrValueResolver,
@@ -192,7 +194,7 @@ function renderTitleTemplate(
 ): string | undefined | null {
   if (template == null) return '';
 
-  if (typeof template === 'string') {
+  if (isString(template)) {
     return template.replace('%s', resolve(title) ?? '');
   }
 
@@ -339,7 +341,6 @@ function dedupeTags<T extends HeadTag>(tag: T, resolve: AttrValueResolver) {
 }
 
 function __resolver<T extends AttrValue>(value: ReactiveAttrValue<T>) {
-  const result =
-    value && typeof value === 'function' ? (value as () => T)() : value;
+  const result = value && isFunction(value) ? (value as () => T)() : value;
   return result !== false ? result : null;
 }

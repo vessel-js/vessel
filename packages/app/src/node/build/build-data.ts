@@ -103,8 +103,8 @@ export type BuildData = {
   };
   static: {
     /**
-     * Page routes that are static meaning they contain no `serverLoader` in their branch (page/error
-     * itself or any of its layouts).
+     * Page routes that are static meaning they contain no `serverLoader` in their branch
+     * (page/error itself or any of its layouts).
      */
     pages: Set<AppRoute>;
     /**
@@ -183,14 +183,14 @@ export type BuildData = {
   };
   server: {
     /**
-     * Page routes that are dynamic meaning they contain a `serverLoader` in their branch
+     * Page routes that are dynamic meaning they contain a `serverLoader` export in their branch
      * (page/error itself or any of its layouts).
      */
     pages: Set<AppRoute>;
     /**
      * Route ids and whether their respective component modules contain a `serverLoader` export. If
-     * a route id exists in this map it means that one if its components in its branch has a
-     * `serverLoader` - it might not contain any itself.
+     * a route id exists in this map it means that one if its route components in its branch has a
+     * `serverLoader` - in other words it might not contain any itself.
      */
     loaders: Map<string, { [P in RouteComponentType]?: boolean }>;
     /**
