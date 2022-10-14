@@ -1,11 +1,11 @@
 /* eslint-disable prefer-rest-params */
 import type {
   ServerApiModule,
-  ServerApiRequestHandler,
   ServerErrorHandler,
   ServerErrorRoute,
   ServerLoadableApiRoute,
   ServerMiddlewareEntry,
+  ServerRequestHandler,
 } from 'server/types';
 import {
   ALL_HTTP_METHODS,
@@ -57,7 +57,7 @@ export function createServerRouter() {
   const addHttpRoute = (
     methods: HttpMethod | HttpMethod[],
     path: string,
-    handler: ServerApiRequestHandler,
+    handler: ServerRequestHandler,
     rpcId = '',
     middlewares: (string | FetchMiddleware)[] = [],
   ) => {
@@ -238,7 +238,7 @@ export type ServerRouter = {
     Response extends AnyResponse = AnyResponse,
   >(
     path: `/${string}`,
-    handler: ServerApiRequestHandler<Params, Response>,
+    handler: ServerRequestHandler<Params, Response>,
   ): ServerRouter;
 
   head<
@@ -246,7 +246,7 @@ export type ServerRouter = {
     Response extends AnyResponse = AnyResponse,
   >(
     path: `/${string}`,
-    handler: ServerApiRequestHandler<Params, Response>,
+    handler: ServerRequestHandler<Params, Response>,
   ): ServerRouter;
 
   get<
@@ -254,7 +254,7 @@ export type ServerRouter = {
     Response extends AnyResponse = AnyResponse,
   >(
     path: `/${string}`,
-    handler: ServerApiRequestHandler<Params, Response>,
+    handler: ServerRequestHandler<Params, Response>,
   ): ServerRouter;
 
   post<
@@ -262,7 +262,7 @@ export type ServerRouter = {
     Response extends AnyResponse = AnyResponse,
   >(
     path: `/${string}`,
-    handler: ServerApiRequestHandler<Params, Response>,
+    handler: ServerRequestHandler<Params, Response>,
   ): ServerRouter;
 
   put<
@@ -270,7 +270,7 @@ export type ServerRouter = {
     Response extends AnyResponse = AnyResponse,
   >(
     path: `/${string}`,
-    handler: ServerApiRequestHandler<Params, Response>,
+    handler: ServerRequestHandler<Params, Response>,
   ): ServerRouter;
 
   patch<
@@ -278,7 +278,7 @@ export type ServerRouter = {
     Response extends AnyResponse = AnyResponse,
   >(
     path: `/${string}`,
-    handler: ServerApiRequestHandler<Params, Response>,
+    handler: ServerRequestHandler<Params, Response>,
   ): ServerRouter;
 
   delete<
@@ -286,7 +286,7 @@ export type ServerRouter = {
     Response extends AnyResponse = AnyResponse,
   >(
     path: `/${string}`,
-    handler: ServerApiRequestHandler<Params, Response>,
+    handler: ServerRequestHandler<Params, Response>,
   ): ServerRouter;
 
   http<
@@ -295,6 +295,6 @@ export type ServerRouter = {
   >(
     methods: HttpMethod | HttpMethod[],
     path: `/${string}`,
-    handler: ServerApiRequestHandler<Params, Response>,
+    handler: ServerRequestHandler<Params, Response>,
   ): ServerRouter;
 };

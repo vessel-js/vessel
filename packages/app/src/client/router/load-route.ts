@@ -4,9 +4,9 @@ import {
 } from 'shared/data';
 import {
   HttpError,
-  isErrorResponse,
-  isExpectedErrorResponse,
   resolveResponseData,
+  resolveResponseRedirect,
+  tryResolveResponseError,
 } from 'shared/http';
 import {
   getRouteComponentTypes,
@@ -125,7 +125,7 @@ export async function loadStaticData(
     );
 
     if (response.status >= 400) {
-      throw new HttpError('static data load fail', response.status);
+      throw new HttpError('failed static data load', response.status);
     }
 
     return { data: await response.json() };
@@ -188,30 +188,13 @@ export async function loadServerData(
     signal,
   });
 
-  if (response.headers.get('X-Vessel-Data') === 'no') {
-    return;
-  }
+  if (response.headers.get('X-Vessel-Data') === 'no') return;
 
-  const redirect = response.headers.get('X-Vessel-Redirect');
+  const redirect = resolveResponseRedirect(response);
   if (redirect) return { redirect };
 
-  if (isErrorResponse(response)) {
-    const data = await response.json();
-
-    if (isExpectedErrorResponse(response)) {
-      return {
-        error: new HttpError(
-          data.error.message,
-          response.status,
-          data.error.data,
-        ),
-      };
-    }
-
-    const error = Error(data.error.message);
-    error.stack = data.error.stack;
-    throw error;
-  }
+  const error = await tryResolveResponseError(response);
+  if (error) return { error };
 
   return { data: await resolveResponseData(response) };
 }

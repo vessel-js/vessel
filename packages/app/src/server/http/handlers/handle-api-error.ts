@@ -2,18 +2,20 @@ import kleur from 'kleur';
 import type { ServerErrorRoute, ServerManifest } from 'server/types';
 import {
   coerceAnyResponse,
+  createVesselResponse,
   isHttpError,
   json,
   type VesselRequest,
+  type VesselResponse,
 } from 'shared/http';
 import { testRoute } from 'shared/routing';
 import { coerceError } from 'shared/utils/error';
 
 export async function handleApiError(
-  error: unknown,
   request: VesselRequest,
+  error: unknown,
   manifest: ServerManifest,
-): Promise<Response> {
+): Promise<VesselResponse> {
   let response!: Response;
 
   if (isHttpError(error)) {
@@ -67,7 +69,7 @@ export async function handleApiError(
   }
 
   response.headers.set('X-Vessel-Error', 'yes');
-  return response;
+  return createVesselResponse(request.URL, response);
 }
 
 export async function runErrorHandlers(
@@ -78,7 +80,7 @@ export async function runErrorHandlers(
   for (const route of routes) {
     if (testRoute(request.URL, route)) {
       const response = await route.handler(request, error);
-      if (response) return coerceAnyResponse(response);
+      if (response) return coerceAnyResponse(request.URL, response);
     }
   }
 

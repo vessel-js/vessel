@@ -1,16 +1,17 @@
 import type {
   AnyResponse,
+  ClientFetchInit,
   FetchMiddleware,
-  InferResponseData,
+  InferAnyResponseData,
   JSONData,
   JSONResponse,
-  RequestEvent,
-  RequestEventInit,
   RequestParams,
+  ResponseDetails,
+  RPCFetchInfo,
+  RPCHandler,
   VesselJSONResponse,
   VesselRequest,
   VesselResponse,
-  VesselResponseInit,
 } from 'shared/http';
 import type {
   LoadableRoute,
@@ -52,22 +53,23 @@ export type ServerRenderResult = {
   htmlAttrs?: string;
 };
 
-export type ServerRPC = (...args: any[]) => any;
-export type SerializedServerRPC = [method: string, path: string];
-
-export type ServerFetch = <RPC extends ServerRPC = never>(
+export type ServerFetch = <RPC extends RPCHandler>(
   input: RequestInfo | URL | RPC,
-  init?: ServerFetchInit<InferApiHandlerParams<RPC>>,
-) => Promise<
-  RPC extends ServerApiRequestHandler<any, infer Response>
+  init?: ServerFetchInit<InferServerFetchParams<RPC>>,
+) => Promise<InferServerFetchResponse<RPC>>;
+
+export type ServerFetchInit<Params extends RequestParams = RequestParams> =
+  ClientFetchInit<Params>;
+
+export type InferServerFetchParams<RPC extends RPCHandler> =
+  InferServerRequestHandlerParams<RPC>;
+
+export type InferServerFetchResponse<RPC extends RPCHandler> =
+  RPC extends ServerRequestHandler<any, infer Response>
     ? Response extends JSONResponse<infer Data>
       ? VesselJSONResponse<Data>
       : VesselResponse
-    : VesselResponse
->;
-
-export type ServerFetchInit<Params extends RequestParams = RequestParams> =
-  RequestInit & { params?: Params };
+    : VesselResponse;
 
 export type ServerRedirect = {
   readonly path: string;
@@ -139,37 +141,58 @@ export type ServerMiddlewareEntry = {
 };
 
 // ---------------------------------------------------------------------------------------
-// API Request Handler
+// Request Event
 // ---------------------------------------------------------------------------------------
 
-export interface ServerApiRequestHandler<
+export type ServerRequestEvent<Params extends RequestParams = RequestParams> = {
+  request: VesselRequest;
+  params: Params;
+  response: ResponseDetails;
+  page?: ResponseDetails;
+  serverFetch: ServerFetch;
+};
+
+export type ServerRequestEventInit<
+  Params extends RequestParams = RequestParams,
+> = {
+  request: VesselRequest;
+  params: Params;
+  page?: ResponseDetails;
+  manifest: ServerManifest;
+};
+
+// ---------------------------------------------------------------------------------------
+// Request Handler
+// ---------------------------------------------------------------------------------------
+
+export interface ServerRequestHandler<
   Params extends RequestParams = RequestParams,
   Response extends AnyResponse = AnyResponse,
 > {
-  (event: ServerApiRequestEvent<Params>): Response | Promise<Response>;
+  (event: ServerRequestEvent<Params>): Response | Promise<Response>;
   middleware?: (string | FetchMiddleware)[];
-  rpc?: SerializedServerRPC;
+  rpc?: RPCFetchInfo;
 }
 
-export type InferApiHandlerParams<T> = T extends ServerApiRequestHandler<
+export type InferServerRequestHandlerParams<T> = T extends ServerRequestHandler<
   infer Params
 >
   ? Params
   : RequestParams;
 
-export type InferApiHandlerData<T> = T extends ServerApiRequestHandler<
+export type InferServerRequestHandlerData<T> = T extends ServerRequestHandler<
   never,
   infer Data
 >
-  ? InferResponseData<Data>
-  : InferResponseData<T>;
+  ? InferAnyResponseData<Data>
+  : InferAnyResponseData<T>;
 
 // ---------------------------------------------------------------------------------------
 // API Routes
 // ---------------------------------------------------------------------------------------
 
 export type ServerApiModule = {
-  [id: string]: ServerApiRequestHandler;
+  [id: string]: ServerRequestHandler;
 };
 
 export type ServerLoadableApiRoute = Route & {
@@ -181,20 +204,6 @@ export type ServerMatchedApiRoute = ServerLoadableApiRoute & RouteMatch;
 
 export type ServerLoadedApiRoute = ServerMatchedApiRoute & {
   readonly module: ServerApiModule;
-};
-
-export type ServerApiRequestEvent<
-  Params extends RequestParams = RequestParams,
-> = RequestEvent<Params> & {
-  page?: ServerPageResponse;
-  serverFetch: ServerFetch;
-};
-
-export type ServerApiRequestEventInit<
-  Params extends RequestParams = RequestParams,
-> = RequestEventInit<Params> & {
-  page?: VesselResponseInit;
-  manifest: ServerManifest;
 };
 
 // ---------------------------------------------------------------------------------------
@@ -216,18 +225,6 @@ export type ServerMatchedPageRoute<
 export type ServerLoadedPageRoute<
   Params extends RequestParams = RequestParams,
 > = LoadedRoute<ServerPageModule, Params>;
-
-export type ServerPageRequestEventInit<
-  Params extends RequestParams = RequestParams,
-> = ServerApiRequestEventInit<Params> & { response?: VesselResponseInit };
-
-export type ServerPageRequestEvent<
-  Params extends RequestParams = RequestParams,
-> = Omit<ServerApiRequestEvent<Params>, 'page'> & {
-  response: ServerPageResponse;
-};
-
-export type ServerPageResponse = Required<VesselResponseInit>;
 
 /**
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTML/Element/link}
@@ -259,21 +256,10 @@ export type ServerPageResourceEntry = number;
 // Server Loader
 // ---------------------------------------------------------------------------------------
 
-export interface ServerLoader<
+export type ServerLoader<
   Params extends RequestParams = RequestParams,
   Response extends AnyResponse = AnyResponse,
-> {
-  (event: ServerPageRequestEvent<Params>): Response | Promise<Response>;
-  middleware?: (string | FetchMiddleware)[];
-}
-
-export type InferServerLoaderParams<T> = T extends ServerLoader<infer Params>
-  ? Params
-  : RequestParams;
-
-export type InferServerLoaderData<T> = T extends ServerLoader<never, infer Data>
-  ? InferResponseData<Data>
-  : InferResponseData<T>;
+> = ServerRequestHandler<Params, Response>;
 
 // ---------------------------------------------------------------------------------------
 // Static Loader

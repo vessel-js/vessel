@@ -32,6 +32,28 @@ export function isExpectedErrorResponse(response: Response) {
   return response.headers.has('X-Vessel-Expected');
 }
 
+export async function tryResolveResponseError(
+  response: Response,
+): Promise<HttpError | null> {
+  if (isErrorResponse(response)) {
+    const data = await response.json();
+
+    if (isExpectedErrorResponse(response)) {
+      return new HttpError(
+        data.error.message,
+        response.status,
+        data.error.data,
+      );
+    }
+
+    const error = Error(data.error.message);
+    error.stack = data.error.stack;
+    throw error;
+  }
+
+  return null;
+}
+
 export function invariant(value: boolean, message?: string): asserts value;
 
 export function invariant<T>(

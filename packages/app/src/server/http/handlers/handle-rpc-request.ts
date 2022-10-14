@@ -1,14 +1,13 @@
 import type { ServerManifest } from 'server/types';
-import { json, type RequestParams } from 'shared/http';
+import { json, type RequestParams, VesselRequest } from 'shared/http';
 
 import { handleApiRequest } from './handle-api-request';
 
 export async function handleRPCRequest(
-  url: URL,
-  request: Request,
+  request: VesselRequest,
   manifest: ServerManifest,
 ): Promise<Response> {
-  const routeId = url.searchParams.get('rpc_route_id'),
+  const routeId = request.URL.searchParams.get('rpc_route_id'),
     params: RequestParams = {};
 
   const route =
@@ -18,7 +17,7 @@ export async function handleRPCRequest(
     return json({ error: { message: 'route not found' } }, 404);
   }
 
-  const searchParams = url.searchParams.getAll('rpc_params');
+  const searchParams = request.URL.searchParams.getAll('rpc_params');
   if (searchParams) {
     for (const param of searchParams) {
       const index = param.indexOf('=');
@@ -29,9 +28,9 @@ export async function handleRPCRequest(
 
   const matchedRoute = {
     ...route,
-    matchedURL: url,
+    matchedURL: request.URL,
     params,
   };
 
-  return handleApiRequest(url, request, matchedRoute, manifest);
+  return handleApiRequest(request, matchedRoute, manifest);
 }

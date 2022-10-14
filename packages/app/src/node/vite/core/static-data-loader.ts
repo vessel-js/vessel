@@ -17,12 +17,7 @@ import type {
   StaticLoaderCacheMap,
   StaticLoaderResponse,
 } from 'server/types';
-import {
-  coerceFetchInput,
-  createVesselRequest,
-  createVesselResponse,
-  httpError,
-} from 'shared/http';
+import { coerceFetchInput, createVesselResponse, httpError } from 'shared/http';
 import {
   getRouteComponentTypes,
   matchAllRoutes,
@@ -48,32 +43,22 @@ export function createStaticLoaderFetch(
   const ssrURL = new URL(ssrOrigin);
   return async (input, init) => {
     const request = coerceFetchInput(input, init, ssrURL);
-    const requestURL = new URL(request.url);
 
-    if (requestURL.origin === ssrOrigin) {
-      const route = matchRoute(requestURL, manifest.routes.api);
+    if (request.URL.origin === ssrOrigin) {
+      const route = matchRoute(request.URL, manifest.routes.api);
 
       if (!route) {
-        const error = await handleApiError(
+        return handleApiError(
+          request,
           httpError('route not found', 404),
-          createVesselRequest(request),
           manifest,
         );
-
-        return createVesselResponse(requestURL, error);
       }
 
-      const response = await handleApiRequest(
-        requestURL,
-        request,
-        route,
-        manifest,
-      );
-
-      return createVesselResponse(requestURL, response);
+      return handleApiRequest(request, route, manifest);
     }
 
-    return createVesselResponse(requestURL, await fetch(input, init));
+    return createVesselResponse(request.URL, await fetch(request, init)) as any;
   };
 }
 

@@ -8,19 +8,17 @@ import type {
 } from 'server/types';
 import { resolveStaticDataAssetId } from 'shared/data';
 import {
-  type AnyResponse,
+  appendHeaders,
   coerceAnyResponse,
-  Cookies,
-  createVesselRequest,
+  createResponseDetails,
   createVesselResponse,
   HttpError,
   isClientRedirectResponse,
   isHttpError,
   isRedirectResponse,
-  isResponse,
-  isVesselResponse,
   resolveResponseData,
-  type VesselResponse,
+  type ResponseDetails,
+  type VesselRequest,
   withMiddleware,
 } from 'shared/http';
 import {
@@ -43,29 +41,23 @@ import {
   createStaticDataScriptTag,
   createStaticLoaderDataMap,
 } from '../../static-data';
-import { createPageRequestEvent } from '../create-request-event';
+import { createServerRequestEvent } from '../create-request-event';
 import { resolveMiddleware } from '../middleware';
 import { runErrorHandlers } from './handle-api-error';
 
 export async function handlePageRequest(
-  url: URL,
-  request: Request,
+  request: VesselRequest,
   manifest: ServerManifest,
 ): Promise<Response> {
   try {
-    const response = await withMiddleware(
+    return await withMiddleware(
       request,
-      (request) => renderDocument(request.URL, request, manifest),
+      (request) => renderDocument(request, manifest),
       resolveMiddleware(manifest.middlewares, [], 'page'),
     );
-
-    if (isVesselResponse(response)) response.cookies.attach(response.headers);
-    return coerceAnyResponse(response);
   } catch (e) {
-    const vesselRequest = createVesselRequest(request);
-
     const handled = await runErrorHandlers(
-      vesselRequest,
+      request,
       e,
       manifest.errorHandlers?.page ?? [],
     );
@@ -73,7 +65,7 @@ export async function handlePageRequest(
     if (handled) return handled;
 
     if (!manifest.production) {
-      manifest.dev?.onPageRenderError?.(vesselRequest, e);
+      manifest.dev?.onPageRenderError?.(request, e);
     }
 
     const error = coerceError(e);
@@ -81,7 +73,7 @@ export async function handlePageRequest(
     console.error(
       kleur.bold(kleur.red(`\n🚨 Page Render Error`)),
       `\n\n${kleur.bold('Messsage:')} ${error.message}`,
-      `\n${kleur.bold('URL:')} ${url.pathname}${url?.search}`,
+      `\n${kleur.bold('URL:')} ${request.URL.pathname}${request.URL.search}`,
       error.stack ? `\n\n${error.stack}` : '',
       '\n',
     );
@@ -101,38 +93,35 @@ export async function handlePageRequest(
 }
 
 async function renderDocument(
-  url: URL,
-  request: Request,
+  request: VesselRequest,
   manifest: ServerManifest,
-): Promise<VesselResponse> {
+): Promise<Response> {
   const { render } = await manifest.entry();
 
-  const headers = new Headers();
-  const cookies = new Cookies({ url, headers });
+  const page = createResponseDetails(request.URL);
 
   const matches = matchAllRoutes(
-    url,
+    request.URL,
     manifest.routes.pages,
     manifest.trailingSlash,
   );
 
   const loadResults = await loadRoutes(
-    url,
+    request.URL,
     matches,
     async (_, route, type) => {
       const id = resolveStaticDataAssetId(route, type);
       const hashedId = manifest.staticData.serverHashRecord?.[id] ?? id;
       return (await manifest.staticData.loaders?.[hashedId]?.())?.data;
     },
-    async (url, route, type) => {
+    async (_, route, type) => {
       if (manifest.production && !route[type]!.canFetch) return;
       return loadServerData({
-        url,
         request,
         route,
         type,
+        page,
         manifest,
-        response: { headers, cookies },
       });
     },
   );
@@ -154,7 +143,7 @@ async function renderDocument(
           );
         }
 
-        return createVesselResponse(url, value.redirect);
+        return value.redirect;
       }
     }
   }
@@ -223,7 +212,7 @@ async function renderDocument(
     loadedRoutes.push(route);
   }
 
-  if (loadedRoutes[0]?.matchedURL.pathname !== url.pathname) {
+  if (loadedRoutes[0]?.matchedURL.pathname !== request.URL.pathname) {
     const error = new HttpError('not found', 404);
 
     const serializeError = (routeId) => {
@@ -248,7 +237,7 @@ async function renderDocument(
       loadedRoutes[0] = {
         id,
         error,
-        matchedURL: url,
+        matchedURL: request.URL,
       } as any;
       serializeError(id);
     }
@@ -342,62 +331,73 @@ async function renderDocument(
     },
   });
 
-  return createVesselResponse(url, response, { headers, cookies });
+  appendHeaders(response, page.headers);
+  page.cookies.attach(response);
+
+  return createVesselResponse(request.URL, response);
 }
 
-type LoadServerDataInit = {
-  url: URL;
-  request: Request;
-  response: { headers: Headers; cookies: Cookies };
-  route: ServerMatchedPageRoute;
-  type: RouteComponentType;
-  manifest: ServerManifest;
-};
-
-export type LoadServerDataResult = {
+type LoadServerDataResult = {
   redirect?: Response;
   data?: LoadedServerData;
   error?: HttpError;
 };
 
-async function loadServerData({
-  request,
-  response,
-  route,
-  type,
-  manifest,
-}: LoadServerDataInit): Promise<LoadServerDataResult | undefined> {
-  const { serverLoader } = await route[type]!.loader();
+type LoadServerDataInit = {
+  request: VesselRequest;
+  page: ResponseDetails;
+  route: ServerMatchedPageRoute;
+  type: RouteComponentType;
+  manifest: ServerManifest;
+};
+
+async function loadServerData(
+  init: LoadServerDataInit,
+): Promise<LoadServerDataResult | undefined> {
+  const { serverLoader } = await init.route[init.type]!.loader();
   if (!serverLoader) return;
 
-  const event = createPageRequestEvent({
-    request,
-    response,
-    params: route.params,
-    manifest,
-  });
-
-  let output: AnyResponse;
-
   try {
-    output = await serverLoader(event);
+    const response = await withMiddleware(
+      init.request,
+      async () => {
+        const event = createServerRequestEvent({
+          request: init.request,
+          params: init.route.params,
+          page: init.page,
+          manifest: init.manifest,
+        });
+
+        const response = coerceAnyResponse(
+          init.request.URL,
+          await serverLoader(event),
+        );
+
+        appendHeaders(response, event.response.headers);
+        event.response.cookies.attach(response);
+        return response;
+      },
+      resolveMiddleware(
+        init.manifest.middlewares,
+        serverLoader.middleware,
+        'api',
+      ),
+    );
+
+    if (isRedirectResponse(response)) {
+      return { redirect: response };
+    }
+
+    return { data: await resolveResponseData(response) };
   } catch (error) {
     if (isRedirectResponse(error)) {
-      output = error;
+      return { redirect: error };
     } else if (isHttpError(error)) {
       return { error };
     } else {
       throw error;
     }
   }
-
-  if (isRedirectResponse(output)) {
-    return { redirect: output };
-  } else if (isResponse(output)) {
-    return { data: await resolveResponseData(output) };
-  }
-
-  return { data: output };
 }
 
 export function createServerRouter() {

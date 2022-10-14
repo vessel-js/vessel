@@ -1,55 +1,40 @@
 import type {
-  ServerApiRequestEvent,
-  ServerApiRequestEventInit,
   ServerFetch,
   ServerManifest,
-  ServerPageRequestEvent,
-  ServerPageRequestEventInit,
+  ServerRequestEvent,
+  ServerRequestEventInit,
 } from 'server/types';
 import {
   coerceFetchInput,
-  Cookies,
-  createVesselRequest,
+  createResponseDetails,
   createVesselResponse,
   type RequestParams,
-  type VesselResponseInit,
+  type ResponseDetails,
 } from 'shared/http';
 import { matchRoute } from 'shared/routing';
 import { isFunction } from 'shared/utils/unit';
 
 import { handleApiRequest } from './handlers/handle-api-request';
 
-export function createPageRequestEvent<
+export function createServerRequestEvent<
   Params extends RequestParams = RequestParams,
->(init: ServerPageRequestEventInit<Params>): ServerPageRequestEvent<Params> {
-  const apiEvent = createApiRequestEvent(init);
-  const response = createPageResponse(apiEvent.request.URL, init.response);
-  return {
-    ...apiEvent,
-    get response() {
-      return response;
-    },
-  };
-}
+>(init: ServerRequestEventInit<Params>): ServerRequestEvent<Params> {
+  const request = init.request;
+  const response = createResponseDetails(request.URL);
+  const serverFetch = createServerFetch(request.URL, init.manifest, init.page);
 
-export function createApiRequestEvent<
-  Params extends RequestParams = RequestParams,
->(init: ServerApiRequestEventInit<Params>): ServerApiRequestEvent<Params> {
-  const request = createVesselRequest(init.request);
-  const page = init.page
-    ? createPageResponse(request.URL, init.page)
-    : undefined;
-  const serverFetch = createServerFetch(request.URL, init.manifest);
-
-  const event: ServerApiRequestEvent<Params> = {
+  const event: ServerRequestEvent<Params> = {
     get params() {
       return init.params;
     },
     get request() {
       return request;
     },
+    get response() {
+      return response;
+    },
     get page() {
-      return page;
+      return init.page;
     },
     get serverFetch() {
       return serverFetch;
@@ -62,6 +47,7 @@ export function createApiRequestEvent<
 export function createServerFetch(
   baseURL: URL,
   manifest: ServerManifest,
+  page?: ResponseDetails,
 ): ServerFetch {
   return async (input, init) => {
     if (isFunction(input) && !input.rpc) {
@@ -74,33 +60,11 @@ export function createServerFetch(
       baseURL,
     );
 
-    const requestURL = new URL(request.url);
-
-    if (init?.params) {
-      for (const key of Object.keys(init.params)) {
-        requestURL.searchParams.append(
-          'rpc_params',
-          `${key}=${init.params[key]}`,
-        );
-      }
+    if (request.URL.origin === baseURL.origin) {
+      const route = matchRoute(request.URL, manifest.routes.api);
+      if (route) return handleApiRequest(request, route, manifest, page);
     }
 
-    if (requestURL.origin === baseURL.origin) {
-      const route = matchRoute(requestURL, manifest.routes.api);
-      if (route) {
-        return createVesselResponse(
-          requestURL,
-          await handleApiRequest(requestURL, request, route, manifest),
-        ) as any;
-      }
-    }
-
-    return createVesselResponse(requestURL, await fetch(request, init));
+    return createVesselResponse(request.URL, await fetch(request, init)) as any;
   };
-}
-
-function createPageResponse(url: URL, response?: VesselResponseInit) {
-  const headers = response?.headers ?? new Headers();
-  const cookies = response?.cookies ?? new Cookies({ url, headers });
-  return { headers, cookies };
 }

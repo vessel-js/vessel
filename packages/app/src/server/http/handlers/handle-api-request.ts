@@ -1,32 +1,34 @@
 import type { ServerManifest, ServerMatchedApiRoute } from 'server/types';
 import {
+  appendHeaders,
   coerceAnyResponse,
-  createVesselRequest,
   createVesselResponse,
   HTTP_METHOD_RE,
   httpError,
   type HttpMethod,
   isRedirectResponse,
-  isVesselResponse,
   resolveHandlerHttpMethod,
+  type ResponseDetails,
+  type VesselRequest,
+  type VesselResponse,
   withMiddleware,
 } from 'shared/http';
 import { isString } from 'shared/utils/unit';
 
-import { createApiRequestEvent } from '../create-request-event';
+import { createServerRequestEvent } from '../create-request-event';
 import { resolveMiddleware } from '../middleware';
 import { handleApiError } from './handle-api-error';
 
 export async function handleApiRequest(
-  url: URL,
-  request: Request,
+  request: VesselRequest,
   route: ServerMatchedApiRoute,
   manifest: ServerManifest,
-): Promise<Response> {
+  page?: ResponseDetails,
+): Promise<VesselResponse> {
   try {
     if (
-      !url.pathname.startsWith('/__rpc') &&
-      !route.pattern.test({ pathname: url.pathname })
+      !request.URL.pathname.startsWith('/__rpc') &&
+      !route.pattern.test({ pathname: request.URL.pathname })
     ) {
       throw httpError('route not found', 404);
     }
@@ -46,7 +48,7 @@ export async function handleApiRequest(
         : request.method
     ) as HttpMethod;
 
-    const handlerId = url.searchParams.get('rpc_handler_id') ?? method;
+    const handlerId = request.URL.searchParams.get('rpc_handler_id') ?? method;
     const handlerMethod = resolveHandlerHttpMethod(handlerId);
 
     if (
@@ -72,28 +74,29 @@ export async function handleApiRequest(
     if (!handler) handler = mod.ANY;
     if (!handler) throw httpError('route not found', 404);
 
-    const response = await withMiddleware(
+    return await withMiddleware(
       request,
       async (request) => {
-        const event = createApiRequestEvent({
+        const event = createServerRequestEvent({
           request,
           params: route.params,
+          page,
           manifest,
         });
-        const anyResponse = await handler(event);
-        const response = coerceAnyResponse(anyResponse);
-        return createVesselResponse(request.URL, response);
+
+        const response = coerceAnyResponse(request.URL, await handler(event));
+        appendHeaders(response, event.response.headers);
+        event.response.cookies.attach(response);
+
+        return response;
       },
       resolveMiddleware(manifest.middlewares, handler.middleware, 'api'),
     );
-
-    if (isVesselResponse(response)) response.cookies.attach(response.headers);
-    return coerceAnyResponse(response);
   } catch (error) {
     if (isRedirectResponse(error)) {
-      return error;
+      return createVesselResponse(request.URL, error);
     } else {
-      return handleApiError(error, createVesselRequest(request), manifest);
+      return handleApiError(request, error, manifest);
     }
   }
 }

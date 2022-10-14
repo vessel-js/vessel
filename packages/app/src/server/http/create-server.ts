@@ -1,6 +1,8 @@
 import type { ServerManifest } from 'server/types';
 import {
+  createVesselRequest,
   HTML_DOCUMENT_HTTP_METHOD,
+  isVesselResponse,
   json,
   redirect,
   type RequestHandler,
@@ -17,10 +19,14 @@ import { handleRPCRequest } from './handlers/handle-rpc-request';
 export function createServer(manifest: ServerManifest): RequestHandler {
   initServerManifest(manifest);
 
-  return async (request) => {
-    const url = new URL(request.url);
+  return async (req) => {
+    const request = createVesselRequest(req);
 
-    const redirect = resolveTrailingSlashRedirect(url, manifest.trailingSlash);
+    const redirect = resolveTrailingSlashRedirect(
+      request.URL,
+      manifest.trailingSlash,
+    );
+
     if (redirect) return redirect;
 
     let response: Response;
@@ -29,19 +35,23 @@ export function createServer(manifest: ServerManifest): RequestHandler {
     const accepts = request.headers.get('Accept');
     const acceptsHTML = accepts && /\btext\/html\b/.test(accepts);
 
-    if (url.pathname.startsWith('/__rpc')) {
-      response = await handleRPCRequest(url, request, manifest);
-    } else if (url.searchParams.has('__data')) {
-      response = await handleDataRequest(url, request, manifest);
+    if (request.URL.pathname.startsWith('/__rpc')) {
+      response = await handleRPCRequest(request, manifest);
+    } else if (request.URL.searchParams.has('__data')) {
+      response = await handleDataRequest(request, manifest);
     } else if (acceptsHTML && HTML_DOCUMENT_HTTP_METHOD.has(method)) {
-      response = await handlePageRequest(url, request, manifest);
+      response = await handlePageRequest(request, manifest);
     } else {
-      const route = matchRoute(url, manifest.routes.api);
+      const route = matchRoute(request.URL, manifest.routes.api);
       if (route) {
-        response = await handleApiRequest(url, request, route, manifest);
+        response = await handleApiRequest(request, route, manifest);
       } else {
         response = json({ error: { message: 'route not found' } }, 404);
       }
+    }
+
+    if (isVesselResponse(response)) {
+      response.cookies.attach(response);
     }
 
     if (method === 'HEAD') {

@@ -5,11 +5,7 @@ import type {
   RequestParams,
 } from 'shared/http';
 
-import type {
-  ServerApiRequestHandler,
-  ServerLoader,
-  StaticLoader,
-} from './types';
+import type { ServerRequestHandler, StaticLoader } from './types';
 
 export function createStaticLoader<
   Params extends RequestParams = RequestParams,
@@ -18,24 +14,15 @@ export function createStaticLoader<
   return loader;
 }
 
-export function createServerLoader<
+export const createServerLoader = createServerRequestHandler;
+
+export function createServerRequestHandler<
   Params extends RequestParams = RequestParams,
   Response extends AnyResponse = AnyResponse,
 >(
-  loader: ServerLoader<Params, Response>,
+  loader: ServerRequestHandler<Params, Response>,
   init?: { middleware?: FetchMiddleware[] },
 ) {
   loader.middleware = init?.middleware;
   return loader;
-}
-
-export function createApiRequestHandler<
-  Params extends RequestParams = RequestParams,
-  Response extends AnyResponse = AnyResponse,
->(
-  handler: ServerApiRequestHandler<Params, Response>,
-  init?: { middleware?: FetchMiddleware[] },
-) {
-  handler.middleware = init?.middleware;
-  return handler;
 }

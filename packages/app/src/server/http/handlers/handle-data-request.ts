@@ -1,29 +1,29 @@
 import type { ServerManifest } from 'server/types';
 import {
+  appendHeaders,
   clientRedirect,
   coerceAnyResponse,
-  createVesselRequest,
-  createVesselResponse,
   HttpError,
   isRedirectResponse,
-  isVesselResponse,
+  type VesselRequest,
   withMiddleware,
 } from 'shared/http';
 import { matchRoute } from 'shared/routing';
 import type { RouteComponentType } from 'shared/routing/types';
 
-import { createPageRequestEvent } from '../create-request-event';
+import { createServerRequestEvent } from '../create-request-event';
 import { resolveMiddleware } from '../middleware';
 import { handleApiError } from './handle-api-error';
 
 export async function handleDataRequest(
-  url: URL,
-  request: Request,
+  request: VesselRequest,
   manifest: ServerManifest,
 ): Promise<Response> {
   try {
-    const routeId = url.searchParams.get('route_id'),
-      routeType = url.searchParams.get('route_type') as RouteComponentType;
+    const routeId = request.URL.searchParams.get('route_id'),
+      routeType = request.URL.searchParams.get(
+        'route_type',
+      ) as RouteComponentType;
 
     const route = manifest.routes.pages.find(
       (route) => route.id === routeId && route[routeType],
@@ -33,7 +33,7 @@ export async function handleDataRequest(
       throw new HttpError('data not found', 404);
     }
 
-    const match = matchRoute(url, [route]);
+    const match = matchRoute(request.URL, [route]);
 
     if (!match) {
       throw new HttpError('data not found', 404);
@@ -51,26 +51,32 @@ export async function handleDataRequest(
     const response = await withMiddleware(
       request,
       async (request) => {
-        const event = createPageRequestEvent({
+        const event = createServerRequestEvent({
           request,
           params: match.params,
           manifest,
         });
-        const anyResponse = await serverLoader(event);
-        const response = coerceAnyResponse(anyResponse);
+
+        const response = coerceAnyResponse(
+          request.URL,
+          await serverLoader(event),
+        );
+
         response.headers.set('X-Vessel-Data', 'yes');
-        return createVesselResponse(request.URL, response, event.response);
+        appendHeaders(response, event.response.headers);
+        event.response.cookies.attach(response);
+
+        return response;
       },
       resolveMiddleware(manifest.middlewares, serverLoader.middleware, 'api'),
     );
 
-    if (isVesselResponse(response)) response.cookies.attach(response.headers);
-    return coerceAnyResponse(response);
+    return response;
   } catch (error) {
     if (isRedirectResponse(error)) {
       return clientRedirect(error.headers.get('Location')!, error);
     } else {
-      return handleApiError(error, createVesselRequest(request), manifest);
+      return handleApiError(request, error, manifest);
     }
   }
 }

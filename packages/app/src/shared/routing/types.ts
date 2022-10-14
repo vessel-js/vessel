@@ -80,9 +80,7 @@ export type LoadedRouteData = {
 export type LoadedRouteComponent<Module extends RouteModule = RouteModule> =
   LoadableRouteComponent<Module> & {
     readonly module: Module;
-    /**
-     * Used client-side to determine whether the data is still valid.
-     */
+    /** Used client-side to determine whether the data is still valid. */
     dataValid?: boolean;
   } & LoadedRouteData;
 

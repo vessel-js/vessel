@@ -6,11 +6,8 @@ import { isString } from 'shared/utils/unit';
 
 import { Cookies } from './cookies';
 
-export type VesselResponse = Response & Required<VesselResponseInit>;
-
-export type VesselResponseInit = {
-  headers?: Headers;
-  cookies?: Cookies;
+export type VesselResponse = Response & {
+  cookies: Cookies;
 };
 
 export type VesselJSONResponse<T extends JSONData = JSONData> = Omit<
@@ -18,24 +15,18 @@ export type VesselJSONResponse<T extends JSONData = JSONData> = Omit<
   'json'
 > & { json(): Promise<T> };
 
-const VESSEL_RESPONSE = Symbol();
+const VESSEL_RESPONSE = Symbol('VESSEL_RESPONSE');
 
 export function createVesselResponse(
   url: URL,
-  response: Response,
-  init?: VesselResponseInit,
+  response: Response & { cookies?: Cookies },
 ): VesselResponse {
   if (isVesselResponse(response)) return response;
 
   response[VESSEL_RESPONSE] = true;
 
-  if (init?.headers) {
-    appendResponseHeaders(response, init.headers);
-  }
-
-  if (!('cookies' in response)) {
-    const cookies =
-      init?.cookies ?? new Cookies({ url, headers: response.headers });
+  if (!response.cookies) {
+    const cookies = new Cookies({ url, headers: response.headers });
     Object.defineProperty(response, 'cookies', {
       enumerable: true,
       get() {
@@ -47,9 +38,9 @@ export function createVesselResponse(
   return response as VesselResponse;
 }
 
-export function appendResponseHeaders(response: Response, headers: Headers) {
+export function appendHeaders(body: Request | Response, headers: Headers) {
   for (const [key, value] of headers) {
-    response.headers.append(key, value);
+    body.headers.append(key, value);
   }
 }
 
@@ -91,7 +82,7 @@ export function isResponse(value: unknown): value is Response {
 }
 
 export function isVesselResponse(value: unknown): value is VesselResponse {
-  return value?.[VESSEL_RESPONSE];
+  return !!value?.[VESSEL_RESPONSE];
 }
 
 const redirectStatusCodes = new Set([301, 302, 303, 307, 308]);
@@ -99,6 +90,10 @@ export function isRedirectResponse(
   response: unknown,
 ): response is JSONResponse<never> {
   return isResponse(response) && redirectStatusCodes.has(response.status);
+}
+
+export function resolveResponseRedirect(response: Response): string | null {
+  return response.headers.get('X-Vessel-Redirect');
 }
 
 /**
@@ -155,16 +150,36 @@ export type AnyResponse<Data extends JSONData = JSONData> =
   | Response
   | JSONResponse<Data>;
 
-export type InferResponseData<T> = T extends Response
+export type InferAnyResponseData<T> = T extends Response
   ? T extends JSONResponse<infer Data>
     ? Data
     : any
   : T;
 
-export function coerceAnyResponse(response: AnyResponse): Response {
-  return isResponse(response)
-    ? response
-    : isString(response)
-    ? new Response(response)
-    : json(response ?? {});
+export function coerceAnyResponse(
+  url: URL,
+  response: AnyResponse,
+): VesselResponse {
+  return createVesselResponse(
+    url,
+    isResponse(response)
+      ? response
+      : isString(response)
+      ? new Response(response)
+      : json(response ?? {}),
+  );
+}
+
+export type ResponseDetails = {
+  headers: Headers;
+  cookies: Cookies;
+};
+
+export function createResponseDetails(
+  url: URL,
+  init?: Partial<ResponseDetails>,
+): ResponseDetails {
+  const headers = init?.headers ?? new Headers();
+  const cookies = init?.cookies ?? new Cookies({ url, headers });
+  return { headers, cookies };
 }
