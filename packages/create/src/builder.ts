@@ -12,13 +12,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const vesselPkgPath = path.resolve(__dirname, '../package.json');
 const vesselPkg = JSON.parse(fs.readFileSync(vesselPkgPath, 'utf-8'));
 
-export type JSFramework = 'svelte' | 'vue' | 'solid' | 'preact' | 'react';
+export type JSFramework = 'svelte' | 'vue' | 'solid' | 'preact';
+
 export const JS_FRAMEWORKS: JSFramework[] = [
   'svelte',
   'vue',
   'solid',
   'preact',
-  'react',
 ];
 
 export type BuilderAddon =

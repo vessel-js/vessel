@@ -171,8 +171,6 @@ export function extendManualChunks(): GetManualChunk {
         return 'svelte';
       } else if (/\/@?vue\//.test(id) && !/@?vue\/node_modules/.test(id)) {
         return 'vue';
-      } else if (/\/@?react\//.test(id) && !/@?react\/node_modules/.test(id)) {
-        return 'react';
       } else if (
         /\/@?solid-js\//.test(id) &&
         !/@?solid-js\/node_modules/.test(id)

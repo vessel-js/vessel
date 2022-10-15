@@ -24,7 +24,7 @@ const clientPackages = [
   '@vessel-js/svelte',
   '@vessel-js/vue',
   '@vessel-js/preact',
-  '@vessel-js/react',
+  // '@vessel-js/react',
   '@vessel-js/solid',
   'urlpattern-polyfill/urlpattern',
 ];

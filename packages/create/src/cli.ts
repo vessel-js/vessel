@@ -90,16 +90,16 @@ export async function run() {
         builder.pkg.addDevDep('vue-tsc', '^0.40.0');
       }
       break;
-    case 'react':
-      builder.pkg.addVesselDep('react');
-      builder.pkg.addDep('react', '^18.0.0');
-      builder.pkg.addDep('react-dom', '^18.0.0');
-      builder.pkg.addDevDep('@vitejs/plugin-react', '^2.1.0');
-      if (builder.hasAddon('typescript')) {
-        builder.pkg.addDevDep('@types/react', '^18.0.0');
-        builder.pkg.addDevDep('@types/react-dom', '^18.0.0');
-      }
-      break;
+    // case 'react':
+    //   builder.pkg.addVesselDep('react');
+    //   builder.pkg.addDep('react', '^18.0.0');
+    //   builder.pkg.addDep('react-dom', '^18.0.0');
+    //   builder.pkg.addDevDep('@vitejs/plugin-react', '^2.1.0');
+    //   if (builder.hasAddon('typescript')) {
+    //     builder.pkg.addDevDep('@types/react', '^18.0.0');
+    //     builder.pkg.addDevDep('@types/react-dom', '^18.0.0');
+    //   }
+    //   break;
     case 'preact':
       builder.pkg.addVesselDep('preact');
       builder.pkg.addDep('preact', '^10.5.0');
