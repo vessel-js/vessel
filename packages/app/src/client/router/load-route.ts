@@ -32,7 +32,7 @@ export async function loadRoutes(
   routes: ClientMatchedRoute[],
   signal?: AbortSignal,
 ) {
-  const id = routes[0].id + routes.length;
+  const id = routes[0].id + routes[0].pathname;
   if (loading.has(id)) return loading.get(id)!;
 
   let resolve!: (route: ClientLoadRouteResult[]) => void;
@@ -68,7 +68,8 @@ export async function loadStaticData(
   const component = route[type];
   if (!component) return;
 
-  if (route[type]?.dataValid) {
+  // Avoid undefined.
+  if (component.stale === false) {
     const loadedRoute = route as ClientLoadedRoute;
     return { data: loadedRoute[type]!.staticData };
   }
@@ -173,7 +174,7 @@ export async function loadServerData(
     }
   }
 
-  if (route[type]?.dataValid) {
+  if (component.stale === false) {
     const loadedRoute = route as ClientLoadedRoute;
     return { data: loadedRoute[type]?.serverData };
   }

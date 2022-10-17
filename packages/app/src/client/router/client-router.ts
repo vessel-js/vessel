@@ -78,7 +78,6 @@ export class Router {
   protected _redirectsMap = new Map<string, string>();
   protected _beforeNavigate: BeforeNavigateHook[] = [];
   protected _afterNavigate: AfterNavigateHook[] = [];
-  protected _navAbortController: AbortController | null = null;
 
   /** Key used to save navigation state in history state object. */
   historyKey = 'vsl::index';
@@ -174,9 +173,10 @@ export class Router {
   }
 
   constructor(options: RouterOptions) {
-    this._url = new URL(location.href);
     this.baseUrl = options.baseUrl;
     this.trailingSlash = options.trailingSlash ?? true;
+
+    this._url = new URL(location.href);
     this._fw = options.frameworkDelegate;
     this._comparator = createSimpleComparator();
     this._scrollDelegate = createSimpleScrollDelegate(this);
@@ -232,7 +232,7 @@ export class Router {
   }
 
   /**
-   * Returns whether the given pathname matches any page route.
+   * Returns whether the given pathname matches any route.
    */
   test(pathnameOrURL: string | URL): boolean {
     const url = this.createURL(pathnameOrURL);
@@ -294,14 +294,14 @@ export class Router {
   /**
    * Deregisters a route given it's id.
    */
-  remove(id: string | symbol): void {
+  remove(id: string): void {
     this._routes = this._routes.filter((r) => r.id !== id);
   }
 
   /**
    * Attempts to find and return a registered route given a route id.
    */
-  findById(id: string | symbol) {
+  findById(id: string) {
     return this._routes.find((route) => route.id === id);
   }
 
@@ -318,7 +318,11 @@ export class Router {
    * instance (`new URL(...)`).
    */
   async go(
-    path: VesselRoutes[keyof VesselRoutes] | URL,
+    path:
+      | `https://${string}`
+      | `#${string}`
+      | VesselRoutes[keyof VesselRoutes]
+      | URL,
     {
       scroll,
       replace = false,
@@ -394,8 +398,7 @@ export class Router {
   }
 
   /**
-   * Attempts to find a route given a pathname or URL and call it's prefetch handler. This method
-   * will throw if no route matches the given pathname.
+   * Attempts to match routes to a given pathname or URL and start loading them.
    */
   async prefetch(pathnameOrURL: string | URL): Promise<void> {
     const url = this.createURL(pathnameOrURL);
@@ -554,10 +557,6 @@ export class Router {
     redirect: NavigationRedirector;
     matches: ClientMatchedRoute[];
   } & NavigationOptions): Promise<void> {
-    this._navAbortController?.abort();
-    this._navAbortController = new AbortController();
-
-    const signal = this._navAbortController.signal;
     const from = this.currentRoute ?? null;
 
     this._fw.navigation.set({ from: this._url, to: url });
@@ -568,7 +567,7 @@ export class Router {
       );
     }
 
-    const loadResults = await this._loadRoutes(url, matches, signal);
+    const loadResults = await this._loadRoutes(url, matches);
 
     // Abort if user navigated away during load.
     if (nav.token !== navigationToken) return nav.blocked?.();
@@ -628,7 +627,7 @@ export class Router {
           }
         }
 
-        route[type] = { ...component, dataValid: true };
+        route[type] = { ...component, stale: true };
       }
 
       loadedRoutes.push(route);
@@ -679,15 +678,9 @@ export class Router {
     for (const hook of this._afterNavigate) {
       await hook({ from, to: currentRoute });
     }
-
-    this._navAbortController = null;
   }
 
-  protected _loadRoutes(
-    url: URL,
-    matches: ClientMatchedRoute[],
-    signal = this._navAbortController?.signal,
-  ) {
+  protected _loadRoutes(url: URL, matches: ClientMatchedRoute[]) {
     const prevMatches = this._fw.matches.get();
     return loadRoutes(
       url,
@@ -699,7 +692,6 @@ export class Router {
           ? { ...existing, page: existing.page ?? match.page }
           : match;
       }),
-      signal,
     );
   }
 

@@ -261,6 +261,9 @@ export type ServerLoader<
   Response extends AnyResponse = AnyResponse,
 > = ServerRequestHandler<Params, Response>;
 
+export type InferServerLoaderParams<T> = InferServerRequestHandlerParams<T>;
+export type InferServerLoaderData<T> = InferServerRequestHandlerData<T>;
+
 // ---------------------------------------------------------------------------------------
 // Static Loader
 // ---------------------------------------------------------------------------------------

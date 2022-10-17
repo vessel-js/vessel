@@ -84,7 +84,7 @@ export async function init({ frameworkDelegate }: ClientInitOptions) {
   return router;
 }
 
-const routeIds = new Set<string | symbol>();
+const routeIds = new Set<string>();
 
 function readManifest(
   router: Router,
@@ -115,6 +115,7 @@ function readManifest(
         newRoute[type] = {
           loader: loaders[loaderIndex++],
           canFetch: fetch.includes(loaderIndex),
+          stale: true,
         } as LoadableRouteComponent;
       }
     }

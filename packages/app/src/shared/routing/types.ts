@@ -44,10 +44,8 @@ export type LoadableRouteComponent<Module extends RouteModule = RouteModule> = {
    * regardless.
    */
   readonly canFetch?: boolean;
-  /**
-   * Used client-side to determine whether the data is still valid.
-   */
-  dataValid?: boolean;
+  /** Used client-side to determine whether data is stale. */
+  stale?: boolean;
 };
 
 export type RouteComponentType = 'page' | 'layout' | 'errorBoundary';
@@ -80,8 +78,8 @@ export type LoadedRouteData = {
 export type LoadedRouteComponent<Module extends RouteModule = RouteModule> =
   LoadableRouteComponent<Module> & {
     readonly module: Module;
-    /** Used client-side to determine whether the data is still valid. */
-    dataValid?: boolean;
+    /** Used client-side to determine whether data is stale. */
+    stale?: boolean;
   } & LoadedRouteData;
 
 export type LoadedRoute<
