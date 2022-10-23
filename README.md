@@ -8,7 +8,7 @@ Coming Soon.
 
 [MIT](./LICENSE)
 
-Copyright (c) 2021-present, Rahim Alwer
+Copyright (c) 2022-present, Rahim Alwer
 
 [package]: https://www.npmjs.com/package/@vessel-js/app
 [package-badge]: https://img.shields.io/npm/v/@vessel-js/app?style=flat-square
