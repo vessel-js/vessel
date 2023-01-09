@@ -19,9 +19,7 @@
   },
   "files": [
     "dist/",
-    "index.d.ts",
-    "node.d.ts",
-    "globals.d.ts"
+    "*.d.ts"
   ],
   "exports": {
     ".": "./dist/client/index.js",
