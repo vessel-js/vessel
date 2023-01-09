@@ -1,9 +1,11 @@
 import type { Node, RenderableTreeNode } from '@markdoc/markdoc';
 import type { MarkdownFrontmatter, MarkdownHeading, MarkdownMeta } from 'shared/markdown';
 
-export type HighlightCodeBlock = (code: string, lang: string) => string | undefined | null;
+export interface HighlightCodeBlock {
+  (code: string, lang: string): string | undefined | null;
+}
 
-export type MarkdocTreeWalkStuff = {
+export interface MarkdocTreeWalkStuff {
   [id: string]: any;
   baseUrl: string;
   filePath: string;
@@ -12,45 +14,54 @@ export type MarkdocTreeWalkStuff = {
   imports: Set<string>;
   headings: MarkdownHeading[];
   highlight: HighlightCodeBlock;
-};
+}
 
-export type MarkdocTreeNodeTransformer = (data: {
-  node: RenderableTreeNode;
-  stuff: MarkdocTreeWalkStuff;
-}) => void;
+export interface MarkdocTreeNodeTransformer {
+  (data: { node: RenderableTreeNode; stuff: MarkdocTreeWalkStuff }): void;
+}
 
-export type MarkdocAstTransformer = (data: { ast: Node; filePath: string; source: string }) => void;
+export interface MarkdocAstTransformer {
+  (data: { ast: Node; filePath: string; source: string }): void;
+}
 
-export type MarkdocContentTransformer = (data: {
-  filePath: string;
-  content: RenderableTreeNode;
-  frontmatter: MarkdownFrontmatter;
-}) => string;
+export interface MarkdocContentTransformer {
+  (data: {
+    filePath: string;
+    content: RenderableTreeNode;
+    frontmatter: MarkdownFrontmatter;
+  }): string;
+}
 
-export type MarkdocMetaTransformer = (data: {
-  filePath: string;
-  imports: string[];
-  stuff: MarkdocTreeWalkStuff;
-  meta: MarkdownMeta;
-}) => void;
+export interface MarkdocMetaTransformer {
+  (data: {
+    filePath: string;
+    imports: string[];
+    stuff: MarkdocTreeWalkStuff;
+    meta: MarkdownMeta;
+  }): void;
+}
 
-export type MarkdocOutputTransformer = (data: {
-  filePath: string;
-  code: string;
-  imports: string[];
-  stuff: MarkdocTreeWalkStuff;
-  meta: MarkdownMeta;
-}) => string;
+export interface MarkdocOutputTransformer {
+  (data: {
+    filePath: string;
+    code: string;
+    imports: string[];
+    stuff: MarkdocTreeWalkStuff;
+    meta: MarkdownMeta;
+  }): string;
+}
 
-export type MarkdocRenderer = (data: {
-  filePath: string;
-  content: RenderableTreeNode;
-  imports: string[];
-  stuff: MarkdocTreeWalkStuff;
-  meta: MarkdownMeta;
-}) => string;
+export interface MarkdocRenderer {
+  (data: {
+    filePath: string;
+    content: RenderableTreeNode;
+    imports: string[];
+    stuff: MarkdocTreeWalkStuff;
+    meta: MarkdownMeta;
+  }): string;
+}
 
-export type ParseMarkdownConfig = {
+export interface ParseMarkdownConfig {
   ignoreCache?: boolean;
   filter: (id: string) => boolean;
   highlight: HighlightCodeBlock;
@@ -60,13 +71,13 @@ export type ParseMarkdownConfig = {
   transformMeta: MarkdocMetaTransformer[];
   transformOutput: MarkdocOutputTransformer[];
   render: MarkdocRenderer;
-};
+}
 
-export type ParseMarkdownResult = {
+export interface ParseMarkdownResult {
   filePath: string;
   output: string;
   meta: MarkdownMeta;
   ast: Node;
   stuff: MarkdocTreeWalkStuff;
   content: RenderableTreeNode;
-};
+}

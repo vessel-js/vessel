@@ -193,7 +193,7 @@ export function createServerRouter() {
   };
 }
 
-export type ServerApp = {
+export interface ServerApp {
   middleware: {
     group(name: string): Omit<ServerApp['middleware'], 'group'>;
     add(handler: FetchMiddleware): ServerApp['middleware'];
@@ -203,9 +203,9 @@ export type ServerApp = {
     onPageRenderError: (path: `/${string}`, handler: ServerErrorHandler) => ServerApp['errors'];
     onApiError: (path: `/${string}`, handler: ServerErrorHandler) => ServerApp['errors'];
   };
-};
+}
 
-export type ServerRouter = {
+export interface ServerRouter {
   basePrefix: `/${string}`;
 
   middleware(handler: FetchMiddleware): ServerRouter;
@@ -255,4 +255,4 @@ export type ServerRouter = {
     path: `/${string}`,
     handler: ServerRequestHandler<Params, Response>,
   ): ServerRouter;
-};
+}

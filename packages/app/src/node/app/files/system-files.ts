@@ -6,7 +6,7 @@ import { isString } from 'shared/utils/unit';
 
 import type { App } from '../App';
 
-export type SystemFilePath = {
+export interface SystemFilePath {
   /** Absolute system file path. */
   readonly absolute: string;
   /** System file path relative to `<root>`. */
@@ -15,18 +15,18 @@ export type SystemFilePath = {
   readonly route: string;
   /** System file route path as URL pathname `/blog/[product]/` */
   readonly pathname: string;
-};
+}
 
-export type SystemDirPath = {
+export interface SystemDirPath {
   /** Absolute system directory path. */
   readonly absolute: string;
   /** System directory path relative to `<root>`. */
   readonly root: string;
   /** System directory path relative to `<app>`. */
   readonly route: string;
-};
+}
 
-export type SystemFileMeta = {
+export interface SystemFileMeta {
   /** File path meta. */
   readonly path: SystemFilePath;
   /** File dir meta. */
@@ -35,12 +35,12 @@ export type SystemFileMeta = {
   readonly reset?: boolean;
   /** System file extension name (e.g., `.tsx`). */
   readonly ext: string;
-};
+}
 
-export type SystemFilesOptions = {
+export interface SystemFilesOptions {
   include: string[];
   exclude?: (string | RegExp)[];
-};
+}
 
 export abstract class SystemFiles<T extends SystemFileMeta> implements Iterable<T> {
   protected _app!: App;

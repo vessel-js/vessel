@@ -6,7 +6,6 @@
     "declarationDir": "types",
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
-    "tsBuildInfoFile": ".tsbuildinfo",
     "paths": {
       ":virtual/vessel/solid/app": ["src/virtual/app"]
     }

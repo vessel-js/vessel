@@ -2,7 +2,7 @@ import type { BuildData } from 'node/build';
 
 import type { App } from '../App';
 
-export type ResolvedRoutesConfig = {
+export interface ResolvedRoutesConfig {
   /**
    * An array of pages to crawl from. The given path must be a valid route such as
    * `/getting-started/` or `/getting-started/intro.html` and a page must match.
@@ -97,31 +97,31 @@ export type ResolvedRoutesConfig = {
      */
     exclude: (string | RegExp)[];
   };
-};
+}
 
 export type RoutesLogStyle = 'none' | 'table' | CustomRoutesLogger;
 
-export type CustomRoutesLogger = (app: App, build: BuildData) => void | Promise<void>;
+export interface CustomRoutesLogger {
+  (app: App, build: BuildData): void | Promise<void>;
+}
 
 export type RouteMatcher = string | RegExp | null | undefined | void;
 
-export type SimpleRouteMatcher = {
+export interface SimpleRouteMatcher {
   name: string;
   matcher: RouteMatcher;
-};
+}
 
-export type ComplexRouteMatcher = (
-  route: string,
-  info: { path: string },
-) => string | null | undefined | void;
+export interface ComplexRouteMatcher {
+  (route: string, info: { path: string }): string | null | undefined | void;
+}
 
 export type RouteMatcherConfig = (SimpleRouteMatcher | ComplexRouteMatcher)[];
 
-export type RoutesConfig = Partial<
-  Omit<ResolvedRoutesConfig, 'pages' | 'layouts' | 'errors' | 'api'>
-> & {
+export interface RoutesConfig
+  extends Partial<Omit<ResolvedRoutesConfig, 'pages' | 'layouts' | 'errors' | 'api'>> {
   pages?: Partial<ResolvedRoutesConfig['pages']>;
   layouts?: Partial<ResolvedRoutesConfig['layouts']>;
   errors?: Partial<ResolvedRoutesConfig['errors']>;
   api?: Partial<ResolvedRoutesConfig['api']>;
-};
+}

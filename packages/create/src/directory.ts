@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import * as path from 'pathe';
 
-export type SystemDirectory = {
+export interface SystemDirectory {
   path: string;
   read: (filePath: string) => Promise<string>;
   readSync: (filePath: string) => string;
@@ -15,7 +15,7 @@ export type SystemDirectory = {
   copy: (src: string, dest: string) => Promise<void>;
   rimraf: (filePath: string) => Promise<void>;
   isDirEmpty: (filePath: string) => Promise<boolean>;
-};
+}
 
 export function createSystemDirectory(...segments: string[]): SystemDirectory {
   const dirname = path.resolve(...segments);

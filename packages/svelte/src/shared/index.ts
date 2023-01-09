@@ -1,13 +1,13 @@
-import { type SvelteComponent } from 'svelte';
+import type { SvelteComponent } from 'svelte';
 
 export type SvelteConstructor = typeof SvelteComponent;
 
-export type SvelteModule = {
+export interface SvelteModule {
   readonly [id: string]: unknown;
   readonly default: SvelteConstructor;
-};
+}
 
-export type SvelteServerModule = {
+export interface SvelteServerModule {
   readonly [id: string]: unknown;
   readonly default: {
     render(
@@ -19,6 +19,6 @@ export type SvelteServerModule = {
       css?: string | { code: string; map: string | null };
     };
   };
-};
+}
 
 export {};

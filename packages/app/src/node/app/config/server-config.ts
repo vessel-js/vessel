@@ -1,4 +1,4 @@
-export type ResolvedServerConfig = {
+export interface ResolvedServerConfig {
   config: {
     /**
      * Globs used to discover edge server configuration file.
@@ -9,8 +9,8 @@ export type ResolvedServerConfig = {
      */
     node: string[];
   };
-};
+}
 
-export type ServerConfig = {
+export interface ServerConfig {
   config?: Partial<ResolvedServerConfig['config']>;
-};
+}

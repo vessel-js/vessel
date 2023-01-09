@@ -1,5 +1,5 @@
-import { type MarkdocSchema } from 'node/markdoc';
-import { type logger } from 'node/utils';
+import type { MarkdocSchema } from 'node/markdoc';
+import type { logger } from 'node/utils';
 import type {
   ConfigEnv as ViteConfigEnv,
   ViteDevServer,
@@ -12,18 +12,18 @@ import type { DisposalBin } from './create/disposal-bin';
 import type { AppFiles } from './files';
 import type { AppRoutes } from './routes';
 
-export type AppDetails = {
+export interface AppDetails {
   version: string;
   dirs: AppDirectories;
   vite: { env: ViteConfigEnv };
   config: ResolvedAppConfig;
-};
+}
 
-export type AppFactory = AppDetails & {
-  create: () => Promise<App>;
-};
+export interface AppFactory extends AppDetails {
+  create(): Promise<App>;
+}
 
-export type App = AppDetails & {
+export interface App extends AppDetails {
   /** Plugin extensions. */
   [x: string]: unknown;
   context: Map<string, unknown>;
@@ -41,9 +41,9 @@ export type App = AppDetails & {
     server?: ViteDevServer;
   };
   destroy: () => void;
-};
+}
 
-export type AppDirectories = {
+export interface AppDirectories {
   cwd: Directory;
   root: Directory;
   workspace: Directory;
@@ -55,9 +55,9 @@ export type AppDirectories = {
     client: Directory;
     server: Directory;
   };
-};
+}
 
-export type Directory = {
+export interface Directory {
   /** Absolute path to directory. */
   path: string;
   /** Read contents of file relative to current directory. */
@@ -70,6 +70,6 @@ export type Directory = {
   write: (filePath: string, data: string) => void;
   /** Resolve glob relative to current directory. */
   glob: (pattern: string | string[]) => string[];
-};
+}
 
 export { DisposalBin };

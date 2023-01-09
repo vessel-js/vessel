@@ -2,7 +2,7 @@
  * Credit: https://github.com/vueuse/head
  */
 
-import { type HeadConfig, type HeadManager } from '@vessel-js/app/head';
+import type { HeadConfig, HeadManager } from '@vessel-js/app/head';
 import { HEAD_MANAGER } from 'client/context-keys';
 import { inject, onBeforeUnmount, watchEffect } from 'vue';
 

@@ -6,13 +6,14 @@ import { isString } from 'shared/utils/unit';
 
 import { Cookies } from './cookies';
 
-export type VesselResponse = Response & {
+export interface VesselResponse extends Response {
   cookies: Cookies;
-};
+}
 
-export type VesselJSONResponse<T extends JSONData = JSONData> = Omit<VesselResponse, 'json'> & {
+export interface VesselJSONResponse<T extends JSONData = JSONData>
+  extends Omit<VesselResponse, 'json'> {
   json(): Promise<T>;
-};
+}
 
 const VESSEL_RESPONSE = Symbol('VESSEL_RESPONSE');
 
@@ -43,11 +44,11 @@ export function appendHeaders(body: Request | Response, headers: Headers) {
   }
 }
 
-export type JSONData = Record<string, any>;
+export interface JSONData extends Record<string, any> {}
 
-export type JSONResponse<T extends JSONData = JSONData> = Omit<Response, 'json'> & {
+export interface JSONResponse<T extends JSONData = JSONData> extends Omit<Response, 'json'> {
   json(): Promise<T>;
-};
+}
 
 /**
  * This is a shortcut for creating `application/json` responses. Converts `data` to JSON and sets
@@ -70,7 +71,9 @@ export function json<Data extends JSONData>(
   });
 }
 
-export type RedirectFunction = (url: string, init?: number | ResponseInit) => JSONResponse<never>;
+export interface RedirectFunction {
+  (url: string, init?: number | ResponseInit): JSONResponse<never>;
+}
 
 export function isResponse(value: unknown): value is Response {
   return value instanceof Response;
@@ -156,10 +159,10 @@ export function coerceAnyResponse(url: URL, response: AnyResponse): VesselRespon
   );
 }
 
-export type ResponseDetails = {
+export interface ResponseDetails {
   headers: Headers;
   cookies: Cookies;
-};
+}
 
 export function createResponseDetails(url: URL, init?: Partial<ResponseDetails>): ResponseDetails {
   const headers = init?.headers ?? new Headers();

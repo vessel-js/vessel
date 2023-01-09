@@ -10,16 +10,16 @@ const DEFAULT_SERIALIZE_OPTIONS = {
   sameSite: 'lax',
 } as const;
 
-export type Cookie = {
+export interface Cookie {
   name: string;
   value: string;
   options: CookieSerializeOptions;
-};
+}
 
-export type CookiesInit = {
+export interface CookiesInit {
   url: URL;
   headers?: Headers;
-};
+}
 
 export class Cookies implements Iterable<[string, Cookie]> {
   protected _cookies = new Map<string, Cookie>();

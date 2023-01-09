@@ -1,6 +1,6 @@
-import { ParentComponent } from 'solid-js';
+import type { ParentComponent } from 'solid-js';
 
-export type LinkProps = {
+export interface LinkProps {
   /**
    * Specifies the URL of the linked resource.
    */
@@ -17,7 +17,7 @@ export type LinkProps = {
    * @defaultValue false
    */
   replace?: boolean;
-};
+}
 
 const Link: ParentComponent<LinkProps> = (props) => {
   return (

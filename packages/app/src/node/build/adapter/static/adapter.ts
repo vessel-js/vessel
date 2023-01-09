@@ -11,12 +11,12 @@ import { copyDir, logger, LoggerIcon } from 'node/utils';
 import ora from 'ora';
 import { createPageResourceLinkTags } from 'server';
 
-import { type BuildAdapterFactory } from '../build-adapter';
+import type { BuildAdapterFactory } from '../build-adapter';
 
-export type StaticBuildAdapterConfig = {
+export interface StaticBuildAdapterConfig {
   /** Whether to write the output to the `<build>` directory. */
   output?: boolean;
-};
+}
 
 export function createStaticBuildAdapter({
   output = true,

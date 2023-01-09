@@ -1,13 +1,13 @@
 import { Cookies } from './cookies';
 
-export type VesselRequest = Request & {
+export interface VesselRequest extends Request {
   URL: URL;
   cookies: Cookies;
-};
+}
 
-export type RequestParams = {
+export interface RequestParams {
   [param: string]: string | undefined;
-};
+}
 
 const VESSEL_REQUEST = Symbol('VESSEL_REQUEST');
 

@@ -1,7 +1,7 @@
 import type { ServerRequestHandler } from 'server/types';
 
 import type { RequestParams } from './request';
-import { type AnyResponse, type VesselResponse } from './response';
+import type { AnyResponse, VesselResponse } from './response';
 
 export interface RPCHandler {
   (...args: any[]): AnyResponse;

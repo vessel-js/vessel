@@ -23,26 +23,15 @@
     "globals.d.ts"
   ],
   "exports": {
-    ".": {
-      "types": "./index.d.ts",
-      "default": "./dist/client/index.ts"
-    },
-    "./head": {
-      "types": "./head.d.ts",
-      "default": "./dist/client/head/index.ts"
-    },
-    "./node": {
-      "types": "./node.d.ts",
-      "default": "./dist/node/index.js"
-    },
-    "./*": {
-      "default": "./dist/client/*"
-    },
+    ".": "./dist/client/index.ts",
+    "./head": "./dist/client/head/index.ts",
+    "./node": "./dist/node/index.js",
+    "./*": "./dist/client/*",
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "rimraf dist && tsup",
-    "dev": "DEV=true pnpm run build --watch"
+    "dev": "DEV=true pnpm run build --watch",
+    "build": "rimraf dist && tsup"
   },
   "dependencies": {
     "globby": "^13.0.0",

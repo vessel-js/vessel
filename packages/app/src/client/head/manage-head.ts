@@ -33,26 +33,26 @@ const acceptedHeadFields: Set<HeadConfigKeys> = new Set([
   'bodyAttrs',
 ]);
 
-export type HeadTag = {
+export interface HeadTag {
   tag: HeadConfigKeys;
   props: Record<string, ReactiveAttrValue> &
     HeadTagRenderPriority &
     HeadTagRenderDuplicate &
     HeadTagInnerContent &
     HeadTagRenderLocation;
-};
+}
 
-export type HeadManager = {
+export interface HeadManager {
   tags: HeadTag[];
   resolver: AttrValueResolver;
   add: (head: HeadConfig) => void;
   remove: (head: HeadConfig) => void;
   update: (document?: Document) => void;
-};
+}
 
-export type CreateHeadManagerInit = {
+export interface CreateHeadManagerInit {
   resolver: AttrValueResolver;
-};
+}
 
 export function createHeadManager(init: CreateHeadManagerInit = { resolver: __resolver }) {
   const { resolver: resolve } = init;

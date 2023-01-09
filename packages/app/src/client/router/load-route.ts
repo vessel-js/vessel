@@ -16,11 +16,8 @@ import {
 
 import type { ClientLoadedRoute, ClientMatchedRoute } from './types';
 
-export type ClientLoadRouteResult = LoadRouteResult<
-  ClientMatchedRoute,
-  LoadStaticDataResult,
-  LoadServerDataResult
->;
+export interface ClientLoadRouteResult
+  extends LoadRouteResult<ClientMatchedRoute, LoadStaticDataResult, LoadServerDataResult> {}
 
 const loading = new Map<string, Promise<ClientLoadRouteResult[]>>();
 

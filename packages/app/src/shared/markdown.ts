@@ -1,18 +1,18 @@
-export type MarkdownMeta = {
+export interface MarkdownMeta {
   title?: string | null;
   headings: MarkdownHeading[];
   frontmatter: MarkdownFrontmatter;
   lastUpdated: number;
-};
+}
 
-export type MarkdownFrontmatter = Record<string, any>;
+export interface MarkdownFrontmatter extends Record<string, any> {}
 
-export type MarkdownHeading = {
+export interface MarkdownHeading {
   level: number;
   title: string;
   id: string;
-};
+}
 
-export type MarkdownModule = {
+export interface MarkdownModule {
   __markdownMeta: MarkdownMeta;
-};
+}

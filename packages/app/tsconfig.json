@@ -4,7 +4,6 @@
     "baseUrl": "./src",
     "outDir": "dist",
     "declarationDir": "types",
-    "tsBuildInfoFile": ".tsbuildinfo",
     "paths": {
       ":virtual/vessel/config": ["virtual/config"],
       ":virtual/vessel/manifest": ["virtual/manifest"]

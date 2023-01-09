@@ -165,7 +165,7 @@ export const createComplexScrollDelegate: ScrollDelegateFactory<ComplexScrollDel
   return manager;
 };
 
-export type ScrollDelegate = {
+export interface ScrollDelegate {
   /**
    * Scrolls to the given target element, hash, or position.
    */
@@ -183,9 +183,9 @@ export type ScrollDelegate = {
    * Called when scroll positions should be persisted (i.e., local/session storage).
    */
   commit?(): void;
-};
+}
 
-export type ComplexScrollDelegate = Required<ScrollDelegate> & {
+export interface ComplexScrollDelegate extends Required<ScrollDelegate> {
   /**
    * Base scroll settings that are applied to all scrolls.
    */
@@ -196,32 +196,34 @@ export type ComplexScrollDelegate = Required<ScrollDelegate> & {
    * @defaultValue `'auto'`
    */
   setBehavior(hook: ScrollBehaviorHook): void;
-};
+}
 
-export type ScrollDelegateFactory<T extends ScrollDelegate = ScrollDelegate> = (
-  router: Router,
-) => T;
+export interface ScrollDelegateFactory<T extends ScrollDelegate = ScrollDelegate> {
+  (router: Router): T;
+}
 
-export type ScrollBase = ScrollToOptions;
+export interface ScrollBase extends ScrollToOptions {}
 
-export type ScrollOptions = {
+export interface ScrollOptions {
   hash?: string;
   from?: ClientLoadedRoute | null;
   to?: ClientLoadedRoute;
   target?: ScrollToTarget | null;
-};
+}
 
-export type ScrollBehaviorHook = (info: {
-  from: ClientLoadedRoute | null;
-  to: ClientLoadedRoute;
-  cancel: ScrollCancel;
-  savedPosition?: { top?: number; left?: number };
-}) => ScrollTarget | Promise<ScrollTarget>;
+export interface ScrollBehaviorHook {
+  (info: {
+    from: ClientLoadedRoute | null;
+    to: ClientLoadedRoute;
+    cancel: ScrollCancel;
+    savedPosition?: { top?: number; left?: number };
+  }): ScrollTarget | Promise<ScrollTarget>;
+}
 
-export type ScrollPosition = {
+export interface ScrollPosition {
   top: number;
   left: number;
-};
+}
 
 export function scrollPosition(): ScrollPosition {
   return {
@@ -232,6 +234,10 @@ export function scrollPosition(): ScrollPosition {
 
 export type ScrollTarget = void | null | false | (ScrollToOptions & { el?: string | HTMLElement });
 
-export type ScrollToTarget = (info: { cancel: ScrollCancel }) => ScrollTarget;
+export interface ScrollToTarget {
+  (info: { cancel: ScrollCancel }): ScrollTarget;
+}
 
-export type ScrollCancel = () => void;
+export interface ScrollCancel {
+  (): void;
+}

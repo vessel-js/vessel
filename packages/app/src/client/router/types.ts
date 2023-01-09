@@ -7,35 +7,33 @@ import type { ScrollToTarget } from './scroll-delegate';
 // Client Module
 // ---------------------------------------------------------------------------------------
 
-export type ClientModule = {
+export interface ClientModule {
   [id: string]: unknown;
   default: any;
   __markdownMeta?: MarkdownMeta;
-};
+}
 
-export type ClientModuleLoader = () => Promise<ClientModule>;
+export interface ClientModuleLoader {
+  (): Promise<ClientModule>;
+}
 
 // ---------------------------------------------------------------------------------------
 // Client Route
 // ---------------------------------------------------------------------------------------
 
-export type ClientLoadableRoute = LoadableRoute<ClientModule>;
+export interface ClientLoadableRoute extends LoadableRoute<ClientModule> {}
 
-export type ClientMatchedRoute<Params extends RouteParams = RouteParams> = MatchedRoute<
-  ClientModule,
-  Params
-> & {
+export interface ClientMatchedRoute<Params extends RouteParams = RouteParams>
+  extends MatchedRoute<ClientModule, Params> {
   error?: LoadedRoute['error'];
-};
+}
 
-export type ClientLoadedRoute<Params extends RouteParams = RouteParams> = LoadedRoute<
-  ClientModule,
-  Params
->;
+export interface ClientLoadedRoute<Params extends RouteParams = RouteParams>
+  extends LoadedRoute<ClientModule, Params> {}
 
-export type ClientRouteDeclaration = Omit<ClientLoadableRoute, 'score' | 'pattern'> & {
+export interface ClientRouteDeclaration extends Omit<ClientLoadableRoute, 'score' | 'pattern'> {
   score?: number;
-};
+}
 
 // ---------------------------------------------------------------------------------------
 // Client Navigation
@@ -46,35 +44,40 @@ export type Navigation = {
   to: URL;
 } | null;
 
-export type GoHrefOptions = {
+export interface GoHrefOptions {
   scroll?: ScrollToTarget | null;
   keepfocus?: boolean;
   replace?: boolean;
   state?: any;
-};
+}
 
-export type NavigationOptions = GoHrefOptions & {
+export interface NavigationOptions extends GoHrefOptions {
   blocked?: () => void;
   accepted?: () => void;
   canHandle?: () => void;
   redirects?: string[];
-};
+}
 
-export type CancelNavigation = () => void;
+export interface CancelNavigation {
+  (): void;
+}
 
-export type NavigationRedirector = (pathnameOrURL: string | URL) => Promise<void>;
+export interface NavigationRedirector {
+  (pathnameOrURL: string | URL): Promise<void>;
+}
 
-export type BeforeNavigateHook = (navigation: {
-  from: ClientLoadedRoute | null;
-  to: ClientMatchedRoute;
-  cancel: CancelNavigation;
-  redirect: NavigationRedirector;
-}) => void | Promise<void>;
+export interface BeforeNavigateHook {
+  (navigation: {
+    from: ClientLoadedRoute | null;
+    to: ClientMatchedRoute;
+    cancel: CancelNavigation;
+    redirect: NavigationRedirector;
+  }): void | Promise<void>;
+}
 
-export type AfterNavigateHook = (navigation: {
-  from: ClientLoadedRoute | null;
-  to: ClientLoadedRoute;
-}) => void | Promise<void>;
+export interface AfterNavigateHook {
+  (navigation: { from: ClientLoadedRoute | null; to: ClientLoadedRoute }): void | Promise<void>;
+}
 
 // ---------------------------------------------------------------------------------------
 // Client Manifest
@@ -85,7 +88,7 @@ export type AfterNavigateHook = (navigation: {
  * import manifest from ":virtual/vessel/manifest";
  * ```
  */
-export type ClientManifest = {
+export interface ClientManifest {
   /** Page, layout, and error component module loaders - stored like this to save bytes. */
   loaders: ClientModuleLoader[];
   /** Contains loader indicies ^ who can fetch data from the server. */
@@ -101,4 +104,4 @@ export type ClientManifest = {
     /** Whether this route contains a page loader. */
     p?: 1;
   }[];
-};
+}

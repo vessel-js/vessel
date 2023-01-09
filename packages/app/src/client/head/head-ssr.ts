@@ -8,7 +8,7 @@ import { BODY_TAG_ATTR_NAME, HEAD_ATTRS_KEY, HEAD_COUNT_KEY } from './update-hea
 
 const SELF_CLOSING_TAGS = ['meta', 'link', 'base'];
 
-type SSRHeadResult = {
+interface SSRHeadResult {
   /** Tags in `<head>` */
   readonly head: string;
   /** Attributes for `<html>` */
@@ -17,7 +17,7 @@ type SSRHeadResult = {
   readonly bodyAttrs: string;
   /** Tags in `<body>` */
   readonly body: string;
-};
+}
 
 export function renderHeadToString(manager: HeadManager): SSRHeadResult {
   const tags: string[] = [];

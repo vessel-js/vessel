@@ -1,7 +1,7 @@
 import kleur from 'kleur';
 import type { App } from 'node/app/App';
 import { createAppEntries } from 'node/app/create/app-factory';
-import { type RouteFileType } from 'node/app/files';
+import type { RouteFileType } from 'node/app/files';
 import { AppRoute, toRoute } from 'node/app/routes';
 import { installPolyfills } from 'node/polyfills';
 import { hash, logger, LoggerIcon, mkdirp, rimraf } from 'node/utils';

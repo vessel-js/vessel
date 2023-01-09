@@ -7,7 +7,7 @@ import type { ResolvedRoutesConfig, RoutesConfig } from './routes-config';
 import type { ResolvedServerConfig, ServerConfig } from './server-config';
 import type { ResolvedSitemapConfig, SitemapConfig } from './sitemap-config';
 
-export type ResolvedAppConfig = {
+export interface ResolvedAppConfig {
   debug: boolean;
   build: ResolvedBuildConfig;
   dirs: ResolvedDirectoriesConfig;
@@ -19,16 +19,17 @@ export type ResolvedAppConfig = {
   sitemap: ResolvedSitemapConfig[];
   isBuild: boolean;
   isSSR: boolean;
-};
+}
 
-export type AppConfig = Partial<{
-  debug: boolean;
-  build: BuildConfig;
-  dirs: DirectoriesConfig;
-  entry: ResolvedEntryConfig;
-  client: ClientConfig;
-  server: ServerConfig;
-  routes: RoutesConfig;
-  markdown: MarkdownConfig;
-  sitemap: SitemapConfig | SitemapConfig[];
-}>;
+export interface AppConfig
+  extends Partial<{
+    debug: boolean;
+    build: BuildConfig;
+    dirs: DirectoriesConfig;
+    entry: ResolvedEntryConfig;
+    client: ClientConfig;
+    server: ServerConfig;
+    routes: RoutesConfig;
+    markdown: MarkdownConfig;
+    sitemap: SitemapConfig | SitemapConfig[];
+  }> {}

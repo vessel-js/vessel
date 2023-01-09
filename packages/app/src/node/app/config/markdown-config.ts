@@ -1,10 +1,10 @@
-import { type Config as MarkdocConfig } from '@markdoc/markdoc';
+import type { Config as MarkdocConfig } from '@markdoc/markdoc';
 import type { FilterPattern } from '@rollup/pluginutils';
-import { type Options as HastToHtmlConfig } from 'hast-util-to-html';
+import type { Options as HastToHtmlConfig } from 'hast-util-to-html';
 import type { HighlightCodeBlock, ParseMarkdownConfig } from 'node/markdoc';
 import type { HighlighterOptions as ShikiConfig } from 'shiki';
 
-export type ResolvedMarkdownConfig = {
+export interface ResolvedMarkdownConfig {
   /**
    * Filter files to be processed as Markdown files.
    */
@@ -77,6 +77,6 @@ export type ResolvedMarkdownConfig = {
    * Custom Markdoc renderer which takes render tree and produces final output.
    */
   render?: ParseMarkdownConfig['render'];
-};
+}
 
-export type MarkdownConfig = Partial<ResolvedMarkdownConfig>;
+export interface MarkdownConfig extends Partial<ResolvedMarkdownConfig> {}

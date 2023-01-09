@@ -2,7 +2,7 @@ import App from ':virtual/vessel/svelte/app';
 import { init } from '@vessel-js/app';
 import { tick } from 'svelte';
 
-import { type SvelteModule } from '../shared';
+import type { SvelteModule } from '../shared';
 import { createContext } from './context';
 import { ROUTER_KEY } from './context-keys';
 

@@ -11,7 +11,8 @@
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
-    "incremental": true,
+    "incremental": false,
+    "importsNotUsedAsValues": "error",
     "jsx": "preserve",
     "lib": ["dom", "dom.iterable", "es2017"],
     // tsconfig.json
@@ -19,7 +20,7 @@
     "moduleResolution": "node",
     "newLine": "lf",
     "noImplicitAny": false,
-    "noImplicitReturns": true,
+    "noImplicitReturns": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "outDir": "dist",

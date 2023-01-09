@@ -4,7 +4,7 @@ export * from './router';
 export * from './utils';
 export * from 'shared/markdown';
 
-export type AppConfig = {
+export interface AppConfig {
   id: string;
   baseUrl: string;
-};
+}

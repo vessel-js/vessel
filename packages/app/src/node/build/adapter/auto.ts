@@ -1,8 +1,8 @@
 import kleur from 'kleur';
 
-import { type BuildAdapterFactory } from './build-adapter';
-import { type StaticBuildAdapterConfig } from './static/adapter';
-import { type VercelBuildAdapterConfig } from './vercel/adapter';
+import type { BuildAdapterFactory } from './build-adapter';
+import type { StaticBuildAdapterConfig } from './static/adapter';
+import type { VercelBuildAdapterConfig } from './vercel/adapter';
 
 export const adapters = [
   {
@@ -17,11 +17,11 @@ export const adapters = [
   },
 ];
 
-export type AutoBuildAdapterConfig = {
+export interface AutoBuildAdapterConfig {
   use?: 'static' | 'vercel';
   static?: StaticBuildAdapterConfig;
   vercel?: VercelBuildAdapterConfig;
-};
+}
 
 export function createAutoBuildAdapter(config?: AutoBuildAdapterConfig): BuildAdapterFactory {
   const using = (name: string) =>

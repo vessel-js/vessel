@@ -77,12 +77,9 @@ export async function loadRoutes<
   );
 }
 
-export type RouteDataLoader<Route extends MatchedRoute, LoadResult> = (
-  url: URL,
-  route: Route,
-  type: RouteComponentType,
-  signal?: AbortSignal,
-) => Promise<LoadResult>;
+export interface RouteDataLoader<Route extends MatchedRoute, LoadResult> {
+  (url: URL, route: Route, type: RouteComponentType, signal?: AbortSignal): Promise<LoadResult>;
+}
 
 export function resolveSettledPromiseValue<T>(result?: PromiseSettledResult<T>) {
   return result?.status === 'fulfilled' ? result.value : null;

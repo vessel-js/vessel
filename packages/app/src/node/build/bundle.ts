@@ -1,6 +1,6 @@
 import type { App } from 'node/app/App';
 import { createAppEntries } from 'node/app/create/app-factory';
-import { OutputBundle } from 'rollup';
+import type { OutputBundle } from 'rollup';
 import { build, type UserConfig as ViteConfig } from 'vite';
 
 import { extendManualChunks } from './chunks';

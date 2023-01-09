@@ -96,29 +96,29 @@ export interface HeadConfig {
   bodyAttrs?: ReactiveAttrs<BodyTagAttributes>;
 }
 
-export type HeadTagRenderDuplicate = {
+export interface HeadTagRenderDuplicate {
   /**
    * By default, tags which share the same unique key `name, `property` are de-duped. To allow
    * duplicates to be made you can provide a unique key for each entry.
    */
   key?: string;
-};
+}
 
-export type HeadTagRenderLocation = {
+export interface HeadTagRenderLocation {
   /**
    * Render tag at the end of the <body>.
    */
   body?: boolean;
-};
+}
 
-export type HeadTagInnerContent = {
+export interface HeadTagInnerContent {
   /**
    * Sets the textContent of an element.
    */
   children?: string | null;
-};
+}
 
-export type HeadTagRenderPriority = {
+export interface HeadTagRenderPriority {
   /**
    * The priority for rendering the tag, without this all tags are rendered as they are registered
    * (besides some special tags).
@@ -133,4 +133,4 @@ export type HeadTagRenderPriority = {
    * @warn Experimental feature. Only available when rendering SSR
    */
   renderPriority?: number;
-};
+}

@@ -9,7 +9,7 @@ import ora from 'ora';
 import * as path from 'pathe';
 import { endslash, isLinkExternal, noendslash } from 'shared/utils/url';
 
-import { type BuildAdapterFactory } from '../build-adapter';
+import type { BuildAdapterFactory } from '../build-adapter';
 import { createStaticBuildAdapter } from '../static/adapter';
 import { noopStaticLoader } from '../utils';
 import { trailingSlash } from './trailing-slash';
@@ -272,7 +272,7 @@ async function bundleNode(
 
 export { createVercelBuildAdapter as default };
 
-export type VercelBuildAdapterConfig = {
+export interface VercelBuildAdapterConfig {
   /**
    * @see {@link https://vercel.com/docs/build-output-api/v3#vercel-primitives/serverless-functions}
    */
@@ -322,4 +322,4 @@ export type VercelBuildAdapterConfig = {
      */
     envVarsInUse?: string[];
   };
-};
+}

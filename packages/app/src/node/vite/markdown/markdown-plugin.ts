@@ -15,7 +15,7 @@ import type { MarkdownMeta } from 'shared/markdown';
 import type { ViteDevServer } from 'vite';
 
 import { invalidateRouteModule } from '../files/files-hmr';
-import { type VesselPlugin } from '../Plugin';
+import type { VesselPlugin } from '../Plugin';
 import { handleMarkdownHMR } from './hmr';
 
 export function markdownPlugin(): VesselPlugin {

@@ -53,18 +53,18 @@ import type {
   NavigationRedirector,
 } from './types';
 
-export type RouterOptions = {
+export interface RouterOptions {
   baseUrl: string;
   trailingSlash?: boolean;
   frameworkDelegate: RouterFrameworkDelegate;
-};
+}
 
-export type RouterFrameworkDelegate = {
+export interface RouterFrameworkDelegate {
   tick: () => void | Promise<void>;
   route: Reactive<ClientLoadedRoute>;
   matches: Reactive<ClientLoadedRoute[]>;
   navigation: Reactive<Navigation>;
-};
+}
 
 let navigationToken = {};
 

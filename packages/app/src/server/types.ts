@@ -21,36 +21,42 @@ import type { ServerConfig } from './http/app/configure-server';
 // Server Entry
 // ---------------------------------------------------------------------------------------
 
-export type ServerEntryContext = {
+export interface ServerEntryContext {
   router: any;
   route: ServerLoadedPageRoute;
   matches: ServerLoadedPageRoute[];
-};
+}
 
-export type ServerEntryModule = {
+export interface ServerEntryModule {
   [id: string]: unknown;
   render: ServerRenderer;
-};
+}
 
-export type ServerEntryLoader = () => Promise<ServerEntryModule>;
+export interface ServerEntryLoader {
+  (): Promise<ServerEntryModule>;
+}
 
-export type ServerRenderer = (context: ServerEntryContext) => Promise<ServerRenderResult>;
+export interface ServerRenderer {
+  (context: ServerEntryContext): Promise<ServerRenderResult>;
+}
 
-export type ServerRenderResult = {
+export interface ServerRenderResult {
   head?: string;
   css?: string;
   html: string;
   body?: string;
   bodyAttrs?: string;
   htmlAttrs?: string;
-};
+}
 
-export type ServerFetch = <RPC extends RPCHandler>(
-  input: RequestInfo | URL | RPC,
-  init?: ServerFetchInit<InferServerFetchParams<RPC>>,
-) => Promise<InferServerFetchResponse<RPC>>;
+export interface ServerFetch<RPC extends RPCHandler = RPCHandler> {
+  (input: RequestInfo | URL | RPC, init?: ServerFetchInit<InferServerFetchParams<RPC>>): Promise<
+    InferServerFetchResponse<RPC>
+  >;
+}
 
-export type ServerFetchInit<Params extends RequestParams = RequestParams> = ClientFetchInit<Params>;
+export interface ServerFetchInit<Params extends RequestParams = RequestParams>
+  extends ClientFetchInit<Params> {}
 
 export type InferServerFetchParams<RPC extends RPCHandler> = InferServerRequestHandlerParams<RPC>;
 
@@ -63,16 +69,16 @@ export type InferServerFetchResponse<RPC extends RPCHandler> = RPC extends Serve
     : VesselResponse
   : VesselResponse;
 
-export type ServerRedirect = {
+export interface ServerRedirect {
   readonly path: string;
   readonly status: number;
-};
+}
 
 // ---------------------------------------------------------------------------------------
 // Server Manifest
 // ---------------------------------------------------------------------------------------
 
-export type ServerManifest = {
+export interface ServerManifest {
   production?: boolean;
   baseUrl: string;
   trailingSlash: boolean;
@@ -116,40 +122,39 @@ export type ServerManifest = {
     onPageRenderError?: (request: VesselRequest, error: unknown) => void;
     onApiError?: (request: VesselRequest, error: unknown) => void;
   };
-};
+}
 
-export type ServerErrorRoute = Route & {
+export interface ServerErrorRoute extends Route {
   readonly handler: ServerErrorHandler;
-};
+}
 
-export type ServerErrorHandler = (
-  request: VesselRequest,
-  error: unknown,
-) => void | AnyResponse | Promise<void | AnyResponse>;
+export interface ServerErrorHandler {
+  (request: VesselRequest, error: unknown): void | AnyResponse | Promise<void | AnyResponse>;
+}
 
-export type ServerMiddlewareEntry = {
+export interface ServerMiddlewareEntry {
   readonly group?: string;
   readonly handler: FetchMiddleware;
-};
+}
 
 // ---------------------------------------------------------------------------------------
 // Request Event
 // ---------------------------------------------------------------------------------------
 
-export type ServerRequestEvent<Params extends RequestParams = RequestParams> = {
+export interface ServerRequestEvent<Params extends RequestParams = RequestParams> {
   request: VesselRequest;
   params: Params;
   response: ResponseDetails;
   page?: ResponseDetails;
   serverFetch: ServerFetch;
-};
+}
 
-export type ServerRequestEventInit<Params extends RequestParams = RequestParams> = {
+export interface ServerRequestEventInit<Params extends RequestParams = RequestParams> {
   request: VesselRequest;
   params: Params;
   page?: ResponseDetails;
   manifest: ServerManifest;
-};
+}
 
 // ---------------------------------------------------------------------------------------
 // Request Handler
@@ -176,53 +181,49 @@ export type InferServerRequestHandlerData<T> = T extends ServerRequestHandler<ne
 // API Routes
 // ---------------------------------------------------------------------------------------
 
-export type ServerApiModule = {
+export interface ServerApiModule {
   [id: string]: ServerRequestHandler;
-};
+}
 
-export type ServerLoadableApiRoute = Route & {
+export interface ServerLoadableApiRoute extends Route {
   readonly loader: () => Promise<ServerApiModule>;
   readonly methods?: string[];
-};
+}
 
-export type ServerMatchedApiRoute = ServerLoadableApiRoute & RouteMatch;
+export interface ServerMatchedApiRoute extends ServerLoadableApiRoute, RouteMatch {}
 
-export type ServerLoadedApiRoute = ServerMatchedApiRoute & {
+export interface ServerLoadedApiRoute extends ServerMatchedApiRoute {
   readonly module: ServerApiModule;
-};
+}
 
 // ---------------------------------------------------------------------------------------
 // Page Routes
 // ---------------------------------------------------------------------------------------
 
-export type ServerPageModule = {
+export interface ServerPageModule {
   [id: string]: unknown;
   staticLoader?: StaticLoader;
   serverLoader?: ServerLoader;
-};
+}
 
-export type ServerLoadablePageRoute = LoadableRoute<ServerPageModule>;
+export interface ServerLoadablePageRoute extends LoadableRoute<ServerPageModule> {}
 
-export type ServerMatchedPageRoute<Params extends RequestParams = RequestParams> = MatchedRoute<
-  ServerPageModule,
-  Params
->;
+export interface ServerMatchedPageRoute<Params extends RequestParams = RequestParams>
+  extends MatchedRoute<ServerPageModule, Params> {}
 
-export type ServerLoadedPageRoute<Params extends RequestParams = RequestParams> = LoadedRoute<
-  ServerPageModule,
-  Params
->;
+export interface ServerLoadedPageRoute<Params extends RequestParams = RequestParams>
+  extends LoadedRoute<ServerPageModule, Params> {}
 
 /**
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTML/Element/link}
  */
-export type ServerPageResource = {
+export interface ServerPageResource {
   href: string;
   rel?: 'prefetch' | 'preload' | 'modulepreload' | 'stylesheet';
   as?: 'audio' | 'video' | 'image' | 'fetch' | 'font' | 'script' | 'style' | 'track' | 'worker';
   type?: string;
   crossorigin?: boolean;
-};
+}
 
 /**
  * The number should point to a resource in a resource collection (i.e., `PageResource[]`). A
@@ -234,43 +235,47 @@ export type ServerPageResourceEntry = number;
 // Server Loader
 // ---------------------------------------------------------------------------------------
 
-export type ServerLoader<
+export interface ServerLoader<
   Params extends RequestParams = RequestParams,
   Response extends AnyResponse = AnyResponse,
-> = ServerRequestHandler<Params, Response>;
+> extends ServerRequestHandler<Params, Response> {}
 
 export type InferServerLoaderParams<T> = InferServerRequestHandlerParams<T>;
+
 export type InferServerLoaderData<T> = InferServerRequestHandlerData<T>;
 
 // ---------------------------------------------------------------------------------------
 // Static Loader
 // ---------------------------------------------------------------------------------------
 
-export type StaticLoaderEvent<Params extends RequestParams = RequestParams> = Readonly<{
-  pathname: string;
-  route: Route;
-  params: Params;
-  serverFetch: ServerFetch;
-}>;
+export interface StaticLoaderEvent<Params extends RequestParams = RequestParams>
+  extends Readonly<{
+    pathname: string;
+    route: Route;
+    params: Params;
+    serverFetch: ServerFetch;
+  }> {}
 
 /** Map of data asset id to server loaded data objects. */
-export type StaticLoaderDataMap = Map<string, JSONData>;
+export interface StaticLoaderDataMap extends Map<string, JSONData> {}
 
 /** Key can be anything but only truthy values are cached. */
 export type StaticLoaderCacheKey = unknown;
 
-export type StaticLoaderCacheMap = Map<StaticLoaderCacheKey, StaticLoaderResponse>;
+export interface StaticLoaderCacheMap extends Map<StaticLoaderCacheKey, StaticLoaderResponse> {}
 
-export type StaticLoaderCacheKeyBuilder = (
-  event: StaticLoaderEvent,
-) => StaticLoaderCacheKey | Promise<StaticLoaderCacheKey>;
+export interface StaticLoaderCacheKeyBuilder {
+  (event: StaticLoaderEvent): StaticLoaderCacheKey | Promise<StaticLoaderCacheKey>;
+}
 
-export type StaticLoader<
+export interface StaticLoader<
   Params extends RequestParams = RequestParams,
   Data extends JSONData = JSONData,
-> = (
-  event: StaticLoaderEvent<Params>,
-) => MaybeStaticLoaderResponse<Data> | Promise<MaybeStaticLoaderResponse<Data>>;
+> {
+  (event: StaticLoaderEvent<Params>):
+    | MaybeStaticLoaderResponse<Data>
+    | Promise<MaybeStaticLoaderResponse<Data>>;
+}
 
 export type MaybeStaticLoaderResponse<Data = JSONData> =
   | void
@@ -278,11 +283,11 @@ export type MaybeStaticLoaderResponse<Data = JSONData> =
   | null
   | StaticLoaderResponse<Data>;
 
-export type StaticLoaderResponse<Data = JSONData> = {
+export interface StaticLoaderResponse<Data = JSONData> {
   data?: Data;
   readonly redirect?: string | { path: string; status?: number };
   readonly cache?: StaticLoaderCacheKeyBuilder;
-};
+}
 
 export type InferStaticLoaderParams<T> = T extends StaticLoader<infer Params>
   ? Params

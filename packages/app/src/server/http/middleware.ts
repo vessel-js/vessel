@@ -1,5 +1,5 @@
 import type { ServerMiddlewareEntry } from 'server/types';
-import { type FetchMiddleware } from 'shared/http';
+import type { FetchMiddleware } from 'shared/http';
 import { isString } from 'shared/utils/unit';
 
 export function resolveMiddleware(

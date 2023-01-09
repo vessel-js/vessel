@@ -7,13 +7,13 @@ import { SystemFiles, type SystemFileMeta, type SystemFilesOptions } from './sys
 
 export const STRIP_MARKDOC_DIR_RE = /\/\.markdoc\/.+/;
 
-export type MarkdocFile = SystemFileMeta & {
+export interface MarkdocFile extends SystemFileMeta {
   type: 'node' | 'tag';
   name: string;
   cname: string;
   inline: boolean;
   owningDir: string;
-};
+}
 
 export class MarkdocFiles extends SystemFiles<MarkdocFile> {
   init(app: App, options?: Partial<SystemFilesOptions>) {

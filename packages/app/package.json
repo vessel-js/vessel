@@ -17,41 +17,21 @@
   },
   "files": [
     "dist/",
-    "index.d.ts",
-    "globals.d.ts",
-    "node.d.ts"
+    "*.d.ts"
   ],
   "exports": {
-    ".": {
-      "types": "./index.d.ts",
-      "default": "./dist/client.js"
-    },
-    "./head": {
-      "types": "./head.d.ts",
-      "default": "./dist/head.js"
-    },
-    "./node": {
-      "types": "./node.d.ts",
-      "default": "./dist/node.js"
-    },
-    "./server": {
-      "types": "./server.d.ts",
-      "default": "./dist/server.js"
-    },
-    "./routing": {
-      "types": "./routing.d.ts",
-      "default": "./dist/routing.js"
-    },
-    "./http": {
-      "types": "./http.d.ts",
-      "default": "./dist/http.js"
-    },
+    ".": "./dist/client.js",
+    "./head": "./dist/head.js",
+    "./node": "./dist/node.js",
+    "./server": "./dist/server.js",
+    "./routing": "./dist/routing.js",
+    "./http": "./dist/http.js",
     "./node/*": "./dist/node/*",
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "rimraf dist && tsup",
-    "dev": "pnpm run build --watch"
+    "dev": "pnpm run build --watch",
+    "build": "rimraf dist && tsup"
   },
   "dependencies": {
     "@markdoc/markdoc": "^0.2.0",

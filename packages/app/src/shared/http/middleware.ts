@@ -1,11 +1,12 @@
-import { type VesselRequest } from './request';
-import { type VesselRequestHandler } from './request-handler';
+import type { VesselRequest } from './request';
+import type { VesselRequestHandler } from './request-handler';
 import { coerceAnyResponse, type AnyResponse, type VesselResponse } from './response';
 
-export type FetchMiddleware = (
-  request: VesselRequest,
-  next: (request: VesselRequest) => Promise<VesselResponse>,
-) => AnyResponse | Promise<AnyResponse>;
+export interface FetchMiddleware {
+  (request: VesselRequest, next: (request: VesselRequest) => Promise<VesselResponse>):
+    | AnyResponse
+    | Promise<AnyResponse>;
+}
 
 export type MaybeFetchMiddleware = FetchMiddleware | undefined | null | false;
 

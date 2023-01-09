@@ -5,10 +5,10 @@ import { createVesselRequest, type RequestParams } from './request';
 import { createVesselResponse } from './response';
 import type { InferRPCParams, InferRPCResponse, RPCFetchInfo, RPCHandler } from './rpc';
 
-export type ClientFetchInit<Params = RequestParams> = RequestInit & {
+export interface ClientFetchInit<Params = RequestParams> extends RequestInit {
   params?: Params;
   searchParams?: URLSearchParams;
-};
+}
 
 export async function clientFetch<RPC extends RPCHandler>(
   input: string | Request | URL | RPC,
@@ -30,9 +30,9 @@ export async function clientFetch<RPC extends RPCHandler>(
   return response as any;
 }
 
-export type ClientFetcher<RPC extends RPCHandler> = (
-  init?: ClientFetchInit<InferRPCParams<RPC>>,
-) => Promise<InferRPCResponse<RPC>>;
+export interface ClientFetcher<RPC extends RPCHandler> {
+  (init?: ClientFetchInit<InferRPCParams<RPC>>): Promise<InferRPCResponse<RPC>>;
+}
 
 export function createClientFetcher<RPC extends RPCHandler>(
   input: string | Request | URL | RPC,

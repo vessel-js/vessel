@@ -1,7 +1,7 @@
 import type { AutoBuildAdapterConfig, BuildAdapterFactory } from 'node/build/adapter';
 
-export type ResolvedBuildConfig = {
+export interface ResolvedBuildConfig {
   adapter: BuildAdapterFactory | AutoBuildAdapterConfig;
-};
+}
 
-export type BuildConfig = Partial<ResolvedBuildConfig>;
+export interface BuildConfig extends Partial<ResolvedBuildConfig> {}

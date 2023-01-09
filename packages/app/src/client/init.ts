@@ -1,6 +1,6 @@
 import config from ':virtual/vessel/config';
 import manifest from ':virtual/vessel/manifest';
-import { MarkdownMeta } from 'shared/markdown';
+import type { MarkdownMeta } from 'shared/markdown';
 import { installURLPattern } from 'shared/polyfills';
 import {
   getRouteComponentTypes,
@@ -12,9 +12,9 @@ import { Router, type ClientLoadableRoute, type RouterFrameworkDelegate } from '
 import type { ClientManifest } from './router/types';
 import { isMarkdownModule } from './utils';
 
-export type ClientInitOptions = {
+export interface ClientInitOptions {
   frameworkDelegate: RouterFrameworkDelegate;
-};
+}
 
 export async function init({ frameworkDelegate }: ClientInitOptions) {
   await installURLPattern();

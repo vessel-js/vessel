@@ -4,7 +4,6 @@
     "baseUrl": "./src",
     "outDir": "dist",
     "declarationDir": "types",
-    "tsBuildInfoFile": ".tsbuildinfo",
     "paths": {
       ":virtual/vessel/svelte/app": ["src/virtual/app"]
     }

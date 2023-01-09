@@ -1,4 +1,4 @@
-import { type ClientLoadedRoute } from '@vessel-js/app';
+import type { ClientLoadedRoute } from '@vessel-js/app';
 import {
   createComponent,
   createEffect,
@@ -11,15 +11,15 @@ import {
 import DevErrorFallback from './DevErrorFallback';
 import ProdErrorFallback from './ProdErrorFallback';
 
-export type ErrorBoundaryProps = {
+export interface ErrorBoundaryProps {
   error: unknown;
   reset(): void;
-};
+}
 
-type RouteErrorBoundaryProps = {
+interface RouteErrorBoundaryProps {
   error?: ClientLoadedRoute['error'];
   boundary?: ClientLoadedRoute['errorBoundary'];
-};
+}
 
 const RouteErrorBoundary: ParentComponent<RouteErrorBoundaryProps> = (props) => {
   const [loadError, setLoadError] = createSignal(props.error);

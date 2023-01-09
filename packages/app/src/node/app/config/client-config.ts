@@ -1,8 +1,8 @@
-export type ResolvedClientConfig = {
+export interface ResolvedClientConfig {
   /**
    * Application module ID or file path relative to `<root>`.
    */
   app: string;
-};
+}
 
-export type ClientConfig = Partial<ResolvedClientConfig>;
+export interface ClientConfig extends Partial<ResolvedClientConfig> {}

@@ -34,16 +34,16 @@ export const BUILDER_ADDONS: BuilderAddon[] = [
 
 const DEFAULT_GIT_IGNORE = ['.DS_STORE', '.vercel/', '.vessel/', 'build/', 'node_modules/'];
 
-export type BuilderInit = {
+export interface BuilderInit {
   target: string;
   framework: JSFramework;
   addons: BuilderAddon[];
   link?: string;
-};
+}
 
-export type BuilderHooks = {
+export interface BuilderHooks {
   postBuild: (() => void | Promise<void>)[];
-};
+}
 
 export class Builder {
   readonly framework: JSFramework;

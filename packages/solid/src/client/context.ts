@@ -41,7 +41,7 @@ import {
 } from './context-keys';
 
 /** @internal */
-export type VesselContextMap = Map<string | symbol, unknown>;
+export interface VesselContextMap extends Map<string | symbol, unknown> {}
 
 /** @internal */
 export const VesselContext = createSolidContext<VesselContextMap>();
@@ -55,44 +55,45 @@ export function useRouter() {
   return useVesselContext().get(ROUTER_KEY) as Router;
 }
 
-export type RouteSignal = Accessor<ClientLoadedRoute>;
+export interface RouteSignal extends Accessor<ClientLoadedRoute> {}
 
 export function useRoute() {
   return useVesselContext().get(ROUTE_KEY) as RouteSignal;
 }
 
-export type RouteMatchesAccessor = Accessor<ClientLoadedRoute[]>;
+export interface RouteMatchesAccessor extends Accessor<ClientLoadedRoute[]> {}
 
 export function useRouteMatches() {
   return useVesselContext().get(ROUTE_MATCHES_KEY) as RouteMatchesAccessor;
 }
 
-export type RouteParamsAccessor<T extends RouteParams = RouteParams> = Accessor<T>;
+export interface RouteParamsAccessor<T extends RouteParams = RouteParams> extends Accessor<T> {}
 
 export function useRouteParams<T extends RouteParams = RouteParams>() {
   return useVesselContext().get(ROUTE_PARAMS_KEY) as RouteParamsAccessor<T>;
 }
 
-export type NavigationAccessor = Accessor<Navigation>;
+export interface NavigationAccessor extends Accessor<Navigation> {}
 
 export function useNavigation() {
   return useVesselContext().get(NAVIGATION_KEY) as NavigationAccessor;
 }
 
-export type MarkdownAccessor = Accessor<MarkdownMeta | undefined>;
+export interface MarkdownAccessor extends Accessor<MarkdownMeta | undefined> {}
 
 export function useMarkdown() {
   return useVesselContext().get(MARKDOWN_KEY) as MarkdownAccessor;
 }
 
-export type FrontmatterAccessor<T extends MarkdownFrontmatter = MarkdownFrontmatter> = Accessor<T>;
+export interface FrontmatterAccessor<T extends MarkdownFrontmatter = MarkdownFrontmatter>
+  extends Accessor<T> {}
 
 export function useFrontmatter<T extends MarkdownFrontmatter = MarkdownFrontmatter>() {
   return useVesselContext().get(FRONTMATTER_KEY) as FrontmatterAccessor<T>;
 }
 
-export type StaticDataAccessor<T extends StaticLoader | LoadedStaticData = LoadedStaticData> =
-  Accessor<InferStaticLoaderData<T>>;
+export interface StaticDataAccessor<T extends StaticLoader | LoadedStaticData = LoadedStaticData>
+  extends Accessor<InferStaticLoaderData<T>> {}
 
 export function useStaticData<
   T extends StaticLoader | LoadedStaticData = LoadedStaticData,
@@ -101,8 +102,8 @@ export function useStaticData<
   return useVesselContext().get(STATIC_DATA_KEY) as StaticDataAccessor<InferStaticLoaderData<T>>;
 }
 
-export type ServerDataAccessor<T extends ServerLoader | LoadedServerData = LoadedServerData> =
-  Accessor<InferServerLoaderData<T>>;
+export interface ServerDataAccessor<T extends ServerLoader | LoadedServerData = LoadedServerData>
+  extends Accessor<InferServerLoaderData<T>> {}
 
 export function useServerData<
   T extends ServerLoader | LoadedServerData = LoadedServerData,
@@ -111,7 +112,8 @@ export function useServerData<
   return useVesselContext().get(SERVER_DATA_KEY) as ServerDataAccessor<InferServerLoaderData<T>>;
 }
 
-export type ServerErrorAccessor<T extends HttpErrorData = HttpErrorData> = Accessor<HttpError<T>>;
+export interface ServerErrorAccessor<T extends HttpErrorData = HttpErrorData>
+  extends Accessor<HttpError<T>> {}
 
 export function useServerError<T extends HttpErrorData = HttpErrorData>() {
   return useVesselContext().get(SERVER_ERROR_KEY) as ServerErrorAccessor<T>;

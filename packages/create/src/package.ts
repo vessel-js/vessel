@@ -3,13 +3,13 @@ import { sortObjectKeys } from './utils/obj';
 
 export type NodePackageManager = 'npm' | 'pnpm' | 'yarn';
 
-export type PackageJsonBuilderInit = {
+export interface PackageJsonBuilderInit {
   target: SystemDirectory;
   version: string;
   link?: string;
-};
+}
 
-export type PackageJson = {
+export interface PackageJson {
   [key: string]: unknown;
   name: string;
   version: string;
@@ -19,7 +19,7 @@ export type PackageJson = {
   scripts: Record<string, string>;
   dependencies: Record<string, string>;
   devDependencies: Record<string, string>;
-};
+}
 
 export class PackageJsonBuilder {
   protected _target: SystemDirectory;

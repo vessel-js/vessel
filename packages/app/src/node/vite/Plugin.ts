@@ -2,7 +2,7 @@ import type { App } from 'node/app/App';
 import type { AppConfig, ResolvedAppConfig } from 'node/app/config';
 import type { Plugin as VitePlugin } from 'vite';
 
-export type VesselPlugin = VitePlugin & {
+export interface VesselPlugin extends VitePlugin {
   vessel?: {
     /**
      * Whether to run before core Vessel plugins or after.
@@ -23,7 +23,7 @@ export type VesselPlugin = VitePlugin & {
      */
     configureApp?: (app: App) => void | Promise<void>;
   };
-};
+}
 
 export type VesselPluginOption = VesselPlugin | false | null | undefined;
 

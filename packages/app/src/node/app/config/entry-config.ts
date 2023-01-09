@@ -1,4 +1,4 @@
-export type ResolvedEntryConfig = {
+export interface ResolvedEntryConfig {
   client: string;
   server: string;
-};
+}

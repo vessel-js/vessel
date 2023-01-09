@@ -9,11 +9,11 @@ import { SystemFiles, type SystemDirPath, type SystemFileMeta } from './system-f
 
 export type RouteFileType = RouteComponentType | 'api';
 
-export type RouteFile = SystemFileMeta & {
+export interface RouteFile extends SystemFileMeta {
   readonly routeId: string;
   readonly moduleId: string;
   readonly type: RouteFileType;
-};
+}
 
 export type RouteDir = { path: SystemDirPath } & {
   [P in RouteFileType]?: RouteFile;

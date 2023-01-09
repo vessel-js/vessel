@@ -3,7 +3,7 @@ import { installPolyfills } from 'node/polyfills';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createServer } from 'server/http';
 import type { ServerManifest } from 'server/types';
-import { type RequestHandler } from 'shared/http';
+import type { RequestHandler } from 'shared/http';
 
 export function createIncomingMessageHandler(manifest: ServerManifest) {
   let installed = false,

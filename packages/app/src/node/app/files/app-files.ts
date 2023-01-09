@@ -1,7 +1,7 @@
 import * as path from 'pathe';
 import type { ServerConfig } from 'server/http/app/configure-server';
 
-import { type App } from '../App';
+import type { App } from '../App';
 import { MarkdocFiles } from './markdoc-files';
 import { RouteFiles } from './route-files';
 

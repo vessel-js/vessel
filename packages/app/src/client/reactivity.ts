@@ -1,11 +1,13 @@
-export type Unsubscribe = () => void;
+export interface Unsubscribe {
+  (): void;
+}
 
-export type Reactive<T> = {
+export interface Reactive<T> {
   get(): T;
   set(newValue: T): void;
   subscribe(onUpdate: (value: T) => void): Unsubscribe;
-};
+}
 
-export type ReactiveFactory = {
+export interface ReactiveFactory {
   <T>(value: T): Reactive<T>;
-};
+}

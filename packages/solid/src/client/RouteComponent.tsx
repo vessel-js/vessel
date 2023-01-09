@@ -1,4 +1,4 @@
-import { type ClientLoadedRoute } from '@vessel-js/app';
+import type { ClientLoadedRoute } from '@vessel-js/app';
 import {
   createComponent,
   createEffect,
@@ -10,10 +10,10 @@ import {
 import { useVesselContext } from './context';
 import { SERVER_DATA_KEY, SERVER_ERROR_KEY, STATIC_DATA_KEY } from './context-keys';
 
-type RouteProps = {
+interface RouteProps {
   component?: ClientLoadedRoute['page'];
   leaf?: boolean;
-};
+}
 
 const RouteComponent: ParentComponent<RouteProps> = (props) => {
   const context = useVesselContext();

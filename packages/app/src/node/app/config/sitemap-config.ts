@@ -11,7 +11,7 @@ export type SitemapChangeFrequency =
 
 export type SitemapPriority = number;
 
-export type ResolvedSitemapConfig = {
+export interface ResolvedSitemapConfig {
   /**
    * The URL origin to use when building sitemap URL entries.
    *
@@ -60,13 +60,13 @@ export type ResolvedSitemapConfig = {
    * Additional sitemap URLS to be included.
    */
   entries: SitemapURL[];
-};
+}
 
-export type SitemapURL = {
+export interface SitemapURL {
   path: string;
   lastmod?: string;
   changefreq?: SitemapChangeFrequency;
   priority?: SitemapPriority;
-};
+}
 
-export type SitemapConfig = Partial<ResolvedSitemapConfig>;
+export interface SitemapConfig extends Partial<ResolvedSitemapConfig> {}

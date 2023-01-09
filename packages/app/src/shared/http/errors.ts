@@ -1,6 +1,6 @@
 import { isNumber } from 'shared/utils/unit';
 
-export type HttpErrorData = Record<string, any>;
+export interface HttpErrorData extends Record<string, any> {}
 
 export class HttpError<ErrorData extends HttpErrorData = HttpErrorData> extends Error {
   readonly name = 'HttpError' as const;

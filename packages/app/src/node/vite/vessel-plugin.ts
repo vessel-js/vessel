@@ -6,7 +6,7 @@ import { installPolyfills } from 'node/polyfills';
 import { rimraf } from 'node/utils';
 import * as path from 'pathe';
 import type { OutputBundle } from 'rollup';
-import { type Plugin as VitePlugin, type ResolvedConfig as ViteResolvedConfig } from 'vite';
+import type { Plugin as VitePlugin, ResolvedConfig as ViteResolvedConfig } from 'vite';
 
 import { virtualAliases, virtualModuleRequestPath } from './alias';
 import { configureDevServer } from './core/dev-server';
@@ -26,7 +26,7 @@ const clientPackages = [
   'urlpattern-polyfill/urlpattern',
 ];
 
-export type VesselPluginConfig = AppConfig;
+export interface VesselPluginConfig extends AppConfig {}
 
 export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
   let app: App, appFactory: AppFactory, viteConfig: ViteResolvedConfig;

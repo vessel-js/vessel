@@ -1,4 +1,4 @@
-export type ResolvedDirectoriesConfig = {
+export interface ResolvedDirectoriesConfig {
   /**
    * Path to application directory. The value can be either an absolute file system path or a path
    * relative to `<root>`.
@@ -23,6 +23,6 @@ export type ResolvedDirectoriesConfig = {
    * @default '<root>/build'
    */
   build: string;
-};
+}
 
-export type DirectoriesConfig = Partial<ResolvedDirectoriesConfig>;
+export interface DirectoriesConfig extends Partial<ResolvedDirectoriesConfig> {}

@@ -1,7 +1,7 @@
 import type { RouteFileType } from 'node/app/files';
 import type { AppRoute } from 'node/app/routes';
 import type { OutputAsset, OutputBundle, OutputChunk } from 'rollup';
-import { ServerConfig } from 'server/http/app/configure-server';
+import type { ServerConfig } from 'server/http/app/configure-server';
 import type {
   ServerLoadedPageRoute,
   ServerPageResource,
@@ -11,7 +11,7 @@ import type {
 import type { RouteComponentType } from 'shared/routing';
 import type { Manifest as ViteManifest } from 'vite';
 
-export type BuildBundles = {
+export interface BuildBundles {
   entries: Record<string, string>;
   client: {
     bundle: OutputBundle;
@@ -41,9 +41,9 @@ export type BuildBundles = {
       files: Map<string, { [P in RouteFileType]?: string }>;
     };
   };
-};
+}
 
-export type BuildData = {
+export interface BuildData {
   /**
    * Application entry files that are passed to Rollup's `input` option.
    */
@@ -216,4 +216,4 @@ export type BuildData = {
      */
     routes: Set<string>;
   };
-};
+}
