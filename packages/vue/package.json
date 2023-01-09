@@ -36,7 +36,7 @@
     "pathe": "^1.0.0"
   },
   "peerDependencies": {
-    "@vessel-js/app": "0.0.1",
+    "@vessel-js/app": "0.1.1",
     "vue": "^3.0.0"
   },
   "devDependencies": {
