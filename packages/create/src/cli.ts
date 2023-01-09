@@ -62,18 +62,18 @@ export async function run() {
   // Dependencies
   // -------------------------------------------------------------------------------------------
 
-  builder.pkg.addDevDep('vite', '^3.1.0');
+  builder.pkg.addDevDep('vite', '^4.0.0');
   builder.pkg.addVesselDep('app');
 
   switch (builder.framework) {
     case 'svelte':
       builder.pkg.addVesselDep('svelte');
-      builder.pkg.addDevDep('svelte', '^3.40.0');
-      builder.pkg.addDevDep('@sveltejs/vite-plugin-svelte', '^1.0.0');
-      builder.pkg.addDevDep('svelte-preprocess', '^4.10.0');
+      builder.pkg.addDevDep('svelte', '^3.55.0');
+      builder.pkg.addDevDep('@sveltejs/vite-plugin-svelte', '^2.0.0');
+      builder.pkg.addDevDep('svelte-preprocess', '^5.0.0');
       if (builder.hasAddon('typescript')) {
         builder.pkg.addDevDep('@tsconfig/svelte', '^3.0.0');
-        builder.pkg.addDevDep('svelte-check', '^2.9.0');
+        builder.pkg.addDevDep('svelte-check', '^3.0.0');
       }
       break;
     case 'vue':
@@ -82,7 +82,7 @@ export async function run() {
       builder.pkg.addDevDep('@vue/compiler-sfc', '^3.2.0');
       builder.pkg.addDevDep('@vitejs/plugin-vue', '^3.1.0');
       if (builder.hasAddon('typescript')) {
-        builder.pkg.addDevDep('vue-tsc', '^0.40.0');
+        builder.pkg.addDevDep('vue-tsc', '^1.0.0');
       }
       break;
     // case 'react':
@@ -97,14 +97,14 @@ export async function run() {
     //   break;
     case 'preact':
       builder.pkg.addVesselDep('preact');
-      builder.pkg.addDep('preact', '^10.5.0');
-      builder.pkg.addDep('preact-render-to-string', '^5.1.0');
-      builder.pkg.addDevDep('@preact/preset-vite', '^2.4.0');
+      builder.pkg.addDep('preact', '^10.11.0');
+      builder.pkg.addDep('preact-render-to-string', '^5.2.0');
+      builder.pkg.addDevDep('@preact/preset-vite', '^2.5.0');
       break;
     case 'solid':
       builder.pkg.addVesselDep('solid');
-      builder.pkg.addDep('solid-js', '^1.5.0');
-      builder.pkg.addDevDep('vite-plugin-solid', '^2.3.0');
+      builder.pkg.addDep('solid-js', '^1.6.0');
+      builder.pkg.addDevDep('vite-plugin-solid', '^2.5.0');
       break;
   }
 

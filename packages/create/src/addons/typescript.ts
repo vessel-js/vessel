@@ -3,7 +3,7 @@ import type { Builder } from '../builder';
 export async function typescriptAddon(builder: Builder) {
   if (!builder.hasAddon('typescript')) return;
 
-  builder.pkg.addDevDep('typescript', '^4.4.0');
+  builder.pkg.addDevDep('typescript', '^4.9.0');
   builder.pkg.addDevDep('@types/node', '^16.0.0');
 
   if (builder.framework === 'svelte') {

@@ -6,9 +6,9 @@ export async function eslintAddon(builder: Builder) {
   builder.addGitIgnore('.eslintcache');
 
   builder.pkg.addDevDep('npm-run-all', '^4.0.0');
-  builder.pkg.addDevDep('eslint', '^7.0.0');
-  builder.pkg.addDevDep('eslint-plugin-import', '^2.0.0');
-  builder.pkg.addDevDep('eslint-plugin-simple-import-sort', '^7.0.0');
+  builder.pkg.addDevDep('eslint', '^8.0.0');
+  builder.pkg.addDevDep('eslint-plugin-import', '^2.26.0');
+  builder.pkg.addDevDep('eslint-plugin-simple-import-sort', '^8.0.0');
 
   builder.pkg.addScript('lint', 'run-s lint:*');
 
@@ -26,17 +26,17 @@ export async function eslintAddon(builder: Builder) {
   }
 
   if (builder.hasAddon('typescript')) {
-    builder.pkg.addDevDep('@typescript-eslint/eslint-plugin', '^4.0.0');
-    builder.pkg.addDevDep('@typescript-eslint/parser', '^4.0.0');
-    builder.pkg.addDevDep('eslint-import-resolver-typescript', '^2.5.0');
+    builder.pkg.addDevDep('@typescript-eslint/eslint-plugin', '^5.0.0');
+    builder.pkg.addDevDep('@typescript-eslint/parser', '^5.0.0');
+    builder.pkg.addDevDep('eslint-import-resolver-typescript', '^3.5.0');
   }
 
   if (builder.framework === 'vue') {
-    builder.pkg.addDevDep('eslint-plugin-vue', '^8.0.0');
+    builder.pkg.addDevDep('eslint-plugin-vue', '^9.0.0');
   }
 
   if (builder.framework === 'svelte') {
-    builder.pkg.addDevDep('eslint-plugin-svelte3', '^3.0.0');
+    builder.pkg.addDevDep('eslint-plugin-svelte3', '^4.0.0');
   }
 
   const config = JSON.stringify(resolveConfig(builder), null, 2);

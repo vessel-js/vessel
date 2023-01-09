@@ -4,8 +4,8 @@ import { resolveLintExtensions } from './eslint.js';
 export async function lintStagedAddon(builder: Builder) {
   if (!builder.hasAddon('lint-staged')) return;
 
-  builder.pkg.addDevDep('husky', '^7.0.0');
-  builder.pkg.addDevDep('lint-staged', '^11.0.0');
+  builder.pkg.addDevDep('husky', '^8.0.0');
+  builder.pkg.addDevDep('lint-staged', '^13.0.0');
 
   const prepareScript = builder.pkg.getScript('prepare');
 

@@ -7,7 +7,7 @@ export async function prettierAddon(builder: Builder) {
   builder.pkg.addDevDep('prettier', '^2.0.0');
 
   if (builder.hasAddon('typescript')) {
-    builder.pkg.addDevDep('prettier-plugin-tailwindcss', '^0.1.7');
+    builder.pkg.addDevDep('prettier-plugin-tailwindcss', '^0.2.0');
   }
 
   builder.pkg.addScript('lint', 'run-s lint:*');

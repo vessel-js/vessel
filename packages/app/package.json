@@ -61,8 +61,8 @@
   },
   "peerDependencies": {
     "@wooorm/starry-night": "^1.5.0",
-    "shiki": "^0.10.1",
-    "vite": "^3.0.0"
+    "shiki": "^0.12.0",
+    "vite": "^4.0.0"
   },
   "peerDependenciesMeta": {
     "shiki": {
