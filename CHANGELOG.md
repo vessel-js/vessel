@@ -1,3 +1,9 @@
+## [0.1.1](https://github.com/vessel-js/vessel/compare/v0.1.0...v0.1.1) (2023-01-09)
+
+### Bug Fixes
+
+- include all declaration files and licenses ([d27d9ef](https://github.com/vessel-js/vessel/commit/d27d9ef2d5d4ccd8034fe6cd454a684e6c534b17))
+
 # 0.1.0 (2023-01-09)
 
 ### Bug Fixes
