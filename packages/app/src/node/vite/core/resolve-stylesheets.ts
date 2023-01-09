@@ -6,9 +6,7 @@ export async function resolveDevStylesheets(app: App, route: AppRoute) {
   const stylesMap = await Promise.all(
     [
       app.config.client.app,
-      ...app.routes
-        .getLayoutBranch(route)
-        .map((layout) => layout.path.absolute),
+      ...app.routes.getLayoutBranch(route).map((layout) => layout.path.absolute),
       route.page!.path.absolute,
     ].map((file) => getStylesByFile(app.vite.server!, file)),
   );

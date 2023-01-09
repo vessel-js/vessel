@@ -35,10 +35,7 @@ export function parseAndFindVarRanges(code: string, vars: Set<string>) {
 
     if (node.type === 'FunctionDeclaration' && vars.has(node.id.name)) {
       results.push([node.id.name, node.start, node.end]);
-    } else if (
-      node.type === 'VariableDeclaration' &&
-      vars.has(node.declarations[0].id.name)
-    ) {
+    } else if (node.type === 'VariableDeclaration' && vars.has(node.declarations[0].id.name)) {
       results.push([node.declarations[0].id.name, node.start, node.end]);
     }
   }

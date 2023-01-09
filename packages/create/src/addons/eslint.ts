@@ -41,10 +41,7 @@ export async function eslintAddon(builder: Builder) {
 
   const config = JSON.stringify(resolveConfig(builder), null, 2);
 
-  await builder.dirs.target.write(
-    '.eslintrc.js',
-    `module.exports = ${config};`,
-  );
+  await builder.dirs.target.write('.eslintrc.js', `module.exports = ${config};`);
 }
 
 function resolveConfig(builder: Builder) {
@@ -76,9 +73,7 @@ function resolveBaseConfig({ typescript = false }) {
       sourceType: 'module',
     },
     ignorePatterns: ['.eslintrc.js'],
-    plugins: [typescript && '@typescript-eslint', 'simple-import-sort'].filter(
-      Boolean,
-    ),
+    plugins: [typescript && '@typescript-eslint', 'simple-import-sort'].filter(Boolean),
     overrides: [] as { files: string[]; processor: string }[],
     extends: [
       'eslint:recommended',

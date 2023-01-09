@@ -1,14 +1,14 @@
 import {
   escapeHTML,
   Markdoc,
+  renderMarkdocToHTML,
+  toPascalCase,
   type MarkdocConfig,
   type MarkdocRenderer,
   type MarkdocTag,
   type MarkdocTreeNodeTransformer,
   type MarkdocTreeWalkStuff,
   type RenderMarkdocConfig,
-  renderMarkdocToHTML,
-  toPascalCase,
 } from '@vessel-js/app/node';
 import * as path from 'pathe';
 
@@ -16,11 +16,7 @@ export const solidMarkdocTags: MarkdocConfig['tags'] = {
   component: {
     render: 'solid:component',
     transform(node, config) {
-      return new Markdoc.Tag(
-        'solid:component',
-        node.attributes,
-        node.transformChildren(config),
-      );
+      return new Markdoc.Tag('solid:component', node.attributes, node.transformChildren(config));
     },
   },
 };
@@ -50,11 +46,7 @@ export const renderMarkdoc: MarkdocRenderer = ({ meta, content, imports }) => {
 
   const moduleCode =
     imports.length > 0
-      ? [
-          ...imports,
-          '',
-          `export const __markdownMeta = ${JSON.stringify(meta)};`,
-        ].join('\n')
+      ? [...imports, '', `export const __markdownMeta = ${JSON.stringify(meta)};`].join('\n')
       : '';
 
   const componentCode = [
@@ -73,10 +65,7 @@ const codeNameRE = /^(code|Code)$/;
 const fenceNameRE = /^(pre|Fence)$/;
 const solidComponentNameRE = /^solid:component$/;
 
-export const transformTreeNode: MarkdocTreeNodeTransformer = ({
-  node,
-  stuff,
-}) => {
+export const transformTreeNode: MarkdocTreeNodeTransformer = ({ node, stuff }) => {
   if (node && typeof node !== 'string') {
     const name = node.name;
 
@@ -137,7 +126,5 @@ function escapeFenceContent(tag: MarkdocTag) {
 }
 
 function htmlBlock(html: string) {
-  return `<div textContent="${JSON.stringify(
-    html,
-  )}" style="display: contents;"></div>`;
+  return `<div textContent="${JSON.stringify(html)}" style="display: contents;"></div>`;
 }

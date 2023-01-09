@@ -1,6 +1,6 @@
 import {
-  type ClientLoadedRoute,
   isMarkdownModule,
+  type ClientLoadedRoute,
   type MarkdownFrontmatter,
   type MarkdownMeta,
   type Navigation,
@@ -9,11 +9,7 @@ import {
 } from '@vessel-js/app';
 import { createHeadManager } from '@vessel-js/app/head';
 import type { HttpError, HttpErrorData } from '@vessel-js/app/http';
-import type {
-  LoadedServerData,
-  LoadedStaticData,
-  RouteParams,
-} from '@vessel-js/app/routing';
+import type { LoadedServerData, LoadedStaticData, RouteParams } from '@vessel-js/app/routing';
 import type {
   InferServerLoaderData,
   InferStaticLoaderData,
@@ -22,13 +18,13 @@ import type {
 } from '@vessel-js/app/server';
 import {
   computed,
-  type ComputedRef,
   inject,
   isReadonly,
   readonly,
-  type Ref,
   ref,
   watchEffect,
+  type ComputedRef,
+  type Ref,
 } from 'vue';
 
 import {
@@ -61,12 +57,8 @@ export function useRouteMatches(): RouteMatchesRef {
   return inject(ROUTE_MATCHES_KEY)!;
 }
 
-export type RouteParamsRef<T extends RouteParams = RouteParams> = Readonly<
-  Ref<T>
->;
-export function useRouteParams<
-  T extends RouteParams = RouteParams,
->(): RouteParamsRef<T> {
+export type RouteParamsRef<T extends RouteParams = RouteParams> = Readonly<Ref<T>>;
+export function useRouteParams<T extends RouteParams = RouteParams>(): RouteParamsRef<T> {
   return inject(ROUTE_PARAMS_KEY)!;
 }
 
@@ -82,9 +74,7 @@ export function useMarkdown(): MarkdownRef {
   return inject(MARKDOWN_KEY)!;
 }
 
-export type FrontmatterRef<
-  T extends MarkdownFrontmatter = MarkdownFrontmatter,
-> = ComputedRef<T>;
+export type FrontmatterRef<T extends MarkdownFrontmatter = MarkdownFrontmatter> = ComputedRef<T>;
 
 export function useFrontmatter<
   T extends MarkdownFrontmatter = MarkdownFrontmatter,
@@ -92,9 +82,9 @@ export function useFrontmatter<
   return inject(FRONTMATTER_KEY)!;
 }
 
-export type StaticDataRef<
-  T extends StaticLoader | LoadedStaticData = LoadedStaticData,
-> = Readonly<Ref<InferStaticLoaderData<T>>>;
+export type StaticDataRef<T extends StaticLoader | LoadedStaticData = LoadedStaticData> = Readonly<
+  Ref<InferStaticLoaderData<T>>
+>;
 
 export function useStaticData<
   T extends StaticLoader | LoadedStaticData = LoadedStaticData,
@@ -103,9 +93,9 @@ export function useStaticData<
   return inject(STATIC_DATA_KEY)!;
 }
 
-export type ServerDataRef<
-  T extends ServerLoader | LoadedServerData = LoadedServerData,
-> = Readonly<Ref<InferServerLoaderData<T>>>;
+export type ServerDataRef<T extends ServerLoader | LoadedServerData = LoadedServerData> = Readonly<
+  Ref<InferServerLoaderData<T>>
+>;
 
 export function useServerData<
   T extends ServerLoader | LoadedServerData = LoadedServerData,
@@ -114,13 +104,9 @@ export function useServerData<
   return inject(SERVER_DATA_KEY)!;
 }
 
-export type ServerErrorRef<T extends HttpErrorData = HttpErrorData> = Readonly<
-  Ref<HttpError<T>>
->;
+export type ServerErrorRef<T extends HttpErrorData = HttpErrorData> = Readonly<Ref<HttpError<T>>>;
 
-export function useServerError<
-  T extends HttpErrorData = HttpErrorData,
->(): ServerErrorRef<T> {
+export function useServerError<T extends HttpErrorData = HttpErrorData>(): ServerErrorRef<T> {
   return inject(SERVER_ERROR_KEY)!;
 }
 

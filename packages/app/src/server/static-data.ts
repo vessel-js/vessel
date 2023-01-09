@@ -22,9 +22,7 @@ export function createStaticLoaderInput(
   };
 }
 
-export function createStaticLoaderDataMap(
-  routes: ServerLoadedPageRoute[],
-): StaticLoaderDataMap {
+export function createStaticLoaderDataMap(routes: ServerLoadedPageRoute[]): StaticLoaderDataMap {
   const map: StaticLoaderDataMap = new Map();
 
   for (const route of routes) {
@@ -57,9 +55,7 @@ export function createStaticDataScriptTag(
 
   return [
     '<script>',
-    `__VSL_STATIC_DATA__ = JSON.parse(${JSON.stringify(
-      JSON.stringify(table),
-    )});`,
+    `__VSL_STATIC_DATA__ = JSON.parse(${JSON.stringify(JSON.stringify(table))});`,
     '</script>',
   ].join('');
 }

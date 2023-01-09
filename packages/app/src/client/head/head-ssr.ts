@@ -2,17 +2,9 @@
  * Adapted from: https://github.com/vueuse/head
  */
 
-import { type HeadManager, type HeadTag, sortTags } from './manage-head';
-import type {
-  AttrValueResolver,
-  HeadAttributes,
-  ReactiveAttrValue,
-} from './types/head-attrs';
-import {
-  BODY_TAG_ATTR_NAME,
-  HEAD_ATTRS_KEY,
-  HEAD_COUNT_KEY,
-} from './update-head';
+import { sortTags, type HeadManager, type HeadTag } from './manage-head';
+import type { AttrValueResolver, HeadAttributes, ReactiveAttrValue } from './types/head-attrs';
+import { BODY_TAG_ATTR_NAME, HEAD_ATTRS_KEY, HEAD_COUNT_KEY } from './update-head';
 
 const SELF_CLOSING_TAGS = ['meta', 'link', 'base'];
 
@@ -94,20 +86,15 @@ function tagToString(tag: HeadTag, resolve: AttrValueResolver) {
 
   const attrs = stringifyAttrs(tag.props, resolve);
   if (SELF_CLOSING_TAGS.includes(tag.tag)) {
-    return `<${tag.tag}${attrs}${
-      isBodyTag ? ' ' + ` ${BODY_TAG_ATTR_NAME}="true"` : ''
-    }>`;
+    return `<${tag.tag}${attrs}${isBodyTag ? ' ' + ` ${BODY_TAG_ATTR_NAME}="true"` : ''}>`;
   }
 
-  return `<${tag.tag}${attrs}${
-    isBodyTag ? ` ${BODY_TAG_ATTR_NAME}="true"` : ''
-  }>${resolve(tag.props.children) || ''}</${tag.tag}>`;
+  return `<${tag.tag}${attrs}${isBodyTag ? ` ${BODY_TAG_ATTR_NAME}="true"` : ''}>${
+    resolve(tag.props.children) || ''
+  }</${tag.tag}>`;
 }
 
-function stringifyAttrs(
-  attributes: Record<string, ReactiveAttrValue>,
-  resolve: AttrValueResolver,
-) {
+function stringifyAttrs(attributes: Record<string, ReactiveAttrValue>, resolve: AttrValueResolver) {
   const handledAttributes: string[] = [];
 
   for (const [key, _value] of Object.entries(attributes)) {

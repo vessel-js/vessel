@@ -1,5 +1,5 @@
 import type { ServerManifest } from 'server/types';
-import { json, type RequestParams, VesselRequest } from 'shared/http';
+import { json, VesselRequest, type RequestParams } from 'shared/http';
 
 import { handleApiRequest } from './handle-api-request';
 
@@ -10,8 +10,7 @@ export async function handleRPCRequest(
   const routeId = request.URL.searchParams.get('rpc_route_id'),
     params: RequestParams = {};
 
-  const route =
-    routeId && manifest.routes.api.find((route) => route.id === routeId);
+  const route = routeId && manifest.routes.api.find((route) => route.id === routeId);
 
   if (!route) {
     return json({ error: { message: 'route not found' } }, 404);

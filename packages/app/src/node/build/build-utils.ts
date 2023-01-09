@@ -1,5 +1,5 @@
 import kleur from 'kleur';
-import { type App, ensureDir, LoggerIcon } from 'node';
+import { ensureDir, LoggerIcon, type App } from 'node';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import ora from 'ora';
@@ -14,26 +14,12 @@ export function pluralize(word: string, count: number) {
   return count === 1 ? word : `${word}s`;
 }
 
-export function formatWritingFilesTitle(
-  type: string,
-  word: string,
-  count: number,
-) {
-  return `Writing ${kleur.underline(count)} ${type} ${pluralize(
-    word,
-    count,
-  )}...`;
+export function formatWritingFilesTitle(type: string, word: string, count: number) {
+  return `Writing ${kleur.underline(count)} ${type} ${pluralize(word, count)}...`;
 }
 
-export function formatCommittedFilesTitle(
-  type: string,
-  word: string,
-  count: number,
-) {
-  return `Committed ${kleur.underline(count)} ${type} ${pluralize(
-    word,
-    count,
-  )}`;
+export function formatCommittedFilesTitle(type: string, word: string, count: number) {
+  return `Committed ${kleur.underline(count)} ${type} ${pluralize(word, count)}`;
 }
 
 export function resolveHTMLFilename(url: URL) {
@@ -46,10 +32,7 @@ export function resolveDataFilename(name: string) {
   return `${STATIC_DATA_ASSET_BASE_PATH}/${name}.json`.slice(1);
 }
 
-export function createStaticDataScriptTag(
-  dataAssetIds: Set<string> | undefined,
-  build: BuildData,
-) {
+export function createStaticDataScriptTag(dataAssetIds: Set<string> | undefined, build: BuildData) {
   if (!dataAssetIds) return '';
 
   const table: Record<string, unknown> = {};
@@ -65,9 +48,7 @@ export function createStaticDataScriptTag(
 
   return [
     '<script>',
-    `__VSL_STATIC_DATA__ = JSON.parse(${JSON.stringify(
-      JSON.stringify(table),
-    )});`,
+    `__VSL_STATIC_DATA__ = JSON.parse(${JSON.stringify(JSON.stringify(table))});`,
     '</script>',
   ].join('');
 }

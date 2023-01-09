@@ -13,13 +13,13 @@ import {
   findRoute,
   getRouteComponentDataKeys,
   getRouteComponentTypes,
-  type LoadedRouteComponent,
   matchAllRoutes,
   matchRoute,
   normalizeURL,
   resolveSettledPromiseRejection,
   resolveSettledPromiseValue,
   stripRouteComponentTypes,
+  type LoadedRouteComponent,
 } from 'shared/routing';
 import type { Mutable } from 'shared/types';
 import { coerceError } from 'shared/utils/error';
@@ -158,12 +158,8 @@ export class Router {
   /**
    * Set a new delegate for handling scroll-related tasks.
    */
-  setScrollDelegate<T extends ScrollDelegate>(
-    manager: T | ScrollDelegateFactory<T>,
-  ): T {
-    return (this._scrollDelegate = isFunction(manager)
-      ? manager?.(this)
-      : manager);
+  setScrollDelegate<T extends ScrollDelegate>(manager: T | ScrollDelegateFactory<T>): T {
+    return (this._scrollDelegate = isFunction(manager) ? manager?.(this) : manager);
   }
   /**
    * Adds a new route comparator to handle matching, scoring, and sorting routes.
@@ -226,9 +222,7 @@ export class Router {
    * Checks whether the given URL belongs to this application.
    */
   owns(url: URL): boolean {
-    return (
-      url.origin === location.origin && url.pathname.startsWith(this.baseUrl)
-    );
+    return url.origin === location.origin && url.pathname.startsWith(this.baseUrl);
   }
 
   /**
@@ -252,9 +246,7 @@ export class Router {
    */
   matchAll(pathnameOrURL: string | URL): ClientMatchedRoute[] {
     const url = this.createURL(pathnameOrURL);
-    return this.owns(url)
-      ? matchAllRoutes(url, this._routes, this.trailingSlash)
-      : [];
+    return this.owns(url) ? matchAllRoutes(url, this._routes, this.trailingSlash) : [];
   }
 
   /**
@@ -318,17 +310,8 @@ export class Router {
    * instance (`new URL(...)`).
    */
   async go(
-    path:
-      | `https://${string}`
-      | `#${string}`
-      | VesselRoutes[keyof VesselRoutes]
-      | URL,
-    {
-      scroll,
-      replace = false,
-      keepfocus = false,
-      state = {},
-    }: GoHrefOptions = {},
+    path: `https://${string}` | `#${string}` | VesselRoutes[keyof VesselRoutes] | URL,
+    { scroll, replace = false, keepfocus = false, state = {} }: GoHrefOptions = {},
   ): Promise<void> {
     if (isString(path) && path.startsWith('#')) {
       const hash = path;
@@ -382,9 +365,7 @@ export class Router {
    * Start the router and begin listening for link clicks we can intercept them and handle SPA
    * navigation. This has no effect after initial call.
    */
-  async start(
-    mount: (target: HTMLElement) => void | Promise<void>,
-  ): Promise<void> {
+  async start(mount: (target: HTMLElement) => void | Promise<void>): Promise<void> {
     if (!this._listening) {
       const startingURL = this.normalizeURL(new URL(location.href));
       await this.go(startingURL.href as any, { replace: true });
@@ -445,10 +426,7 @@ export class Router {
       cancelled = true;
     };
 
-    const startNavigation = (
-      matches: ClientMatchedRoute[],
-      rootError?: Error,
-    ) =>
+    const startNavigation = (matches: ClientMatchedRoute[], rootError?: Error) =>
       this._startNavigation({
         ...nav,
         url,
@@ -470,17 +448,12 @@ export class Router {
         );
       }
 
-      return startNavigation(
-        this.matchAll('/'),
-        new HttpError('too many redirects', 500),
-      );
+      return startNavigation(this.matchAll('/'), new HttpError('too many redirects', 500));
     }
 
     const handleRedirect = (to: URL) => {
       if (import.meta.env.DEV) {
-        console.debug(
-          `[vessel] redirecting from \`${fURL(url)}\` to \`${fURL(to)}\``,
-        );
+        console.debug(`[vessel] redirecting from \`${fURL(url)}\` to \`${fURL(to)}\``);
       }
       nav.redirects!.push(to.pathname);
       return this.navigate(to, {
@@ -518,10 +491,7 @@ export class Router {
       if (matches.length > 0) return startNavigation(matches, error);
 
       // Happens in SPA fallback mode - don't go back to the server to prevent infinite reload.
-      if (
-        url.origin === location.origin &&
-        url.pathname === location.pathname
-      ) {
+      if (url.origin === location.origin && url.pathname === location.pathname) {
         return startNavigation(this.matchAll('/'), error);
       }
 
@@ -562,9 +532,7 @@ export class Router {
     this._fw.navigation.set({ from: this._url, to: url });
 
     if (import.meta.env.DEV && from) {
-      console.debug(
-        `[vessel] navigating from \`${fURL(this._url)}\` to \`${fURL(url)}\``,
-      );
+      console.debug(`[vessel] navigating from \`${fURL(this._url)}\` to \`${fURL(url)}\``);
     }
 
     const loadResults = await this._loadRoutes(url, matches);
@@ -685,12 +653,8 @@ export class Router {
     return loadRoutes(
       url,
       matches.map((match) => {
-        const existing = prevMatches.find(
-          (route) => !route.error && route.id === match.id,
-        );
-        return existing
-          ? { ...existing, page: existing.page ?? match.page }
-          : match;
+        const existing = prevMatches.find((route) => !route.error && route.id === match.id);
+        return existing ? { ...existing, page: existing.page ?? match.page } : match;
       }),
     );
   }
@@ -727,9 +691,7 @@ export class Router {
 }
 
 function getBaseUri(baseUrl = '/') {
-  return `${location.protocol}//${location.host}${
-    baseUrl === '/' ? '' : baseUrl
-  }`;
+  return `${location.protocol}//${location.host}${baseUrl === '/' ? '' : baseUrl}`;
 }
 
 // Taken from SvelteKit

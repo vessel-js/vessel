@@ -14,12 +14,7 @@ const vesselPkg = JSON.parse(fs.readFileSync(vesselPkgPath, 'utf-8'));
 
 export type JSFramework = 'svelte' | 'vue' | 'solid' | 'preact';
 
-export const JS_FRAMEWORKS: JSFramework[] = [
-  'svelte',
-  'vue',
-  'solid',
-  'preact',
-];
+export const JS_FRAMEWORKS: JSFramework[] = ['svelte', 'vue', 'solid', 'preact'];
 
 export type BuilderAddon =
   | 'prettier'
@@ -37,13 +32,7 @@ export const BUILDER_ADDONS: BuilderAddon[] = [
   'typescript',
 ];
 
-const DEFAULT_GIT_IGNORE = [
-  '.DS_STORE',
-  '.vercel/',
-  '.vessel/',
-  'build/',
-  'node_modules/',
-];
+const DEFAULT_GIT_IGNORE = ['.DS_STORE', '.vercel/', '.vessel/', 'build/', 'node_modules/'];
 
 export type BuilderInit = {
   target: string;

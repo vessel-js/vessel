@@ -5,8 +5,8 @@ import {
   coerceAnyResponse,
   HttpError,
   isRedirectResponse,
-  type VesselRequest,
   withMiddleware,
+  type VesselRequest,
 } from 'shared/http';
 import { matchRoute } from 'shared/routing';
 import type { RouteComponentType } from 'shared/routing/types';
@@ -21,13 +21,9 @@ export async function handleDataRequest(
 ): Promise<Response> {
   try {
     const routeId = request.URL.searchParams.get('route_id'),
-      routeType = request.URL.searchParams.get(
-        'route_type',
-      ) as RouteComponentType;
+      routeType = request.URL.searchParams.get('route_type') as RouteComponentType;
 
-    const route = manifest.routes.pages.find(
-      (route) => route.id === routeId && route[routeType],
-    );
+    const route = manifest.routes.pages.find((route) => route.id === routeId && route[routeType]);
 
     if (!route) {
       throw new HttpError('data not found', 404);
@@ -57,10 +53,7 @@ export async function handleDataRequest(
           manifest,
         });
 
-        const response = coerceAnyResponse(
-          request.URL,
-          await serverLoader(event),
-        );
+        const response = coerceAnyResponse(request.URL, await serverLoader(event));
 
         response.headers.set('X-Vessel-Data', 'yes');
         appendHeaders(response, event.response.headers);

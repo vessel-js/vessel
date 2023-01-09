@@ -13,13 +13,7 @@ import type {
   VesselRequest,
   VesselResponse,
 } from 'shared/http';
-import type {
-  LoadableRoute,
-  LoadedRoute,
-  MatchedRoute,
-  Route,
-  RouteMatch,
-} from 'shared/routing';
+import type { LoadableRoute, LoadedRoute, MatchedRoute, Route, RouteMatch } from 'shared/routing';
 
 import type { ServerConfig } from './http/app/configure-server';
 
@@ -40,9 +34,7 @@ export type ServerEntryModule = {
 
 export type ServerEntryLoader = () => Promise<ServerEntryModule>;
 
-export type ServerRenderer = (
-  context: ServerEntryContext,
-) => Promise<ServerRenderResult>;
+export type ServerRenderer = (context: ServerEntryContext) => Promise<ServerRenderResult>;
 
 export type ServerRenderResult = {
   head?: string;
@@ -58,18 +50,18 @@ export type ServerFetch = <RPC extends RPCHandler>(
   init?: ServerFetchInit<InferServerFetchParams<RPC>>,
 ) => Promise<InferServerFetchResponse<RPC>>;
 
-export type ServerFetchInit<Params extends RequestParams = RequestParams> =
-  ClientFetchInit<Params>;
+export type ServerFetchInit<Params extends RequestParams = RequestParams> = ClientFetchInit<Params>;
 
-export type InferServerFetchParams<RPC extends RPCHandler> =
-  InferServerRequestHandlerParams<RPC>;
+export type InferServerFetchParams<RPC extends RPCHandler> = InferServerRequestHandlerParams<RPC>;
 
-export type InferServerFetchResponse<RPC extends RPCHandler> =
-  RPC extends ServerRequestHandler<any, infer Response>
-    ? Response extends JSONResponse<infer Data>
-      ? VesselJSONResponse<Data>
-      : VesselResponse
-    : VesselResponse;
+export type InferServerFetchResponse<RPC extends RPCHandler> = RPC extends ServerRequestHandler<
+  any,
+  infer Response
+>
+  ? Response extends JSONResponse<infer Data>
+    ? VesselJSONResponse<Data>
+    : VesselResponse
+  : VesselResponse;
 
 export type ServerRedirect = {
   readonly path: string;
@@ -152,9 +144,7 @@ export type ServerRequestEvent<Params extends RequestParams = RequestParams> = {
   serverFetch: ServerFetch;
 };
 
-export type ServerRequestEventInit<
-  Params extends RequestParams = RequestParams,
-> = {
+export type ServerRequestEventInit<Params extends RequestParams = RequestParams> = {
   request: VesselRequest;
   params: Params;
   page?: ResponseDetails;
@@ -174,16 +164,11 @@ export interface ServerRequestHandler<
   rpc?: RPCFetchInfo;
 }
 
-export type InferServerRequestHandlerParams<T> = T extends ServerRequestHandler<
-  infer Params
->
+export type InferServerRequestHandlerParams<T> = T extends ServerRequestHandler<infer Params>
   ? Params
   : RequestParams;
 
-export type InferServerRequestHandlerData<T> = T extends ServerRequestHandler<
-  never,
-  infer Data
->
+export type InferServerRequestHandlerData<T> = T extends ServerRequestHandler<never, infer Data>
   ? InferAnyResponseData<Data>
   : InferAnyResponseData<T>;
 
@@ -218,13 +203,15 @@ export type ServerPageModule = {
 
 export type ServerLoadablePageRoute = LoadableRoute<ServerPageModule>;
 
-export type ServerMatchedPageRoute<
-  Params extends RequestParams = RequestParams,
-> = MatchedRoute<ServerPageModule, Params>;
+export type ServerMatchedPageRoute<Params extends RequestParams = RequestParams> = MatchedRoute<
+  ServerPageModule,
+  Params
+>;
 
-export type ServerLoadedPageRoute<
-  Params extends RequestParams = RequestParams,
-> = LoadedRoute<ServerPageModule, Params>;
+export type ServerLoadedPageRoute<Params extends RequestParams = RequestParams> = LoadedRoute<
+  ServerPageModule,
+  Params
+>;
 
 /**
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTML/Element/link}
@@ -232,16 +219,7 @@ export type ServerLoadedPageRoute<
 export type ServerPageResource = {
   href: string;
   rel?: 'prefetch' | 'preload' | 'modulepreload' | 'stylesheet';
-  as?:
-    | 'audio'
-    | 'video'
-    | 'image'
-    | 'fetch'
-    | 'font'
-    | 'script'
-    | 'style'
-    | 'track'
-    | 'worker';
+  as?: 'audio' | 'video' | 'image' | 'fetch' | 'font' | 'script' | 'style' | 'track' | 'worker';
   type?: string;
   crossorigin?: boolean;
 };
@@ -268,13 +246,12 @@ export type InferServerLoaderData<T> = InferServerRequestHandlerData<T>;
 // Static Loader
 // ---------------------------------------------------------------------------------------
 
-export type StaticLoaderEvent<Params extends RequestParams = RequestParams> =
-  Readonly<{
-    pathname: string;
-    route: Route;
-    params: Params;
-    serverFetch: ServerFetch;
-  }>;
+export type StaticLoaderEvent<Params extends RequestParams = RequestParams> = Readonly<{
+  pathname: string;
+  route: Route;
+  params: Params;
+  serverFetch: ServerFetch;
+}>;
 
 /** Map of data asset id to server loaded data objects. */
 export type StaticLoaderDataMap = Map<string, JSONData>;
@@ -282,10 +259,7 @@ export type StaticLoaderDataMap = Map<string, JSONData>;
 /** Key can be anything but only truthy values are cached. */
 export type StaticLoaderCacheKey = unknown;
 
-export type StaticLoaderCacheMap = Map<
-  StaticLoaderCacheKey,
-  StaticLoaderResponse
->;
+export type StaticLoaderCacheMap = Map<StaticLoaderCacheKey, StaticLoaderResponse>;
 
 export type StaticLoaderCacheKeyBuilder = (
   event: StaticLoaderEvent,
@@ -314,6 +288,4 @@ export type InferStaticLoaderParams<T> = T extends StaticLoader<infer Params>
   ? Params
   : RequestParams;
 
-export type InferStaticLoaderData<T> = T extends StaticLoader<never, infer Data>
-  ? Data
-  : T;
+export type InferStaticLoaderData<T> = T extends StaticLoader<never, infer Data> ? Data : T;

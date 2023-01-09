@@ -1,11 +1,7 @@
 import { type ClientLoadedRoute } from '@vessel-js/app';
 import { computed, defineComponent, h, provide } from 'vue';
 
-import {
-  SERVER_DATA_KEY,
-  SERVER_ERROR_KEY,
-  STATIC_DATA_KEY,
-} from './context-keys';
+import { SERVER_DATA_KEY, SERVER_ERROR_KEY, STATIC_DATA_KEY } from './context-keys';
 
 export default defineComponent<{
   component?: ClientLoadedRoute['page'];
@@ -24,9 +20,7 @@ export default defineComponent<{
 
     return () =>
       props.component
-        ? h(props.component!.module.default, () =>
-            !props.leaf ? slots.default?.() : undefined,
-          )
+        ? h(props.component!.module.default, () => (!props.leaf ? slots.default?.() : undefined))
         : !props.leaf && slots.default?.();
   },
 });

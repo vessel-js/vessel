@@ -54,11 +54,7 @@ export default defineConfig([
   },
 ]);
 
-export async function copyFiles(
-  glob: string,
-  from = 'src/client',
-  to = 'dist/client',
-) {
+export async function copyFiles(glob: string, from = 'src/client', to = 'dist/client') {
   const fromDir = path.resolve(process.cwd(), from);
   const toDir = path.resolve(process.cwd(), to);
   const globs = `${fromDir}/${glob}`;

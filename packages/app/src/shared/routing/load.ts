@@ -24,11 +24,8 @@ export async function loadRoute<
   serverDataLoader: RouteDataLoader<Route, LoadServerDataResult>,
   signal?: AbortSignal,
 ) {
-  const result: LoadRouteResult<
-    Route,
-    LoadStaticDataResult,
-    LoadServerDataResult
-  > = stripRouteComponentTypes(route);
+  const result: LoadRouteResult<Route, LoadStaticDataResult, LoadServerDataResult> =
+    stripRouteComponentTypes(route);
 
   await Promise.all(
     getRouteComponentTypes()
@@ -64,9 +61,7 @@ export async function loadRoutes<
   staticDataLoader: RouteDataLoader<Route, LoadStaticDataResult>,
   serverDataLoader: RouteDataLoader<Route, LoadServerDataResult>,
   signal?: AbortSignal,
-): Promise<
-  LoadRouteResult<Route, LoadStaticDataResult, LoadServerDataResult>[]
-> {
+): Promise<LoadRouteResult<Route, LoadStaticDataResult, LoadServerDataResult>[]> {
   if (routes.length === 0) return [];
 
   const [leaf, ...branch] = routes;
@@ -78,9 +73,7 @@ export async function loadRoutes<
   ] as Route[];
 
   return Promise.all(
-    nodes.map((route) =>
-      loadRoute(url, route, staticDataLoader, serverDataLoader, signal),
-    ),
+    nodes.map((route) => loadRoute(url, route, staticDataLoader, serverDataLoader, signal)),
   );
 }
 
@@ -91,14 +84,10 @@ export type RouteDataLoader<Route extends MatchedRoute, LoadResult> = (
   signal?: AbortSignal,
 ) => Promise<LoadResult>;
 
-export function resolveSettledPromiseValue<T>(
-  result?: PromiseSettledResult<T>,
-) {
+export function resolveSettledPromiseValue<T>(result?: PromiseSettledResult<T>) {
   return result?.status === 'fulfilled' ? result.value : null;
 }
 
-export function resolveSettledPromiseRejection(
-  result?: PromiseSettledResult<unknown>,
-) {
+export function resolveSettledPromiseRejection(result?: PromiseSettledResult<unknown>) {
   return result?.status === 'rejected' ? result.reason : null;
 }

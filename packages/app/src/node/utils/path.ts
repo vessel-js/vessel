@@ -8,10 +8,7 @@ export function trimExt(filePath: string) {
 export const resolveRelativePath = (base: string, filePath: string): string => {
   return path.isAbsolute(filePath)
     ? path.normalize(filePath)
-    : path.resolve(
-        fs.lstatSync(base).isDirectory() ? base : path.dirname(base),
-        filePath,
-      );
+    : path.resolve(fs.lstatSync(base).isDirectory() ? base : path.dirname(base), filePath);
 };
 
 export const isSubpath = (parent: string, filePath: string): boolean => {

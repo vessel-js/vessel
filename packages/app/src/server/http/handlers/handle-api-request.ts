@@ -5,13 +5,13 @@ import {
   createVesselResponse,
   HTTP_METHOD_RE,
   httpError,
-  type HttpMethod,
   isRedirectResponse,
   resolveHandlerHttpMethod,
+  withMiddleware,
+  type HttpMethod,
   type ResponseDetails,
   type VesselRequest,
   type VesselResponse,
-  withMiddleware,
 } from 'shared/http';
 import { isString } from 'shared/utils/unit';
 
@@ -51,10 +51,7 @@ export async function handleApiRequest(
     const handlerId = request.URL.searchParams.get('rpc_handler_id') ?? method;
     const handlerMethod = resolveHandlerHttpMethod(handlerId);
 
-    if (
-      !handlerMethod ||
-      (route.methods && !route.methods.includes(handlerMethod))
-    ) {
+    if (!handlerMethod || (route.methods && !route.methods.includes(handlerMethod))) {
       throw httpError(`${method} method not allowed`, {
         status: 405,
         headers: {

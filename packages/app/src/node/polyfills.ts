@@ -7,19 +7,13 @@ const globals = {
   crypto: () => import('node:crypto'),
   URLPattern: () => interop(() => import('urlpattern-polyfill'), 'URLPattern'),
   Headers: () => interop(() => import('undici'), 'Headers'),
-  ReadableStream: () =>
-    interop(() => import('node:stream/web'), 'ReadableStream'),
-  TransformStream: () =>
-    interop(() => import('node:stream/web'), 'TransformStream'),
-  WritableStream: () =>
-    interop(() => import('node:stream/web'), 'WritableStream'),
+  ReadableStream: () => interop(() => import('node:stream/web'), 'ReadableStream'),
+  TransformStream: () => interop(() => import('node:stream/web'), 'TransformStream'),
+  WritableStream: () => interop(() => import('node:stream/web'), 'WritableStream'),
   Request: async () => {
     const Readable = await interop(() => import('node:stream'), 'Readable');
     const Request = await interop(() => import('undici'), 'Request');
-    const NodeFetchRequest = await interop(
-      () => import('node-fetch'),
-      'Request',
-    );
+    const NodeFetchRequest = await interop(() => import('node-fetch'), 'Request');
     // TODO: remove the superclass as soon as Undici supports formData (https://github.com/nodejs/undici/issues/974)
     return class extends Request {
       formData() {

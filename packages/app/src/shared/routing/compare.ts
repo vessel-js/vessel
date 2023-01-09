@@ -110,7 +110,5 @@ export function splitRoutePath(pathname: string) {
 
 const dynamicPathRE = /(\*|\(.*\)|{.*}|\/:)/;
 export function isRoutePathDynamic(pathname: string) {
-  return (
-    pathname.startsWith('/:') || dynamicPathRE.test(cleanRoutePath(pathname))
-  );
+  return pathname.startsWith('/:') || dynamicPathRE.test(cleanRoutePath(pathname));
 }

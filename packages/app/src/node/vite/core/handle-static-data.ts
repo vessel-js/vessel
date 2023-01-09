@@ -3,18 +3,11 @@ import kleur from 'kleur';
 import type { App } from 'node/app/App';
 import { logger } from 'node/utils';
 import type { ServerManifest, ServerMatchedPageRoute } from 'server/types';
-import {
-  createMatchedRoute,
-  type RouteComponentType,
-  testRoute,
-} from 'shared/routing';
+import { createMatchedRoute, testRoute, type RouteComponentType } from 'shared/routing';
 import { coerceError } from 'shared/utils/error';
 import { isString } from 'shared/utils/unit';
 
-import {
-  callStaticLoader,
-  createStaticLoaderFetch,
-} from './static-data-loader';
+import { callStaticLoader, createStaticLoaderFetch } from './static-data-loader';
 
 type HandleStaticDataRequestInit = {
   url: URL;
@@ -36,9 +29,7 @@ export async function handleStaticDataRequest({
   const dataURL = new URL(url);
   dataURL.pathname = pathname;
 
-  const route = app.routes
-    .toArray()
-    .find((route) => route.id === id && route[type]);
+  const route = app.routes.toArray().find((route) => route.id === id && route[type]);
 
   if (!route || !testRoute(dataURL, route)) {
     res.setHeader('X-Vessel-Data', 'no');
@@ -59,19 +50,12 @@ export async function handleStaticDataRequest({
   const serverFetch = createStaticLoaderFetch(app, manifest);
 
   try {
-    const response = await callStaticLoader(
-      dataURL,
-      match,
-      serverFetch,
-      staticLoader,
-    );
+    const response = await callStaticLoader(dataURL, match, serverFetch, staticLoader);
 
     if (response.redirect) {
       res.setHeader(
         'X-Vessel-Redirect',
-        isString(response.redirect)
-          ? response.redirect
-          : response.redirect.path,
+        isString(response.redirect) ? response.redirect : response.redirect.path,
       );
     }
 

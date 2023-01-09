@@ -1,18 +1,11 @@
 import { createFilter } from '@rollup/pluginutils';
 import { comparePathDepth, sortedInsert } from 'node/utils';
 import * as path from 'pathe';
-import {
-  getRouteComponentTypes,
-  type RouteComponentType,
-} from 'shared/routing';
+import { getRouteComponentTypes, type RouteComponentType } from 'shared/routing';
 
 import type { App } from '../App';
 import { resolveRouteIdFromFilePath } from './resolve-route';
-import {
-  type SystemDirPath,
-  type SystemFileMeta,
-  SystemFiles,
-} from './system-files';
+import { SystemFiles, type SystemDirPath, type SystemFileMeta } from './system-files';
 
 export type RouteFileType = RouteComponentType | 'api';
 
@@ -46,14 +39,8 @@ export class RouteFiles extends SystemFiles<RouteFile> {
   init(app: App) {
     const config = app.config.routes;
     this._pageFilter = createFilter(config.pages.include, config.pages.exclude);
-    this._layoutFilter = createFilter(
-      config.layouts.include,
-      config.layouts.exclude,
-    );
-    this._errorBoundaryFilter = createFilter(
-      config.errors.include,
-      config.errors.exclude,
-    );
+    this._layoutFilter = createFilter(config.layouts.include, config.layouts.exclude);
+    this._errorBoundaryFilter = createFilter(config.errors.include, config.errors.exclude);
     this._apiFilter = createFilter(config.api.include, config.api.exclude);
     return super.init(app, {
       include: [
@@ -80,10 +67,7 @@ export class RouteFiles extends SystemFiles<RouteFile> {
     const routeFile = {
       ...file,
       type,
-      routeId: resolveRouteIdFromFilePath(
-        this._app.dirs.app.path,
-        file.path.absolute,
-      ),
+      routeId: resolveRouteIdFromFilePath(this._app.dirs.app.path, file.path.absolute),
       moduleId: `/${file.path.root}`,
     };
 
@@ -107,9 +91,7 @@ export class RouteFiles extends SystemFiles<RouteFile> {
 
   isDocumentFile(filePath: string) {
     return (
-      this.isPageFile(filePath) ||
-      this.isLayoutFile(filePath) ||
-      this.isErrorBoundaryFile(filePath)
+      this.isPageFile(filePath) || this.isLayoutFile(filePath) || this.isErrorBoundaryFile(filePath)
     );
   }
 
@@ -134,16 +116,13 @@ export class RouteFiles extends SystemFiles<RouteFile> {
   }
 
   findWithType(filePath: string, type: RouteFileType) {
-    return this.toArray().find(
-      (file) => file.type === type && file.path.absolute === filePath,
-    );
+    return this.toArray().find((file) => file.type === type && file.path.absolute === filePath);
   }
 
   findLeafFile(filePath: string) {
     return this._files.find(
       (file) =>
-        file.path.absolute === filePath &&
-        (file.type === 'page' || file.type === 'errorBoundary'),
+        file.path.absolute === filePath && (file.type === 'page' || file.type === 'errorBoundary'),
     );
   }
 
@@ -182,9 +161,7 @@ export class RouteFiles extends SystemFiles<RouteFile> {
       dir[file.type] = file;
     } else {
       const dir = { path: file.dir, [file.type]: file };
-      sortedInsert(this._dirs, dir, (a, b) =>
-        comparePathDepth(a.path.route, b.path.route),
-      );
+      sortedInsert(this._dirs, dir, (a, b) => comparePathDepth(a.path.route, b.path.route));
     }
   }
 }

@@ -6,15 +6,10 @@ import { searchForWorkspaceRoot } from 'vite';
 import type { AppDirectories, Directory } from '../App';
 import type { ResolvedAppConfig } from '../config';
 
-export function createAppDirectories(
-  root: string,
-  config: ResolvedAppConfig,
-): AppDirectories {
+export function createAppDirectories(root: string, config: ResolvedAppConfig): AppDirectories {
   const cwdDir = createDirectory(process.cwd());
   const rootDir = createDirectory(root);
-  const workspaceDir = createDirectory(
-    searchForWorkspaceRoot(cwdDir.path, rootDir.path),
-  );
+  const workspaceDir = createDirectory(searchForWorkspaceRoot(cwdDir.path, rootDir.path));
   const appDir = createDirectory(config.dirs.app);
   const buildDir = createDirectory(config.dirs.build);
   const publicDir = createDirectory(config.dirs.public);
@@ -39,14 +34,11 @@ export function createDirectory(dirname: string): Directory {
 
   const resolve = (...args: string[]) => path.resolve(cwd, ...args);
 
-  const relative = (...args: string[]) =>
-    path.relative(cwd, path.join(...args));
+  const relative = (...args: string[]) => path.relative(cwd, path.join(...args));
 
-  const read = (filePath: string) =>
-    fs.readFileSync(resolve(filePath), 'utf-8');
+  const read = (filePath: string) => fs.readFileSync(resolve(filePath), 'utf-8');
 
-  const write = (filePath: string, data: string) =>
-    fs.writeFileSync(resolve(filePath), data);
+  const write = (filePath: string, data: string) => fs.writeFileSync(resolve(filePath), data);
 
   const glob = (patterns: string | string[]) => globbySync(patterns, { cwd });
 

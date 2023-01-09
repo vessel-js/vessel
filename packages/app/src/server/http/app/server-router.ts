@@ -9,10 +9,10 @@ import type {
 } from 'server/types';
 import {
   ALL_HTTP_METHODS,
+  redirect,
   type AnyResponse,
   type FetchMiddleware,
   type HttpMethod,
-  redirect,
   type RequestParams,
 } from 'shared/http';
 import { calcRoutePathScore } from 'shared/routing';
@@ -49,10 +49,7 @@ export function createServerRouter() {
 
   const apiRoutes: Omit<ServerLoadableApiRoute, 'pattern'>[] = [];
 
-  const apiRoutesCache = new Map<
-    string,
-    { module: ServerApiModule; methods: string[] }
-  >();
+  const apiRoutesCache = new Map<string, { module: ServerApiModule; methods: string[] }>();
 
   const addHttpRoute = (
     methods: HttpMethod | HttpMethod[],
@@ -128,10 +125,7 @@ export function createServerRouter() {
 
   let basePrefix = '/api';
 
-  const createRouteManager = (
-    prefix = '',
-    middlewares: (string | FetchMiddleware)[] = [],
-  ) => {
+  const createRouteManager = (prefix = '', middlewares: (string | FetchMiddleware)[] = []) => {
     const _prefix = noendslash(prefix);
     const methods = ALL_HTTP_METHODS as HttpMethod[];
 
@@ -146,9 +140,7 @@ export function createServerRouter() {
         return createRouteManager(_prefix, [...middlewares, group]);
       },
       prefix: (nextPrefix) => {
-        return createRouteManager(`${basePrefix}${_prefix}${nextPrefix}`, [
-          ...middlewares,
-        ]);
+        return createRouteManager(`${basePrefix}${_prefix}${nextPrefix}`, [...middlewares]);
       },
       redirect: (from, to, init) => {
         addHttpRoute(
@@ -208,14 +200,8 @@ export type ServerApp = {
   };
 
   errors: {
-    onPageRenderError: (
-      path: `/${string}`,
-      handler: ServerErrorHandler,
-    ) => ServerApp['errors'];
-    onApiError: (
-      path: `/${string}`,
-      handler: ServerErrorHandler,
-    ) => ServerApp['errors'];
+    onPageRenderError: (path: `/${string}`, handler: ServerErrorHandler) => ServerApp['errors'];
+    onApiError: (path: `/${string}`, handler: ServerErrorHandler) => ServerApp['errors'];
   };
 };
 
@@ -227,72 +213,44 @@ export type ServerRouter = {
 
   prefix(prefix: `/${string}`): ServerRouter;
 
-  redirect(
-    from: `/${string}`,
-    to: `/${string}`,
-    init?: number | ResponseInit,
-  ): ServerRouter;
+  redirect(from: `/${string}`, to: `/${string}`, init?: number | ResponseInit): ServerRouter;
 
-  any<
-    Params extends RequestParams = RequestParams,
-    Response extends AnyResponse = AnyResponse,
-  >(
+  any<Params extends RequestParams = RequestParams, Response extends AnyResponse = AnyResponse>(
     path: `/${string}`,
     handler: ServerRequestHandler<Params, Response>,
   ): ServerRouter;
 
-  head<
-    Params extends RequestParams = RequestParams,
-    Response extends AnyResponse = AnyResponse,
-  >(
+  head<Params extends RequestParams = RequestParams, Response extends AnyResponse = AnyResponse>(
     path: `/${string}`,
     handler: ServerRequestHandler<Params, Response>,
   ): ServerRouter;
 
-  get<
-    Params extends RequestParams = RequestParams,
-    Response extends AnyResponse = AnyResponse,
-  >(
+  get<Params extends RequestParams = RequestParams, Response extends AnyResponse = AnyResponse>(
     path: `/${string}`,
     handler: ServerRequestHandler<Params, Response>,
   ): ServerRouter;
 
-  post<
-    Params extends RequestParams = RequestParams,
-    Response extends AnyResponse = AnyResponse,
-  >(
+  post<Params extends RequestParams = RequestParams, Response extends AnyResponse = AnyResponse>(
     path: `/${string}`,
     handler: ServerRequestHandler<Params, Response>,
   ): ServerRouter;
 
-  put<
-    Params extends RequestParams = RequestParams,
-    Response extends AnyResponse = AnyResponse,
-  >(
+  put<Params extends RequestParams = RequestParams, Response extends AnyResponse = AnyResponse>(
     path: `/${string}`,
     handler: ServerRequestHandler<Params, Response>,
   ): ServerRouter;
 
-  patch<
-    Params extends RequestParams = RequestParams,
-    Response extends AnyResponse = AnyResponse,
-  >(
+  patch<Params extends RequestParams = RequestParams, Response extends AnyResponse = AnyResponse>(
     path: `/${string}`,
     handler: ServerRequestHandler<Params, Response>,
   ): ServerRouter;
 
-  delete<
-    Params extends RequestParams = RequestParams,
-    Response extends AnyResponse = AnyResponse,
-  >(
+  delete<Params extends RequestParams = RequestParams, Response extends AnyResponse = AnyResponse>(
     path: `/${string}`,
     handler: ServerRequestHandler<Params, Response>,
   ): ServerRouter;
 
-  http<
-    Params extends RequestParams = RequestParams,
-    Response extends AnyResponse = AnyResponse,
-  >(
+  http<Params extends RequestParams = RequestParams, Response extends AnyResponse = AnyResponse>(
     methods: HttpMethod | HttpMethod[],
     path: `/${string}`,
     handler: ServerRequestHandler<Params, Response>,

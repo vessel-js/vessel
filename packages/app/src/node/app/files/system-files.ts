@@ -42,9 +42,7 @@ export type SystemFilesOptions = {
   exclude?: (string | RegExp)[];
 };
 
-export abstract class SystemFiles<T extends SystemFileMeta>
-  implements Iterable<T>
-{
+export abstract class SystemFiles<T extends SystemFileMeta> implements Iterable<T> {
   protected _app!: App;
   protected _files: T[] = [];
   protected _options!: SystemFilesOptions;
@@ -118,8 +116,7 @@ export abstract class SystemFiles<T extends SystemFileMeta>
 
   is(filePath: string) {
     return (
-      this.has(filePath) ||
-      (filePath.startsWith(this._app.dirs.app.path) && this._filter(filePath))
+      this.has(filePath) || (filePath.startsWith(this._app.dirs.app.path) && this._filter(filePath))
     );
   }
 
@@ -193,9 +190,7 @@ export abstract class SystemFiles<T extends SystemFileMeta>
   protected _addFile(file: T) {
     if (this.has(file.path.absolute)) return;
 
-    sortedInsert(this._files, file, (a, b) =>
-      comparePathDepth(a.path.root, b.path.root),
-    );
+    sortedInsert(this._files, file, (a, b) => comparePathDepth(a.path.root, b.path.root));
 
     for (const callback of this._onAdd) callback(file);
   }

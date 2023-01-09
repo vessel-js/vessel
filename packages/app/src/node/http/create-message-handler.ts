@@ -16,11 +16,6 @@ export function createIncomingMessageHandler(manifest: ServerManifest) {
       installed = true;
     }
 
-    await handleIncomingMessage(
-      `https://${req.headers.host}`,
-      req,
-      res,
-      handler,
-    );
+    await handleIncomingMessage(`https://${req.headers.host}`, req, res, handler);
   };
 }

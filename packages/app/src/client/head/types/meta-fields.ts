@@ -544,10 +544,7 @@ export interface MetaTagFields {
    *
    * @see https://developer.apple.com/library/archive/documentation/AppleApplications/Reference/SafariHTMLRef/Articles/MetaTags.html
    */
-  'apple-mobile-web-app-status-bar-style':
-    | 'default'
-    | 'black'
-    | 'black-translucent';
+  'apple-mobile-web-app-status-bar-style': 'default' | 'black' | 'black-translucent';
   /**
    * Make the app title different from the page title.
    */

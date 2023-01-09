@@ -3,8 +3,7 @@ export const EXTERNAL_URL_RE = /^https?:/i;
 /**
  * Ensure a url `string` has an ending slash `/`.
  */
-export const endslash = (str: string): string =>
-  str.endsWith('/') ? str : str + '/';
+export const endslash = (str: string): string => (str.endsWith('/') ? str : str + '/');
 
 const slashSplitRE = /(?=\/)/g;
 
@@ -40,8 +39,7 @@ export const slashes = (str: string) => slash(noendslash(str));
  * - https://github.com
  * - //github.com
  */
-export const isLinkHttp = (link: string): boolean =>
-  /^(https?:)?\/\//.test(link);
+export const isLinkHttp = (link: string): boolean => /^(https?:)?\/\//.test(link);
 
 /**
  * Determine if a link is external or not.

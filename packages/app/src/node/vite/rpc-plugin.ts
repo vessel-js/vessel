@@ -1,11 +1,7 @@
 import * as lexer from 'es-module-lexer';
 import type { App } from 'node/app/App';
 import * as path from 'pathe';
-import {
-  HTTP_METHOD_RE,
-  HTTP_METHODS,
-  resolveHandlerHttpMethod,
-} from 'shared/http';
+import { HTTP_METHOD_RE, HTTP_METHODS, resolveHandlerHttpMethod } from 'shared/http';
 
 import type { VesselPlugin } from './Plugin';
 
@@ -24,10 +20,7 @@ export function rpcPlugin(): VesselPlugin {
     async transform(code, id, { ssr } = {}) {
       const filePath = path.normalize(id);
 
-      if (
-        filePath.startsWith(app.dirs.app.path) &&
-        app.files.routes.isApiFile(filePath)
-      ) {
+      if (filePath.startsWith(app.dirs.app.path) && app.files.routes.isApiFile(filePath)) {
         if (!installed) {
           await lexer.init;
           installed = true;
@@ -49,9 +42,7 @@ export function rpcPlugin(): VesselPlugin {
             handlers.push([
               handlerId,
               method.toUpperCase(),
-              `/__rpc?rpc_route_id=${encodeURIComponent(
-                routeId,
-              )}${rpcHandlerId}`,
+              `/__rpc?rpc_route_id=${encodeURIComponent(routeId)}${rpcHandlerId}`,
             ]);
           }
         };
@@ -74,10 +65,7 @@ export function rpcPlugin(): VesselPlugin {
           : code +
               '\n\n' +
               handlers
-                .map(
-                  ([handlerId, method, path]) =>
-                    `${handlerId}.rpc = ['${method}', '${path}'];`,
-                )
+                .map(([handlerId, method, path]) => `${handlerId}.rpc = ['${method}', '${path}'];`)
                 .join('\n');
       }
 

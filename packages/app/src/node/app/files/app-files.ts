@@ -36,16 +36,12 @@ export class AppFiles {
           path: absPath,
           type: basename.includes('node') ? 'node' : 'edge',
           viteLoader: async () =>
-            (await this._app.vite.server!.ssrLoadModule(absPath))
-              .default as ServerConfig,
+            (await this._app.vite.server!.ssrLoadModule(absPath)).default as ServerConfig,
         };
       });
   }
 
   get serverConfigGlob() {
-    return [
-      ...this._app.config.server.config.node,
-      ...this._app.config.server.config.edge,
-    ];
+    return [...this._app.config.server.config.node, ...this._app.config.server.config.edge];
   }
 }

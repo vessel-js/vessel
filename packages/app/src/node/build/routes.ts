@@ -64,9 +64,7 @@ export async function resolveAllRoutes(app: App, build: BuildData) {
   }
 
   if (build.server.configs.edge) {
-    const file = app.dirs.app.relative(
-      build.bundles.server.configs.edge!.facadeModuleId!,
-    );
+    const file = app.dirs.app.relative(build.bundles.server.configs.edge!.facadeModuleId!);
 
     for (const route of build.server.configs.edge.apiRoutes) {
       if (seenApiPaths.has(route.pathname)) {
@@ -92,9 +90,7 @@ export async function resolveAllRoutes(app: App, build: BuildData) {
   }
 
   if (build.server.configs.node) {
-    const file = app.dirs.app.relative(
-      build.bundles.server.configs.node!.facadeModuleId!,
-    );
+    const file = app.dirs.app.relative(build.bundles.server.configs.node!.facadeModuleId!);
 
     for (const route of build.server.configs.node.apiRoutes) {
       if (seenApiPaths.has(route.pathname)) {

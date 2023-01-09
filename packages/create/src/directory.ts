@@ -9,11 +9,7 @@ export type SystemDirectory = {
   resolve: (...path: string[]) => string;
   relative: (...path: string[]) => string;
   exists: (filePath: string) => boolean;
-  write: (
-    filePath: string,
-    content: string,
-    overwrite?: boolean,
-  ) => Promise<void>;
+  write: (filePath: string, content: string, overwrite?: boolean) => Promise<void>;
   append: (filePath: string, content: string) => Promise<void>;
   unlink: (filePath: string) => Promise<void>;
   copy: (src: string, dest: string) => Promise<void>;
@@ -26,21 +22,15 @@ export function createSystemDirectory(...segments: string[]): SystemDirectory {
 
   const resolve = (...args: string[]) => path.resolve(dirname, ...args);
 
-  const relative = (...args: string[]) =>
-    path.relative(dirname, path.join(...args));
+  const relative = (...args: string[]) => path.relative(dirname, path.join(...args));
 
   const exists = (filePath: string) => existsSync(resolve(filePath));
 
   const read = (filePath: string) => fs.readFile(resolve(filePath), 'utf-8');
 
-  const readSync = (filePath: string) =>
-    readFileSync(resolve(filePath), 'utf-8');
+  const readSync = (filePath: string) => readFileSync(resolve(filePath), 'utf-8');
 
-  const write = async (
-    filePath: string,
-    content: string,
-    overwrite = false,
-  ) => {
+  const write = async (filePath: string, content: string, overwrite = false) => {
     if (!overwrite && exists(filePath)) return;
 
     const file = resolve(filePath);

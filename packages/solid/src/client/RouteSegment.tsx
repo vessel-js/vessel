@@ -20,10 +20,7 @@ const RouteSegment: ParentComponent<RouteSegmentProps> = (props) => {
 
   return (
     <RouteComponent component={match().layout}>
-      <RouteErrorBoundary
-        error={match().error}
-        boundary={match().errorBoundary}
-      >
+      <RouteErrorBoundary error={match().error} boundary={match().errorBoundary}>
         {props.depth < props.matches.length - 1 ? (
           <RouteSegment matches={props.matches} depth={props.depth + 1} />
         ) : (

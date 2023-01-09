@@ -50,9 +50,7 @@ export function createStaticBuildAdapter({
         if (Object.keys(redirectsTable).length > 0) {
           // Embedded as a string and `JSON.parsed` from the client because it's faster than
           // embedding as a JS object literal.
-          const serializedRedirectsTable = JSON.stringify(
-            JSON.stringify(redirectsTable),
-          );
+          const serializedRedirectsTable = JSON.stringify(JSON.stringify(redirectsTable));
 
           redirectsScriptTag = `<script>__VSL_STATIC_REDIRECTS_MAP__ = JSON.parse(${serializedRedirectsTable});</script>`;
         }
@@ -71,9 +69,7 @@ export function createStaticBuildAdapter({
         if (dataFiles.size > 0) {
           // Embedded as a string and `JSON.parsed` from the client because it's faster than
           // embedding as a JS object literal.
-          const serializedRecord = JSON.stringify(
-            JSON.stringify(build.static.clientHashRecord),
-          );
+          const serializedRecord = JSON.stringify(JSON.stringify(build.static.clientHashRecord));
           dataHashScriptTag = `<script>__VSL_STATIC_DATA_HASH_MAP__ = JSON.parse(${serializedRecord});</script>`;
         }
 
@@ -88,10 +84,7 @@ export function createStaticBuildAdapter({
 
         buildingSpinner.start(
           kleur.bold(
-            `Building ${kleur.underline(htmlCount)} HTML ${pluralize(
-              'page',
-              htmlCount,
-            )}...`,
+            `Building ${kleur.underline(htmlCount)} HTML ${pluralize('page', htmlCount)}...`,
           ),
         );
 
@@ -105,11 +98,7 @@ export function createStaticBuildAdapter({
             ...build.resources.routes[render.route.id],
           ]);
 
-          const headTags = [
-            ...linkTags,
-            render.ssr.css ?? '',
-            render.ssr.head ?? '',
-          ]
+          const headTags = [...linkTags, render.ssr.css ?? '', render.ssr.head ?? '']
             .filter((t) => t.length > 0)
             .join('\n    ');
 
@@ -130,17 +119,11 @@ export function createStaticBuildAdapter({
             .replace(`<!--@vessel/app-->`, render.ssr.html);
 
           if (render.ssr.htmlAttrs) {
-            pageHtml = pageHtml.replace(
-              /<html(.*?)>/,
-              `<html${render.ssr.htmlAttrs}>`,
-            );
+            pageHtml = pageHtml.replace(/<html(.*?)>/, `<html${render.ssr.htmlAttrs}>`);
           }
 
           if (render.ssr.bodyAttrs) {
-            pageHtml = pageHtml.replace(
-              /<body(.*?)>/,
-              `<body${render.ssr.bodyAttrs}>`,
-            );
+            pageHtml = pageHtml.replace(/<body(.*?)>/, `<body${render.ssr.bodyAttrs}>`);
           }
 
           htmlFiles.set(render.filename, pageHtml);
@@ -148,10 +131,7 @@ export function createStaticBuildAdapter({
 
         buildingSpinner.stopAndPersist({
           text: kleur.bold(
-            `Built ${kleur.underline(htmlCount)} HTML ${pluralize(
-              'page',
-              htmlCount,
-            )}`,
+            `Built ${kleur.underline(htmlCount)} HTML ${pluralize('page', htmlCount)}`,
           ),
           symbol: LoggerIcon.Success,
         });
@@ -164,9 +144,7 @@ export function createStaticBuildAdapter({
           const sitemapsSpinner = ora();
           const sitemapCount = kleur.underline(app.config.sitemap.length);
 
-          sitemapsSpinner.start(
-            kleur.bold(`Building ${sitemapCount} sitemaps...`),
-          );
+          sitemapsSpinner.start(kleur.bold(`Building ${sitemapCount} sitemaps...`));
 
           const sitemaps = await buildAllSitemaps(app, build);
           for (const [filename, content] of sitemaps) {

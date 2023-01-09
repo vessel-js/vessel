@@ -42,9 +42,7 @@ function logPagesTable(build: BuildData) {
   const table = createRoutesTable({ sizes: true });
   const pages = build.routes.pages;
 
-  const links = Array.from(pages.keys())
-    .sort(naturalCompare)
-    .sort(comparePathDepth);
+  const links = Array.from(pages.keys()).sort(naturalCompare).sort(comparePathDepth);
 
   const dynamicRE = /\[(.*?)\]/;
 
@@ -70,9 +68,7 @@ function logPagesTable(build: BuildData) {
       : route.type.toLowerCase();
 
     table.push([
-      kleur.bold(
-        route.methods.map((method) => METHOD_COLOR[method](method)).join('|'),
-      ),
+      kleur.bold(route.methods.map((method) => METHOD_COLOR[method](method)).join('|')),
       uri.replace(/(\[.*?\])/g, (g) => kleur.bold(kleur.yellow(g))),
       typeColor(typeTitle),
       prettySize(computeRouteSize(route.path, build)),
@@ -89,9 +85,7 @@ function logApiTable(build: BuildData) {
   const table = createRoutesTable();
   const api = build.routes.api;
 
-  const links = Array.from(api.keys())
-    .sort(naturalCompare)
-    .sort(comparePathDepth);
+  const links = Array.from(api.keys()).sort(naturalCompare).sort(comparePathDepth);
 
   const dynamicRE = /\[(.*?)\]/;
 
@@ -134,11 +128,7 @@ export async function logRoutes(app: App, build: BuildData) {
 export function logBadLinks(badLinks: BuildData['badLinks']) {
   if (badLinks.size === 0) return;
 
-  const logs: string[] = [
-    '',
-    `${LoggerIcon.Warn} ${kleur.bold(kleur.underline('BAD LINKS'))}`,
-    '',
-  ];
+  const logs: string[] = ['', `${LoggerIcon.Warn} ${kleur.bold(kleur.underline('BAD LINKS'))}`, ''];
 
   for (const [pathname, { route, reason }] of badLinks) {
     logs.push(`- ${kleur.bold(pathname)}`);
@@ -175,9 +165,7 @@ export function computeRouteSize(routeId: string, build: BuildData) {
     if (entry >= 0 && !seen.has(entry)) {
       const resource = build.resources.all[entry];
       const fileName = resource.href.slice(1);
-      const chunk = build.bundles.client.chunks.find(
-        (chunk) => chunk.fileName === fileName,
-      );
+      const chunk = build.bundles.client.chunks.find((chunk) => chunk.fileName === fileName);
       if (chunk) chunks.push(chunk);
       seen.add(entry);
     }

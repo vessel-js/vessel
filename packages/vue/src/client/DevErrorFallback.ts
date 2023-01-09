@@ -11,8 +11,7 @@ export default /*#__PURE__*/ defineComponent<{
         'div',
         {
           class: 'error',
-          style:
-            'border: 2px solid red; padding: 1.5rem; font-family: monospace;',
+          style: 'border: 2px solid red; padding: 1.5rem; font-family: monospace;',
         },
         [
           h('b', { class: 'title', style: 'font-size: 1.5rem;' }, 'Error'),

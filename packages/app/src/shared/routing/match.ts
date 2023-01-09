@@ -16,10 +16,7 @@ export function matchAllRoutes<T extends Route>(
   return segments.map(([url, route]) => createMatchedRoute(url, route));
 }
 
-export function createMatchedRoute<T extends Route>(
-  url: URL,
-  route: T,
-): T & RouteMatch {
+export function createMatchedRoute<T extends Route>(url: URL, route: T): T & RouteMatch {
   const match = execRouteMatch(url, route);
   return {
     ...route,
@@ -50,15 +47,8 @@ export function execRouteMatch<T extends Route>(url: URL, route?: T) {
   return route?.pattern.exec({ pathname: url.pathname })?.pathname;
 }
 
-export function normalizeTrailingSlash(
-  pathname: string,
-  trailingSlash: boolean,
-) {
-  return pathname === '/'
-    ? pathname
-    : trailingSlash
-    ? endslash(pathname)
-    : noendslash(pathname);
+export function normalizeTrailingSlash(pathname: string, trailingSlash: boolean) {
+  return pathname === '/' ? pathname : trailingSlash ? endslash(pathname) : noendslash(pathname);
 }
 
 export function normalizeURL(url: URL, trailingSlash: boolean) {
@@ -68,9 +58,7 @@ export function normalizeURL(url: URL, trailingSlash: boolean) {
 }
 
 // type helper
-export function stripRouteComponentTypes<T extends Route>(
-  route: T,
-): Omit<T, RouteComponentType> {
+export function stripRouteComponentTypes<T extends Route>(route: T): Omit<T, RouteComponentType> {
   return { ...route };
 }
 
@@ -97,8 +85,7 @@ export function filterMatchingRouteSegments<T extends Route>(
       .slice(start)
       .findIndex(
         (route) =>
-          testRoute(segmentURL, route) &&
-          (!segments[0] || segments[0][1].id.startsWith(route.id)),
+          testRoute(segmentURL, route) && (!segments[0] || segments[0][1].id.startsWith(route.id)),
       );
 
     if (match >= 0) {

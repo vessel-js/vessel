@@ -10,8 +10,8 @@ npm install @vessel-js/solid
 // vite.config.js
 import { vessel } from '@vessel-js/app/node';
 import { vesselSolid } from '@vessel-js/solid/node';
-import solid from 'vite-plugin-solid';
 import { defineConfig } from 'vite';
+import solid from 'vite-plugin-solid';
 
 export default defineConfig({
   plugins: [

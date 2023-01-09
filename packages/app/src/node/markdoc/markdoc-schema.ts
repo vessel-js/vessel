@@ -74,11 +74,7 @@ export class MarkdocSchema {
       nodes[node.name] = {
         render: node.cname,
         transform: (_node, config) => {
-          return new Markdoc.Tag(
-            node.cname,
-            _node.attributes,
-            _node.transformChildren(config),
-          );
+          return new Markdoc.Tag(node.cname, _node.attributes, _node.transformChildren(config));
         },
       };
 
@@ -96,11 +92,7 @@ export class MarkdocSchema {
         render: tag.cname,
         selfClosing: tag.inline,
         transform: (node, config) => {
-          return new Markdoc.Tag(
-            tag.cname,
-            node.attributes,
-            node.transformChildren(config),
-          );
+          return new Markdoc.Tag(tag.cname, node.attributes, node.transformChildren(config));
         },
       };
 

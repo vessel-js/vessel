@@ -1,7 +1,4 @@
-import {
-  resolveStaticDataAssetId,
-  STATIC_DATA_ASSET_BASE_PATH,
-} from 'shared/data';
+import { resolveStaticDataAssetId, STATIC_DATA_ASSET_BASE_PATH } from 'shared/data';
 import {
   HttpError,
   resolveResponseData,
@@ -9,11 +6,11 @@ import {
   tryResolveResponseError,
 } from 'shared/http';
 import {
+  loadRoutes as __loadRoutes,
   getRouteComponentTypes,
+  resolveSettledPromiseValue,
   type LoadedRouteData,
   type LoadRouteResult,
-  loadRoutes as __loadRoutes,
-  resolveSettledPromiseValue,
   type RouteComponentType,
 } from 'shared/routing';
 
@@ -27,37 +24,23 @@ export type ClientLoadRouteResult = LoadRouteResult<
 
 const loading = new Map<string, Promise<ClientLoadRouteResult[]>>();
 
-export async function loadRoutes(
-  url: URL,
-  routes: ClientMatchedRoute[],
-  signal?: AbortSignal,
-) {
+export async function loadRoutes(url: URL, routes: ClientMatchedRoute[], signal?: AbortSignal) {
   const id = routes[0].id + routes[0].pathname;
   if (loading.has(id)) return loading.get(id)!;
 
   let resolve!: (route: ClientLoadRouteResult[]) => void;
-  const promise = new Promise<ClientLoadRouteResult[]>(
-    (res) => (resolve = res),
-  );
+  const promise = new Promise<ClientLoadRouteResult[]>((res) => (resolve = res));
 
   loading.set(id, promise);
 
-  const loadResults = await __loadRoutes(
-    url,
-    routes,
-    loadStaticData,
-    loadServerData,
-    signal,
-  );
+  const loadResults = await __loadRoutes(url, routes, loadStaticData, loadServerData, signal);
 
   resolve(loadResults);
   loading.delete(id);
   return loadResults;
 }
 
-type LoadStaticDataResult =
-  | { redirect?: string; data?: LoadedRouteData['staticData'] }
-  | undefined;
+type LoadStaticDataResult = { redirect?: string; data?: LoadedRouteData['staticData'] } | undefined;
 
 export async function loadStaticData(
   url: URL,
@@ -95,10 +78,10 @@ export async function loadStaticData(
     searchParams.set('type', type);
     searchParams.set('pathname', route.matchedURL.pathname);
 
-    const response = await fetch(
-      `${STATIC_DATA_ASSET_BASE_PATH}${route.id}.json?${searchParams}`,
-      { credentials: 'same-origin', signal },
-    );
+    const response = await fetch(`${STATIC_DATA_ASSET_BASE_PATH}${route.id}.json?${searchParams}`, {
+      credentials: 'same-origin',
+      signal,
+    });
 
     if (response.status === 500) {
       const { message, stack } = await response.json();
@@ -120,10 +103,10 @@ export async function loadStaticData(
       }
     }
   } else {
-    const response = await fetch(
-      `${STATIC_DATA_ASSET_BASE_PATH}/${hashedDataId}.json`,
-      { credentials: 'same-origin', signal },
-    );
+    const response = await fetch(`${STATIC_DATA_ASSET_BASE_PATH}/${hashedDataId}.json`, {
+      credentials: 'same-origin',
+      signal,
+    });
 
     if (response.status >= 400) {
       throw new HttpError('failed static data load', response.status);

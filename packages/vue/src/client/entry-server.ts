@@ -1,9 +1,8 @@
+import App from ':virtual/vessel/vue/app';
 import { renderHeadToString } from '@vessel-js/app/head';
 import type { ServerRenderer } from '@vessel-js/app/server';
 import { createSSRApp } from 'vue';
 import { renderToString } from 'vue/server-renderer';
-
-import App from ':virtual/vessel/vue/app';
 
 import { createContext } from './context';
 import { ROUTER_KEY } from './context-keys';

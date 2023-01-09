@@ -8,11 +8,7 @@ import { resolveStaticRouteFromFilePath, type RouteFile } from 'node';
 import type { App } from 'node/app/App';
 import fs from 'node:fs';
 import * as path from 'pathe';
-import type {
-  MarkdownFrontmatter,
-  MarkdownHeading,
-  MarkdownMeta,
-} from 'shared/markdown';
+import type { MarkdownFrontmatter, MarkdownHeading, MarkdownMeta } from 'shared/markdown';
 import { escapeHTML } from 'shared/utils/html';
 import { isLinkExternal } from 'shared/utils/url';
 
@@ -91,9 +87,7 @@ export function parseMarkdown(
   const { headings } = stuff;
   const title = headings[0]?.level === 1 ? headings[0].title : null;
 
-  const imports = Array.from(
-    new Set([...nodeImports, ...Array.from(stuff.imports)]),
-  );
+  const imports = Array.from(new Set([...nodeImports, ...Array.from(stuff.imports)]));
 
   const meta: MarkdownMeta = {
     title,
@@ -110,8 +104,7 @@ export function parseMarkdown(
   }
 
   let output =
-    (opts.render?.({ filePath, content, meta, imports, stuff }) ??
-      renderMarkdocToHTML(content)) ||
+    (opts.render?.({ filePath, content, meta, imports, stuff }) ?? renderMarkdocToHTML(content)) ||
     '';
 
   for (const transformer of opts.transformOutput ?? []) {
@@ -152,10 +145,7 @@ function mergeLayoutMeta(
 
   for (const layoutFile of layoutFiles) {
     if (layoutFile) {
-      if (
-        !opts.filter?.(layoutFile.path.absolute) ||
-        layoutFile.ext !== '.md'
-      ) {
+      if (!opts.filter?.(layoutFile.path.absolute) || layoutFile.ext !== '.md') {
         continue;
       }
 
@@ -179,9 +169,7 @@ function mergeLayoutMeta(
       meta.frontmatter = { ...layoutMeta.frontmatter, ...meta.frontmatter };
 
       meta.headings = [
-        ...(headingsPos > 0
-          ? layoutMeta.headings.slice(0, headingsPos)
-          : layoutMeta.headings),
+        ...(headingsPos > 0 ? layoutMeta.headings.slice(0, headingsPos) : layoutMeta.headings),
         ...meta.headings,
         ...(headingsPos > 0 ? layoutMeta.headings.slice(headingsPos) : []),
       ];
@@ -213,10 +201,7 @@ const headingNameRE = /^(h\d|Heading)$/;
 const linkNameRE = /^(a|link|Link)$/;
 const importRE = /^import$/;
 
-function forEachRenderNode(
-  node: RenderableTreeNode,
-  stuff: MarkdocTreeWalkStuff,
-) {
+function forEachRenderNode(node: RenderableTreeNode, stuff: MarkdocTreeWalkStuff) {
   if (node && typeof node !== 'string') {
     const name = node.name;
 
@@ -253,9 +238,7 @@ const preTagStyleAttrRE = /<pre.*?style="(.*?)"/;
 function highlightCodeFences(tag: Tag, highlight: HighlightCodeBlock) {
   const isComponent = tag.name === 'Fence';
 
-  const lang = isComponent
-    ? tag.attributes.language
-    : tag.attributes['data-language'];
+  const lang = isComponent ? tag.attributes.language : tag.attributes['data-language'];
 
   const code = isComponent ? tag.attributes.content : tag.children[0];
 
@@ -277,9 +260,7 @@ function highlightCodeFences(tag: Tag, highlight: HighlightCodeBlock) {
       delete tag.attributes['data-language'];
       delete tag.attributes.content;
     } else {
-      tag.attributes.class = `${
-        highlightedCode ? 'highlight ' : ''
-      }lang-${lang}`;
+      tag.attributes.class = `${highlightedCode ? 'highlight ' : ''}lang-${lang}`;
       tag.children[0] = output;
     }
   }
@@ -289,15 +270,12 @@ function collectHeadings(tag: Tag, headings: MarkdownHeading[]) {
   const child = tag.children[0];
 
   const title =
-    typeof child === 'string'
-      ? child
-      : child?.children[0] ?? child?.attributes.content ?? '';
+    typeof child === 'string' ? child : child?.children[0] ?? child?.attributes.content ?? '';
 
   if (typeof title === 'string') {
     const id = tag.attributes.id ?? slugify(title);
 
-    const level =
-      tag.attributes.level ?? Number(tag.name.match(/h(\d+)/)?.[1] ?? 0);
+    const level = tag.attributes.level ?? Number(tag.name.match(/h(\d+)/)?.[1] ?? 0);
 
     tag.attributes.id = id;
     tag.attributes.level = level;

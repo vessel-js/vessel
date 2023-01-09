@@ -3,9 +3,7 @@ export function noop() {
 }
 
 export function safeNotEqual(a: unknown, b: unknown) {
-  return a != a
-    ? b == b
-    : a !== b || (a && typeof a === 'object') || typeof a === 'function';
+  return a != a ? b == b : a !== b || (a && typeof a === 'object') || typeof a === 'function';
 }
 
 /**
@@ -61,6 +59,5 @@ export function isFunction(value: unknown): value is Function {
 /**
  * Check if a value is plain `object`.
  */
-export const isObject = <T extends Record<any, any> = Record<any, any>>(
-  val: unknown,
-): val is T => Object.prototype.toString.call(val) === '[object Object]';
+export const isObject = <T extends Record<any, any> = Record<any, any>>(val: unknown): val is T =>
+  Object.prototype.toString.call(val) === '[object Object]';

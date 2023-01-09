@@ -17,30 +17,27 @@ import {
   isHttpError,
   isRedirectResponse,
   resolveResponseData,
+  withMiddleware,
   type ResponseDetails,
   type VesselRequest,
-  withMiddleware,
 } from 'shared/http';
 import {
   getRouteComponentDataKeys,
   getRouteComponentTypes,
-  type LoadedRouteComponent,
-  type LoadedServerData,
   loadRoutes,
   matchAllRoutes,
   resolveSettledPromiseRejection,
   resolveSettledPromiseValue,
-  type RouteComponentType,
   stripRouteComponentTypes,
+  type LoadedRouteComponent,
+  type LoadedServerData,
+  type RouteComponentType,
 } from 'shared/routing';
 import type { Mutable } from 'shared/types';
 import { coerceError } from 'shared/utils/error';
 import { slash } from 'shared/utils/url';
 
-import {
-  createStaticDataScriptTag,
-  createStaticLoaderDataMap,
-} from '../../static-data';
+import { createStaticDataScriptTag, createStaticLoaderDataMap } from '../../static-data';
 import { createServerRequestEvent } from '../create-request-event';
 import { resolveMiddleware } from '../middleware';
 import { runErrorHandlers } from './handle-api-error';
@@ -56,11 +53,7 @@ export async function handlePageRequest(
       resolveMiddleware(manifest.middlewares, [], 'page'),
     );
   } catch (e) {
-    const handled = await runErrorHandlers(
-      request,
-      e,
-      manifest.errorHandlers?.page ?? [],
-    );
+    const handled = await runErrorHandlers(request, e, manifest.errorHandlers?.page ?? []);
 
     if (handled) return handled;
 
@@ -92,19 +85,12 @@ export async function handlePageRequest(
   }
 }
 
-async function renderDocument(
-  request: VesselRequest,
-  manifest: ServerManifest,
-): Promise<Response> {
+async function renderDocument(request: VesselRequest, manifest: ServerManifest): Promise<Response> {
   const { render } = await manifest.entry();
 
   const page = createResponseDetails(request.URL);
 
-  const matches = matchAllRoutes(
-    request.URL,
-    manifest.routes.pages,
-    manifest.trailingSlash,
-  );
+  const matches = matchAllRoutes(request.URL, manifest.routes.pages, manifest.trailingSlash);
 
   const loadResults = await loadRoutes(
     request.URL,
@@ -137,10 +123,7 @@ async function renderDocument(
       if (value?.redirect) {
         // This won't work yet as client isn't ready so we need to do a network redirect.
         if (isClientRedirectResponse(value.redirect)) {
-          value.redirect.headers.set(
-            'Location',
-            value.redirect.headers.get('X-Vessel-Redirect')!,
-          );
+          value.redirect.headers.set('Location', value.redirect.headers.get('X-Vessel-Redirect')!);
         }
 
         return value.redirect;
@@ -149,8 +132,7 @@ async function renderDocument(
   }
 
   for (const result of loadResults) {
-    const route: Mutable<ServerLoadedPageRoute> =
-      stripRouteComponentTypes(result);
+    const route: Mutable<ServerLoadedPageRoute> = stripRouteComponentTypes(result);
 
     for (const type of getRouteComponentTypes()) {
       const compResult = result[type];
@@ -263,10 +245,7 @@ async function renderDocument(
   const staticDataMap = createStaticLoaderDataMap(loadedRoutes);
   const staticDataScriptTag =
     manifest.staticData.serverHashRecord && staticDataMap.size > 0
-      ? createStaticDataScriptTag(
-          staticDataMap,
-          manifest.staticData.serverHashRecord,
-        )
+      ? createStaticDataScriptTag(staticDataMap, manifest.staticData.serverHashRecord)
       : '';
 
   const serverDataScriptTag =
@@ -291,9 +270,7 @@ async function renderDocument(
     : [];
 
   const devStylesheets =
-    !manifest.production && manifest.dev?.stylesheets
-      ? await manifest.dev.stylesheets()
-      : '';
+    !manifest.production && manifest.dev?.stylesheets ? await manifest.dev.stylesheets() : '';
 
   const headTags = [...linkTags, devStylesheets, ssr.css ?? '', ssr.head ?? '']
     .filter((t) => t.length > 0)
@@ -351,9 +328,7 @@ type LoadServerDataInit = {
   manifest: ServerManifest;
 };
 
-async function loadServerData(
-  init: LoadServerDataInit,
-): Promise<LoadServerDataResult | undefined> {
+async function loadServerData(init: LoadServerDataInit): Promise<LoadServerDataResult | undefined> {
   const { serverLoader } = await init.route[init.type]!.loader();
   if (!serverLoader) return;
 
@@ -368,20 +343,13 @@ async function loadServerData(
           manifest: init.manifest,
         });
 
-        const response = coerceAnyResponse(
-          init.request.URL,
-          await serverLoader(event),
-        );
+        const response = coerceAnyResponse(init.request.URL, await serverLoader(event));
 
         appendHeaders(response, event.response.headers);
         event.response.cookies.attach(response);
         return response;
       },
-      resolveMiddleware(
-        init.manifest.middlewares,
-        serverLoader.middleware,
-        'api',
-      ),
+      resolveMiddleware(init.manifest.middlewares, serverLoader.middleware, 'api'),
     );
 
     if (isRedirectResponse(response)) {
@@ -441,10 +409,7 @@ export function createPageResourceLinkTags(
     const resource = resources[Math.abs(entry)];
     const rel = resolvePageResourceRel(resource.href, entry < 0);
 
-    const attrs: string[] = [
-      rel ? `rel="${rel}"` : '',
-      `href="${resource.href}"`,
-    ];
+    const attrs: string[] = [rel ? `rel="${rel}"` : '', `href="${resource.href}"`];
 
     if (resource.as) attrs.push(`as="${resource.as}"`);
     if (resource.type) attrs.push(`type="${resource.type}"`);
@@ -458,10 +423,7 @@ export function createPageResourceLinkTags(
   return tags;
 }
 
-export function createPageResource(
-  file: string,
-  baseUrl: string,
-): ServerPageResource {
+export function createPageResource(file: string, baseUrl: string): ServerPageResource {
   const href = `${baseUrl}${slash(file)}`;
   if (file.endsWith('.js')) {
     return { href, as: 'script' };
@@ -489,10 +451,7 @@ export function createPageResource(
   }
 }
 
-export function resolvePageResourceRel(
-  file: string,
-  dynamic?: boolean,
-): ServerPageResource['rel'] {
+export function resolvePageResourceRel(file: string, dynamic?: boolean): ServerPageResource['rel'] {
   if (file.endsWith('.js')) {
     return !dynamic ? 'modulepreload' : 'prefetch';
   } else if (file.endsWith('.css')) {

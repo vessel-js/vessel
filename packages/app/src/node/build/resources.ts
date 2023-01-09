@@ -1,18 +1,11 @@
 import type { App } from 'node/app/App';
-import {
-  createPageResource,
-  type ServerPageResource,
-  type ServerPageResourceEntry,
-} from 'server';
+import { createPageResource, type ServerPageResource, type ServerPageResourceEntry } from 'server';
 import { noendslash } from 'shared/utils/url';
 import type { Manifest as ViteManifest } from 'vite';
 
 import type { BuildBundles } from './build-data';
 
-export function resolveDocumentResourcesFromManifest(
-  app: App,
-  bundles: BuildBundles,
-) {
+export function resolveDocumentResourcesFromManifest(app: App, bundles: BuildBundles) {
   const manifest = bundles.client.manifest;
   const baseUrl = noendslash(app.vite.resolved!.base);
 
@@ -77,10 +70,7 @@ export function resolveDocumentResourcesFromManifest(
     const entries = [
       ...branch
         .reverse()
-        .flatMap((route) => [
-          route.layout?.path.root,
-          route.errorBoundary?.path.root,
-        ]),
+        .flatMap((route) => [route.layout?.path.root, route.errorBoundary?.path.root]),
       route.page!.path.root,
     ].filter(Boolean) as string[];
 

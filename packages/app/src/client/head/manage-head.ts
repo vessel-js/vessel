@@ -54,9 +54,7 @@ export type CreateHeadManagerInit = {
   resolver: AttrValueResolver;
 };
 
-export function createHeadManager(
-  init: CreateHeadManagerInit = { resolver: __resolver },
-) {
+export function createHeadManager(init: CreateHeadManagerInit = { resolver: __resolver }) {
   const { resolver: resolve } = init;
   const previousTags = new Set<string>();
 
@@ -93,17 +91,12 @@ export function createHeadManager(
               // dedupe based on property key value, for example <meta name="description">
               else if (
                 dedupe.propValue &&
-                resolve(prev.props[dedupe.propValue]) ===
-                  resolve(tag.props[dedupe.propValue])
+                resolve(prev.props[dedupe.propValue]) === resolve(tag.props[dedupe.propValue])
               ) {
                 index = i;
               }
               // dedupe based on property keys, for example <meta charset="utf-8">
-              else if (
-                dedupe.propKey &&
-                prev.props[dedupe.propKey] &&
-                tag.props[dedupe.propKey]
-              ) {
+              else if (dedupe.propKey && prev.props[dedupe.propKey] && tag.props[dedupe.propKey]) {
                 index = i;
               }
 
@@ -239,11 +232,7 @@ function flattenHeadTags(head: HeadConfig) {
   return tags;
 }
 
-function setAttrs(
-  el: Element,
-  attrs: HeadAttributes,
-  resolve: AttrValueResolver,
-) {
+function setAttrs(el: Element, attrs: HeadAttributes, resolve: AttrValueResolver) {
   const existingAttrs = el.getAttribute(HEAD_ATTRS_KEY);
 
   if (existingAttrs) {
@@ -275,11 +264,7 @@ function setAttrs(
   }
 }
 
-export function sortTags(
-  aTag: HeadTag,
-  bTag: HeadTag,
-  resolve: AttrValueResolver,
-) {
+export function sortTags(aTag: HeadTag, bTag: HeadTag, resolve: AttrValueResolver) {
   return computeTagWeight(aTag, resolve) - computeTagWeight(bTag, resolve);
 }
 

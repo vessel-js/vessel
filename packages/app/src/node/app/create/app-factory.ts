@@ -4,18 +4,10 @@ import { logger, trimExt } from 'node/utils';
 import type { VesselPlugin } from 'node/vite/Plugin';
 import * as path from 'pathe';
 import { installURLPattern } from 'shared/polyfills';
-import {
-  type ConfigEnv,
-  mergeConfig,
-  type UserConfig as ViteUserConfig,
-} from 'vite';
+import { mergeConfig, type ConfigEnv, type UserConfig as ViteUserConfig } from 'vite';
 
 import type { App, AppDetails, AppFactory } from '../App';
-import {
-  type AppConfig,
-  resolveAppConfig,
-  type ResolvedAppConfig,
-} from '../config';
+import { resolveAppConfig, type AppConfig, type ResolvedAppConfig } from '../config';
 import { AppFiles } from '../files';
 import { AppRoutes } from '../routes';
 import { createAppDirectories } from './app-dirs';
@@ -73,10 +65,7 @@ export const createAppFactory = async (
       for (const plugin of plugins) {
         const overrides = await plugin.vessel!.config?.($app.config);
         if (overrides) {
-          $app.config = mergeConfig(
-            $app.config,
-            overrides,
-          ) as ResolvedAppConfig;
+          $app.config = mergeConfig($app.config, overrides) as ResolvedAppConfig;
         }
       }
 
@@ -89,13 +78,9 @@ export const createAppFactory = async (
         throw Error(
           [
             kleur.red(`Missing client/server entries.`),
-            kleur.bold(
-              "\n1. Make sure you've installed a framework-specific plugin:",
-            ),
+            kleur.bold("\n1. Make sure you've installed a framework-specific plugin:"),
             `\n${frameworkPlugins}`,
-            kleur.bold(
-              "\n2. Next, check if you've added the plugin to `vite.config.*`.",
-            ),
+            kleur.bold("\n2. Next, check if you've added the plugin to `vite.config.*`."),
             '',
           ].join('\n'),
         );

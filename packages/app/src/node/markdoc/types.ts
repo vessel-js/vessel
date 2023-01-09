@@ -1,14 +1,7 @@
 import type { Node, RenderableTreeNode } from '@markdoc/markdoc';
-import type {
-  MarkdownFrontmatter,
-  MarkdownHeading,
-  MarkdownMeta,
-} from 'shared/markdown';
+import type { MarkdownFrontmatter, MarkdownHeading, MarkdownMeta } from 'shared/markdown';
 
-export type HighlightCodeBlock = (
-  code: string,
-  lang: string,
-) => string | undefined | null;
+export type HighlightCodeBlock = (code: string, lang: string) => string | undefined | null;
 
 export type MarkdocTreeWalkStuff = {
   [id: string]: any;
@@ -26,11 +19,7 @@ export type MarkdocTreeNodeTransformer = (data: {
   stuff: MarkdocTreeWalkStuff;
 }) => void;
 
-export type MarkdocAstTransformer = (data: {
-  ast: Node;
-  filePath: string;
-  source: string;
-}) => void;
+export type MarkdocAstTransformer = (data: { ast: Node; filePath: string; source: string }) => void;
 
 export type MarkdocContentTransformer = (data: {
   filePath: string;

@@ -1,7 +1,6 @@
+import App from ':virtual/vessel/svelte/app';
 import { init } from '@vessel-js/app';
 import { tick } from 'svelte';
-
-import App from ':virtual/vessel/svelte/app';
 
 import { type SvelteModule } from '../shared';
 import { createContext } from './context';

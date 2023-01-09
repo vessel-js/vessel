@@ -27,13 +27,9 @@ async function updateRoutesTypes(app: App) {
     const content = await fs.readFile(file, 'utf-8');
     const lines = content.split('\n');
 
-    const startLineIndex = lines.findIndex((line) =>
-      line.includes('<-- AUTOGEN_ROUTES_START -->'),
-    );
+    const startLineIndex = lines.findIndex((line) => line.includes('<-- AUTOGEN_ROUTES_START -->'));
 
-    const endLineIndex = lines.findIndex((line) =>
-      line.includes('<-- AUTOGEN_ROUTES_END -->'),
-    );
+    const endLineIndex = lines.findIndex((line) => line.includes('<-- AUTOGEN_ROUTES_END -->'));
 
     if (startLineIndex >= 0 && endLineIndex >= 0) {
       const routes = app.routes
@@ -44,10 +40,7 @@ async function updateRoutesTypes(app: App) {
             .replace(optionalRestParamRE, '${string}')
             .replace(restParamRE, '${string}')
             .replace(paramRE, '${string}')
-            .replace(
-              trailingSlashRe,
-              app.config.routes.trailingSlash ? '/' : '',
-            ),
+            .replace(trailingSlashRe, app.config.routes.trailingSlash ? '/' : ''),
         )
         .reverse()
         .map((path, i) => `  ${i + 1}: \`/${path}\`;`);

@@ -101,10 +101,7 @@ export type ResolvedRoutesConfig = {
 
 export type RoutesLogStyle = 'none' | 'table' | CustomRoutesLogger;
 
-export type CustomRoutesLogger = (
-  app: App,
-  build: BuildData,
-) => void | Promise<void>;
+export type CustomRoutesLogger = (app: App, build: BuildData) => void | Promise<void>;
 
 export type RouteMatcher = string | RegExp | null | undefined | void;
 

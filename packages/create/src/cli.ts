@@ -22,22 +22,17 @@ export async function run() {
   if (!targetDirArg) {
     console.log(
       kleur.yellow(
-        `\n[vessel] missing project name \n\nnpm init vessel ${kleur.bold(
-          'my-project',
-        )}\n`,
+        `\n[vessel] missing project name \n\nnpm init vessel ${kleur.bold('my-project')}\n`,
       ),
     );
     return;
   }
 
   const targetDir = path.resolve(process.cwd(), targetDirArg);
-  const link =
-    typeof argv.link === 'string' ? removeTrailingSlash(argv.link) : undefined;
+  const link = typeof argv.link === 'string' ? removeTrailingSlash(argv.link) : undefined;
 
   if (existsSync(targetDir)) {
-    console.log(
-      kleur.red(`\nDirectory ${kleur.dim(`(${targetDir})`)} is not empty.\n`),
-    );
+    console.log(kleur.red(`\nDirectory ${kleur.dim(`(${targetDir})`)} is not empty.\n`));
     return;
   }
 
@@ -117,13 +112,7 @@ export async function run() {
   // Addons
   // -------------------------------------------------------------------------------------------
 
-  const addons = [
-    typescriptAddon,
-    eslintAddon,
-    prettierAddon,
-    lintStagedAddon,
-    tailwindAddon,
-  ];
+  const addons = [typescriptAddon, eslintAddon, prettierAddon, lintStagedAddon, tailwindAddon];
 
   for (const addon of addons) {
     await addon(builder);
@@ -133,20 +122,13 @@ export async function run() {
   // Template
   // -------------------------------------------------------------------------------------------
 
-  await builder.dirs.template.copy(
-    `./template-shared`,
-    builder.dirs.target.path,
-  );
+  await builder.dirs.template.copy(`./template-shared`, builder.dirs.target.path);
 
-  await builder.dirs.template.copy(
-    `./template-${builder.framework}`,
-    builder.dirs.target.path,
-  );
+  await builder.dirs.template.copy(`./template-${builder.framework}`, builder.dirs.target.path);
 
-  const tsFiles = globbySync(
-    !builder.hasAddon('typescript') ? '**/*.{ts,tsx}' : '**/*.{js,jsx}',
-    { cwd: builder.dirs.app.path },
-  );
+  const tsFiles = globbySync(!builder.hasAddon('typescript') ? '**/*.{ts,tsx}' : '**/*.{js,jsx}', {
+    cwd: builder.dirs.app.path,
+  });
 
   await Promise.all(tsFiles.map(async (file) => builder.dirs.app.unlink(file)));
 

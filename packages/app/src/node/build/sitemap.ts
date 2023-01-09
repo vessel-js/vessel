@@ -21,13 +21,9 @@ export async function buildSitemap(
 
   const filter = createFilter(config.include, config.exclude);
 
-  const changefreq = isFunction(config.changefreq)
-    ? config.changefreq
-    : () => config.changefreq;
+  const changefreq = isFunction(config.changefreq) ? config.changefreq : () => config.changefreq;
 
-  const priority = isFunction(config.priority)
-    ? config.priority
-    : () => config.priority;
+  const priority = isFunction(config.priority) ? config.priority : () => config.priority;
 
   const lastmodCache = new Map<string, string>();
   const lastmod = async (pathname: string) => {
@@ -71,9 +67,7 @@ export async function buildSitemap(
 }
 
 export function buildSitemapURL(url: SitemapURL, baseUrl = '/') {
-  const lastmod = url.lastmod
-    ? `\n    <lastmod>${url.lastmod ?? ''}</lastmod>`
-    : '';
+  const lastmod = url.lastmod ? `\n    <lastmod>${url.lastmod ?? ''}</lastmod>` : '';
 
   return `<url>
     <loc>${baseUrl}${slash(url.path)}</loc>${lastmod}

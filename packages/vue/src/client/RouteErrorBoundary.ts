@@ -1,12 +1,5 @@
 import { type ClientLoadedRoute } from '@vessel-js/app';
-import {
-  computed,
-  defineComponent,
-  h,
-  onErrorCaptured,
-  ref,
-  watchEffect,
-} from 'vue';
+import { computed, defineComponent, h, onErrorCaptured, ref, watchEffect } from 'vue';
 
 import DevErrorFallback from './DevErrorFallback';
 import ProdErrorFallback from './ProdErrorFallback';
@@ -45,8 +38,6 @@ export default defineComponent<{
     const error = computed(() => renderError.value ?? loadError.value);
 
     return () =>
-      error.value
-        ? h(Fallback.value, { error: error.value, reset })
-        : slots.default?.();
+      error.value ? h(Fallback.value, { error: error.value, reset }) : slots.default?.();
   },
 });

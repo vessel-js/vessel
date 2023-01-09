@@ -117,9 +117,7 @@ export function resolveAppConfig(
     entries: [],
   };
 
-  const __sitemap: ResolvedSitemapConfig[] = (
-    isArray(sitemap) ? sitemap : [sitemap]
-  )
+  const __sitemap: ResolvedSitemapConfig[] = (isArray(sitemap) ? sitemap : [sitemap])
     .filter(Boolean)
     .map((config) => ({ ...__sitemapConfig, ...config }));
 

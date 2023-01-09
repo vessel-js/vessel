@@ -10,15 +10,9 @@ export async function tailwindAddon(builder: Builder) {
   const ext = builder.pkg.hasField('type', 'module') ? '.cjs' : '.js';
 
   builder.addHook('postBuild', async () => {
-    await builder.dirs.target.write(
-      `tailwind.config${ext}`,
-      resolveConfig(builder),
-    );
+    await builder.dirs.target.write(`tailwind.config${ext}`, resolveConfig(builder));
 
-    await builder.dirs.target.write(
-      `postcss.config${ext}`,
-      resolvePostCssConfig(),
-    );
+    await builder.dirs.target.write(`postcss.config${ext}`, resolvePostCssConfig());
 
     await builder.dirs.target.write(
       'app/global.css',

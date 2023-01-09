@@ -9,19 +9,7 @@ import RouteErrorBoundary from './RouteErrorBoundary.svelte';
 export default createErrorBoundary(RouteErrorBoundary);
 
 // https://github.com/sveltejs/svelte/blob/master/src/runtime/internal/Component.ts#L13
-const LIFECYCLE_METHODS = [
-  'c',
-  'l',
-  'h',
-  'm',
-  'p',
-  'r',
-  'f',
-  'a',
-  'i',
-  'o',
-  'd',
-];
+const LIFECYCLE_METHODS = ['c', 'l', 'h', 'm', 'p', 'r', 'f', 'a', 'i', 'o', 'd'];
 
 function createErrorBoundary(Component) {
   if (import.meta.env.SSR) {

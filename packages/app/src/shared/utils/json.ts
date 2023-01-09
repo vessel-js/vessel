@@ -1,5 +1,4 @@
-export const prettyJsonStr = (obj: unknown): string =>
-  JSON.stringify(obj, undefined, 2);
+export const prettyJsonStr = (obj: unknown): string => JSON.stringify(obj, undefined, 2);
 
 const stripImportQuotesRE = /"\(\) => import\((.+)\)"/g;
 

@@ -1,9 +1,4 @@
-import type {
-  AnyResponse,
-  FetchMiddleware,
-  JSONData,
-  RequestParams,
-} from 'shared/http';
+import type { AnyResponse, FetchMiddleware, JSONData, RequestParams } from 'shared/http';
 
 import type { ServerRequestHandler, StaticLoader } from './types';
 
@@ -19,10 +14,7 @@ export const createServerLoader = createServerRequestHandler;
 export function createServerRequestHandler<
   Params extends RequestParams = RequestParams,
   Response extends AnyResponse = AnyResponse,
->(
-  loader: ServerRequestHandler<Params, Response>,
-  init?: { middleware?: FetchMiddleware[] },
-) {
+>(loader: ServerRequestHandler<Params, Response>, init?: { middleware?: FetchMiddleware[] }) {
   loader.middleware = init?.middleware;
   return loader;
 }

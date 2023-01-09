@@ -1,7 +1,6 @@
+import App from ':virtual/vessel/svelte/app';
 import type { ServerRenderer } from '@vessel-js/app/server';
 import type { SvelteServerModule } from 'node';
-
-import App from ':virtual/vessel/svelte/app';
 
 import { createContext } from './context';
 import { ROUTER_KEY } from './context-keys';

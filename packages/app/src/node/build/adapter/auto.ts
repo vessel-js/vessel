@@ -23,9 +23,7 @@ export type AutoBuildAdapterConfig = {
   vercel?: VercelBuildAdapterConfig;
 };
 
-export function createAutoBuildAdapter(
-  config?: AutoBuildAdapterConfig,
-): BuildAdapterFactory {
+export function createAutoBuildAdapter(config?: AutoBuildAdapterConfig): BuildAdapterFactory {
   const using = (name: string) =>
     console.log(kleur.bold(kleur.magenta(`\n🏗️  Using ${name} build adapter`)));
 

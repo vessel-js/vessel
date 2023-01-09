@@ -1,10 +1,6 @@
 import kleur from 'kleur';
 import { sortedInsert, trimExt } from 'node/utils';
-import type {
-  ServerApiModule,
-  ServerLoadablePageRoute,
-  ServerPageModule,
-} from 'server';
+import type { ServerApiModule, ServerLoadablePageRoute, ServerPageModule } from 'server';
 import { getRouteComponentTypes, type Route } from 'shared/routing';
 import type { Mutable } from 'shared/types';
 
@@ -25,9 +21,7 @@ export type AppRoute = Route & {
   cleanId: string;
 } & {
   [P in RouteFileType]?: RouteFile & {
-    viteLoader: () => Promise<
-      P extends 'api' ? ServerApiModule : ServerPageModule
-    >;
+    viteLoader: () => Promise<P extends 'api' ? ServerApiModule : ServerPageModule>;
   };
 };
 
@@ -58,19 +52,14 @@ export class AppRoutes implements Iterable<AppRoute> {
   }
 
   add(file: RouteFile) {
-    const existingRoute = this._routes.find(
-      (route) => route.id === file.routeId,
-    );
+    const existingRoute = this._routes.find((route) => route.id === file.routeId);
 
     if (
       existingRoute &&
       existingRoute[file.type] &&
       existingRoute[file.type]!.path.route !== file.path.route
     ) {
-      this._onDuplicateRoute(
-        file.path.root,
-        existingRoute[file.type]!.path.root,
-      );
+      this._onDuplicateRoute(file.path.root, existingRoute[file.type]!.path.root);
     }
 
     const routeInfo = resolveRouteFromFilePath(
@@ -88,8 +77,7 @@ export class AppRoutes implements Iterable<AppRoute> {
 
     route[file.type] = {
       ...file,
-      viteLoader: () =>
-        this._app.vite.server!.ssrLoadModule(file.path.absolute),
+      viteLoader: () => this._app.vite.server!.ssrLoadModule(file.path.absolute),
     };
 
     if (existingRoute && file.type !== 'api') {
@@ -134,9 +122,7 @@ export class AppRoutes implements Iterable<AppRoute> {
   }
 
   find(file: RouteFile) {
-    return this._routes.find(
-      (route) => route.id === file.routeId && route[file.type],
-    );
+    return this._routes.find((route) => route.id === file.routeId && route[file.type]);
   }
 
   getBranch(route: RouteFile | AppRoute) {
@@ -205,13 +191,7 @@ export class AppRoutes implements Iterable<AppRoute> {
   }
 }
 
-const validRouteKeys: (keyof Route)[] = [
-  'id',
-  'score',
-  'pathname',
-  'pattern',
-  'dynamic',
-];
+const validRouteKeys: (keyof Route)[] = ['id', 'score', 'pathname', 'pattern', 'dynamic'];
 
 export function toRoute(appRoute: AppRoute): Route {
   const route: any = {};

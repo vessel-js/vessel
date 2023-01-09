@@ -20,8 +20,7 @@ export const LoggerIcon = Object.freeze({
 const formatInfoTitle = (title: string): string =>
   LoggerColor.Info(`\n${LoggerIcon.Info}  ${title}\n`);
 
-const formatTipTitle = (title: string): string =>
-  LoggerColor.Tip(`\n${LoggerIcon.Tip} ${title}\n`);
+const formatTipTitle = (title: string): string => LoggerColor.Tip(`\n${LoggerIcon.Tip} ${title}\n`);
 
 const formatSuccessTitle = (title: string): string =>
   LoggerColor.Success(`\n${LoggerIcon.Success} ${title}\n`);
@@ -73,16 +72,11 @@ export const logger = {
         const result = await target();
         const endTime = ((Date.now() - startTime) / 1000).toFixed(2);
 
-        const title =
-          typeof successTitle === 'function' ? successTitle() : successTitle;
+        const title = typeof successTitle === 'function' ? successTitle() : successTitle;
 
         spinner.stopAndPersist({
           symbol: LoggerIcon.Success,
-          text: kleur.bold(
-            options.timed
-              ? `${title} in ${kleur.underline(`${endTime}s`)}`
-              : title,
-          ),
+          text: kleur.bold(options.timed ? `${title} in ${kleur.underline(`${endTime}s`)}` : title),
         });
 
         return result;

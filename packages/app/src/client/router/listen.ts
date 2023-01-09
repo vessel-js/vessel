@@ -20,12 +20,7 @@ export function listen(router: Router) {
   const prefetched = new Set();
   const triggerPrefetch = (event: MouseEvent | TouchEvent) => {
     const a = findAnchor(event.target as Node | null);
-    if (
-      a &&
-      a.href &&
-      a.hasAttribute('data-prefetch') &&
-      !prefetched.has(a.href)
-    ) {
+    if (a && a.href && a.hasAttribute('data-prefetch') && !prefetched.has(a.href)) {
       router.prefetch(getHref(a));
       prefetched.add(a.href);
     }
@@ -52,8 +47,7 @@ export function listen(router: Router) {
     // Adapted from https://github.com/visionmedia/page.js
     // MIT license https://github.com/visionmedia/page.js#license
     if (event.button || event.which !== 1) return;
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
-      return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     if (event.defaultPrevented) return;
 
     const a = findAnchor(event.target as Node | null);

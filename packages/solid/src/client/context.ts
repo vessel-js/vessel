@@ -1,6 +1,6 @@
 import {
-  type ClientLoadedRoute,
   isMarkdownModule,
+  type ClientLoadedRoute,
   type MarkdownFrontmatter,
   type MarkdownMeta,
   type Navigation,
@@ -9,11 +9,7 @@ import {
 } from '@vessel-js/app';
 import { createHeadManager } from '@vessel-js/app/head';
 import type { HttpError, HttpErrorData } from '@vessel-js/app/http';
-import type {
-  LoadedServerData,
-  LoadedStaticData,
-  RouteParams,
-} from '@vessel-js/app/routing';
+import type { LoadedServerData, LoadedStaticData, RouteParams } from '@vessel-js/app/routing';
 import type {
   InferServerLoaderData,
   InferStaticLoaderData,
@@ -21,13 +17,13 @@ import type {
   StaticLoader,
 } from '@vessel-js/app/server';
 import {
-  type Accessor,
-  createContext as createSolidContext,
   createEffect,
   createRoot,
   createSignal,
-  type Signal,
+  createContext as createSolidContext,
   useContext,
+  type Accessor,
+  type Signal,
 } from 'solid-js';
 
 import {
@@ -71,8 +67,7 @@ export function useRouteMatches() {
   return useVesselContext().get(ROUTE_MATCHES_KEY) as RouteMatchesAccessor;
 }
 
-export type RouteParamsAccessor<T extends RouteParams = RouteParams> =
-  Accessor<T>;
+export type RouteParamsAccessor<T extends RouteParams = RouteParams> = Accessor<T>;
 
 export function useRouteParams<T extends RouteParams = RouteParams>() {
   return useVesselContext().get(ROUTE_PARAMS_KEY) as RouteParamsAccessor<T>;
@@ -90,44 +85,33 @@ export function useMarkdown() {
   return useVesselContext().get(MARKDOWN_KEY) as MarkdownAccessor;
 }
 
-export type FrontmatterAccessor<
-  T extends MarkdownFrontmatter = MarkdownFrontmatter,
-> = Accessor<T>;
+export type FrontmatterAccessor<T extends MarkdownFrontmatter = MarkdownFrontmatter> = Accessor<T>;
 
-export function useFrontmatter<
-  T extends MarkdownFrontmatter = MarkdownFrontmatter,
->() {
+export function useFrontmatter<T extends MarkdownFrontmatter = MarkdownFrontmatter>() {
   return useVesselContext().get(FRONTMATTER_KEY) as FrontmatterAccessor<T>;
 }
 
-export type StaticDataAccessor<
-  T extends StaticLoader | LoadedStaticData = LoadedStaticData,
-> = Accessor<InferStaticLoaderData<T>>;
+export type StaticDataAccessor<T extends StaticLoader | LoadedStaticData = LoadedStaticData> =
+  Accessor<InferStaticLoaderData<T>>;
 
 export function useStaticData<
   T extends StaticLoader | LoadedStaticData = LoadedStaticData,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
 >(loader?: T) {
-  return useVesselContext().get(STATIC_DATA_KEY) as StaticDataAccessor<
-    InferStaticLoaderData<T>
-  >;
+  return useVesselContext().get(STATIC_DATA_KEY) as StaticDataAccessor<InferStaticLoaderData<T>>;
 }
 
-export type ServerDataAccessor<
-  T extends ServerLoader | LoadedServerData = LoadedServerData,
-> = Accessor<InferServerLoaderData<T>>;
+export type ServerDataAccessor<T extends ServerLoader | LoadedServerData = LoadedServerData> =
+  Accessor<InferServerLoaderData<T>>;
 
 export function useServerData<
   T extends ServerLoader | LoadedServerData = LoadedServerData,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
 >(loader?: T) {
-  return useVesselContext().get(SERVER_DATA_KEY) as ServerDataAccessor<
-    InferServerLoaderData<T>
-  >;
+  return useVesselContext().get(SERVER_DATA_KEY) as ServerDataAccessor<InferServerLoaderData<T>>;
 }
 
-export type ServerErrorAccessor<T extends HttpErrorData = HttpErrorData> =
-  Accessor<HttpError<T>>;
+export type ServerErrorAccessor<T extends HttpErrorData = HttpErrorData> = Accessor<HttpError<T>>;
 
 export function useServerError<T extends HttpErrorData = HttpErrorData>() {
   return useVesselContext().get(SERVER_ERROR_KEY) as ServerErrorAccessor<T>;
@@ -146,10 +130,7 @@ export function createContext() {
   const context: VesselContextMap = new Map();
 
   for (const key of Object.getOwnPropertySymbols(signals)) {
-    context.set(
-      key,
-      Array.isArray(signals[key]) ? signals[key][0] : signals[key],
-    );
+    context.set(key, Array.isArray(signals[key]) ? signals[key][0] : signals[key]);
   }
 
   const headManager = createHeadManager();
@@ -183,14 +164,10 @@ function createReactive<T>([get, set]: Signal<T>): Reactive<T> {
 function createMarkdownSignal(route: RouteSignal): MarkdownAccessor {
   return () => {
     const page = route().page;
-    return page && isMarkdownModule(page.module)
-      ? page.module.__markdownMeta
-      : undefined;
+    return page && isMarkdownModule(page.module) ? page.module.__markdownMeta : undefined;
   };
 }
 
-function createFrontmatterSignal(
-  markdown: MarkdownAccessor,
-): FrontmatterAccessor {
+function createFrontmatterSignal(markdown: MarkdownAccessor): FrontmatterAccessor {
   return () => markdown()?.frontmatter ?? {};
 }

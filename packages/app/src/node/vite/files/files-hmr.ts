@@ -71,10 +71,7 @@ export function handleFilesHMR(app: App) {
 }
 
 export function invalidateRouteModule(server: ViteDevServer, file: RouteFile) {
-  const module = server.moduleGraph
-    .getModulesByFile(file.path.absolute)
-    ?.values()
-    .next();
+  const module = server.moduleGraph.getModulesByFile(file.path.absolute)?.values().next();
 
   if (module?.value) server.moduleGraph.invalidateModule(module.value);
 }

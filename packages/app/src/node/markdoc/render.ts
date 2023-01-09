@@ -30,16 +30,11 @@ export function renderMarkdocToHTML(
   node: RenderableTreeNodes,
   config: RenderMarkdocConfig = {},
 ): string {
-  if (
-    typeof node === 'string' ||
-    typeof node === 'boolean' ||
-    typeof node === 'number'
-  ) {
+  if (typeof node === 'string' || typeof node === 'boolean' || typeof node === 'number') {
     return node;
   }
 
-  if (Array.isArray(node))
-    return node.map((n) => renderMarkdocToHTML(n, config)).join('');
+  if (Array.isArray(node)) return node.map((n) => renderMarkdocToHTML(n, config)).join('');
 
   if (node === null || typeof node !== 'object') return '';
 
@@ -51,9 +46,7 @@ export function renderMarkdocToHTML(
 
   let output = `<${name}`;
 
-  const attr = config.attr
-    ? (k, v) => config.attr!(name, k, v)
-    : (k, v) => `${k}="${String(v)}"`;
+  const attr = config.attr ? (k, v) => config.attr!(name, k, v) : (k, v) => `${k}="${String(v)}"`;
 
   for (const [k, v] of Object.entries(attributes ?? {})) {
     output += ` ${attr(k, v)}`;

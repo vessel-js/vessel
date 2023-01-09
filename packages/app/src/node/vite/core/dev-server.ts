@@ -6,10 +6,7 @@ import { STATIC_DATA_ASSET_BASE_PATH } from 'shared/data';
 import { coerceError } from 'shared/utils/error';
 import type { Connect, ViteDevServer } from 'vite';
 
-import {
-  initDevServerManifest,
-  updateDevServerManifestRoutes,
-} from './dev-server-manifest';
+import { initDevServerManifest, updateDevServerManifestRoutes } from './dev-server-manifest';
 import { handleDevRequest } from './handle-dev-request';
 import { handleStaticDataRequest } from './handle-static-data';
 import { readIndexHtmlFile } from './index-html';
@@ -58,9 +55,7 @@ export async function configureDevServer(app: App, server: ViteDevServer) {
             throw new Error('[vessel] incomplete request');
           }
 
-          const base = `${protocol}://${
-            req.headers[':authority'] || req.headers.host
-          }`;
+          const base = `${protocol}://${req.headers[':authority'] || req.headers.host}`;
 
           const url = new URL(base + req.url);
           const pathname = decodeURI(url.pathname);
@@ -72,12 +67,11 @@ export async function configureDevServer(app: App, server: ViteDevServer) {
             await current;
           }
 
-          manifest.document.template =
-            await app.vite.server!.transformIndexHtml(
-              decodeURI(url.pathname),
-              readIndexHtmlFile(app),
-              req.originalUrl,
-            );
+          manifest.document.template = await app.vite.server!.transformIndexHtml(
+            decodeURI(url.pathname),
+            readIndexHtmlFile(app),
+            req.originalUrl,
+          );
 
           if (pathname.startsWith(STATIC_DATA_ASSET_BASE_PATH)) {
             return await handleStaticDataRequest({ url, app, res, manifest });
@@ -93,11 +87,7 @@ export async function configureDevServer(app: App, server: ViteDevServer) {
   };
 }
 
-export function logDevError(
-  app: App,
-  req: Connect.IncomingMessage,
-  error: Error,
-) {
+export function logDevError(app: App, req: Connect.IncomingMessage, error: Error) {
   app.logger.error(
     error.message,
     [

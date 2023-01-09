@@ -55,9 +55,7 @@ export type ResolvedSitemapConfig = {
    * @defaultValue `0.7`
    * @see {@link https://www.sitemaps.org/protocol.html}
    */
-  priority:
-    | SitemapPriority
-    | ((url: URL) => SitemapPriority | Promise<SitemapPriority>);
+  priority: SitemapPriority | ((url: URL) => SitemapPriority | Promise<SitemapPriority>);
   /**
    * Additional sitemap URLS to be included.
    */

@@ -3,16 +3,11 @@ import { readFile } from 'fs/promises';
 import { toHtml } from 'hast-util-to-html';
 import kleur from 'kleur';
 import type { App } from 'node/app/App';
-import {
-  resolveRouteIdFromFilePath,
-  RouteDir,
-  RouteFile,
-  RouteFileType,
-} from 'node/app/files';
+import { resolveRouteIdFromFilePath, RouteDir, RouteFile, RouteFileType } from 'node/app/files';
 import {
   clearMarkdownCache,
-  type HighlightCodeBlock,
   parseMarkdown,
+  type HighlightCodeBlock,
   type ParseMarkdownResult,
 } from 'node/markdoc';
 import * as path from 'pathe';
@@ -40,8 +35,7 @@ export function markdownPlugin(): VesselPlugin {
 
         const config = app.config.markdown;
 
-        const { include, exclude, hastToHtml, highlighter, ...parseOptions } =
-          config;
+        const { include, exclude, hastToHtml, highlighter, ...parseOptions } = config;
 
         highlight = typeof highlighter === 'function' ? highlighter : null;
 
@@ -130,9 +124,7 @@ export function markdownPlugin(): VesselPlugin {
         if (currentFile) {
           if (
             layout &&
-            currentBranch.find(
-              (group) => group.layout?.path.root === layout.path.root,
-            )
+            currentBranch.find((group) => group.layout?.path.root === layout.path.root)
           ) {
             clearMarkdownCache(currentFile.path.absolute);
             invalidateRouteModule(server, currentFile);

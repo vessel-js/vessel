@@ -41,9 +41,7 @@ export function loadClientManifestModule(app: App) {
 
   const loaders = clientRoutes.flatMap((route) =>
     getRouteComponentTypes()
-      .map((type) =>
-        route[type] ? `() => import('/${route[type]!.path.root}')` : '',
-      )
+      .map((type) => (route[type] ? `() => import('/${route[type]!.path.root}')` : ''))
       .filter((str) => str.length > 0),
   );
 
@@ -62,7 +60,5 @@ export function loadClientManifestModule(app: App) {
     });
   }
 
-  return `export default ${stripImportQuotesFromJson(
-    prettyJsonStr({ loaders, fetch, routes }),
-  )};`;
+  return `export default ${stripImportQuotesFromJson(prettyJsonStr({ loaders, fetch, routes }))};`;
 }

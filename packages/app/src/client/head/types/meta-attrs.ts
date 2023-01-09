@@ -6,9 +6,7 @@
 
 import type { MetaTagFields } from './meta-fields';
 
-export interface MetaTagAttributes<
-  T extends keyof MetaTagFields = keyof MetaTagFields,
-> {
+export interface MetaTagAttributes<T extends keyof MetaTagFields = keyof MetaTagFields> {
   /**
    * This attribute declares the document's character encoding.* If the attribute is present,
    * its value must be an ASCII case-insensitive match for the string "utf-8", because UTF-8 is the

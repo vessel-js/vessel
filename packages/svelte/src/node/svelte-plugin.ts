@@ -1,4 +1,4 @@
-import { type VesselPlugins, VM_PREFIX } from '@vessel-js/app/node';
+import { VM_PREFIX, type VesselPlugins } from '@vessel-js/app/node';
 import { globbySync } from 'globby';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';

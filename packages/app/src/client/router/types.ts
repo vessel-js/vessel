@@ -1,10 +1,5 @@
 import type { MarkdownMeta } from 'shared/markdown';
-import type {
-  LoadableRoute,
-  LoadedRoute,
-  MatchedRoute,
-  RouteParams,
-} from 'shared/routing';
+import type { LoadableRoute, LoadedRoute, MatchedRoute, RouteParams } from 'shared/routing';
 
 import type { ScrollToTarget } from './scroll-delegate';
 
@@ -26,18 +21,21 @@ export type ClientModuleLoader = () => Promise<ClientModule>;
 
 export type ClientLoadableRoute = LoadableRoute<ClientModule>;
 
-export type ClientMatchedRoute<Params extends RouteParams = RouteParams> =
-  MatchedRoute<ClientModule, Params> & {
-    error?: LoadedRoute['error'];
-  };
+export type ClientMatchedRoute<Params extends RouteParams = RouteParams> = MatchedRoute<
+  ClientModule,
+  Params
+> & {
+  error?: LoadedRoute['error'];
+};
 
-export type ClientLoadedRoute<Params extends RouteParams = RouteParams> =
-  LoadedRoute<ClientModule, Params>;
+export type ClientLoadedRoute<Params extends RouteParams = RouteParams> = LoadedRoute<
+  ClientModule,
+  Params
+>;
 
-export type ClientRouteDeclaration = Omit<
-  ClientLoadableRoute,
-  'score' | 'pattern'
-> & { score?: number };
+export type ClientRouteDeclaration = Omit<ClientLoadableRoute, 'score' | 'pattern'> & {
+  score?: number;
+};
 
 // ---------------------------------------------------------------------------------------
 // Client Navigation
@@ -64,9 +62,7 @@ export type NavigationOptions = GoHrefOptions & {
 
 export type CancelNavigation = () => void;
 
-export type NavigationRedirector = (
-  pathnameOrURL: string | URL,
-) => Promise<void>;
+export type NavigationRedirector = (pathnameOrURL: string | URL) => Promise<void>;
 
 export type BeforeNavigateHook = (navigation: {
   from: ClientLoadedRoute | null;

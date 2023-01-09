@@ -7,10 +7,7 @@ import {
 
 export const STATIC_DATA_ASSET_BASE_PATH = '/_immutable/data';
 
-export function resolveStaticDataAssetId(
-  route: MatchedRoute,
-  type: RouteComponentType,
-) {
+export function resolveStaticDataAssetId(route: MatchedRoute, type: RouteComponentType) {
   return `id=${route.id}&type=${type}&path=${route.matchedURL.pathname}`;
 }
 

@@ -26,8 +26,5 @@ export async function prettierAddon(builder: Builder) {
     trailingComma: 'all',
   };
 
-  await builder.dirs.target.write(
-    '.prettierrc',
-    JSON.stringify(config, null, 2),
-  );
+  await builder.dirs.target.write('.prettierrc', JSON.stringify(config, null, 2));
 }

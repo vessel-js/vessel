@@ -5,9 +5,7 @@ import type { ServerEntryModule, ServerManifest } from 'server/types';
 
 export function initDevServerManifest(app: App): ServerManifest {
   const entryLoader = async () =>
-    (await app.vite.server!.ssrLoadModule(
-      app.config.entry.server,
-    )) as ServerEntryModule;
+    (await app.vite.server!.ssrLoadModule(app.config.entry.server)) as ServerEntryModule;
 
   const fixStacktrace = (error: unknown) => {
     if (error instanceof Error) {
@@ -37,10 +35,7 @@ export function initDevServerManifest(app: App): ServerManifest {
   };
 }
 
-export async function updateDevServerManifestRoutes(
-  app: App,
-  manifest: ServerManifest,
-) {
+export async function updateDevServerManifestRoutes(app: App, manifest: ServerManifest) {
   manifest.middlewares = [];
   manifest.errorHandlers = {};
 

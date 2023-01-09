@@ -2,12 +2,7 @@
  * Copied and slightly adapted from SvelteKit: https://github.com/sveltejs/kit
  */
 
-import {
-  type CookieParseOptions,
-  type CookieSerializeOptions,
-  parse,
-  serialize,
-} from 'cookie';
+import { parse, serialize, type CookieParseOptions, type CookieSerializeOptions } from 'cookie';
 
 const DEFAULT_SERIALIZE_OPTIONS = {
   httpOnly: true,
@@ -95,9 +90,7 @@ function domainMatches(hostname: string, constraint?: string) {
 function pathMatches(path: string, constraint?: string) {
   if (!constraint) return true;
 
-  const normalized = constraint.endsWith('/')
-    ? constraint.slice(0, -1)
-    : constraint;
+  const normalized = constraint.endsWith('/') ? constraint.slice(0, -1) : constraint;
 
   if (path === normalized) return true;
   return path.startsWith(normalized + '/');

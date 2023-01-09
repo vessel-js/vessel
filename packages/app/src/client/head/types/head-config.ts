@@ -27,9 +27,7 @@ export interface HeadConfig {
   /**
    * Generate the title from a template.
    */
-  titleTemplate?:
-    | ReactiveAttrValue<string>
-    | ((title?: string | null) => string);
+  titleTemplate?: ReactiveAttrValue<string> | ((title?: string | null) => string);
   /**
    * The <base> HTML element specifies the base URL to use for all relative URLs in a document.
    * There can be only one <base> element in a document.
@@ -45,18 +43,14 @@ export interface HeadConfig {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/link#attr-as
    */
-  link?: (ReactiveAttrs<LinkTagAttributes> &
-    HeadTagRenderPriority &
-    HeadTagRenderLocation)[];
+  link?: (ReactiveAttrs<LinkTagAttributes> & HeadTagRenderPriority & HeadTagRenderLocation)[];
   /**
    * The <meta> element represents metadata that cannot be expressed in other HTML elements, like
    * <link> or <script>.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta
    */
-  meta?: (ReactiveAttrs<MetaTagAttributes> &
-    HeadTagRenderPriority &
-    HeadTagRenderDuplicate)[];
+  meta?: (ReactiveAttrs<MetaTagAttributes> & HeadTagRenderPriority & HeadTagRenderDuplicate)[];
   /**
    * The <style> HTML element contains style information for a document, or part of a document. It
    * contains CSS, which is applied to the contents of the document containing the <style> element.

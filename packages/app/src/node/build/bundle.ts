@@ -5,9 +5,7 @@ import { build, type UserConfig as ViteConfig } from 'vite';
 
 import { extendManualChunks } from './chunks';
 
-export async function createServerBundle(
-  callback: (bundle: OutputBundle) => void,
-) {
+export async function createServerBundle(callback: (bundle: OutputBundle) => void) {
   // Vite will load `vite.config.*` which also includes Vessel plugin and configuration.
   await build({
     build: { ssr: true },
@@ -56,15 +54,9 @@ export function resolveBuildConfig(app: App): ViteConfig {
         input,
         output: {
           format: 'esm',
-          entryFileNames: ssr
-            ? `[name].js`
-            : `${immutableDir}/[name]-[hash].js`,
-          chunkFileNames: ssr
-            ? 'chunks/[name].js'
-            : `${immutableDir}/chunks/[name]-[hash].js`,
-          assetFileNames: ssr
-            ? ''
-            : `${immutableDir}/assets/[name]-[hash][extname]`,
+          entryFileNames: ssr ? `[name].js` : `${immutableDir}/[name]-[hash].js`,
+          chunkFileNames: ssr ? 'chunks/[name].js' : `${immutableDir}/chunks/[name]-[hash].js`,
+          assetFileNames: ssr ? '' : `${immutableDir}/assets/[name]-[hash][extname]`,
           manualChunks: extendManualChunks(),
         },
         preserveEntrySignatures: 'allow-extension',

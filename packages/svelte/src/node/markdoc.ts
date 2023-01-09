@@ -1,14 +1,14 @@
 import {
   escapeHTML,
   Markdoc,
+  renderMarkdocToHTML,
+  toPascalCase,
   type MarkdocConfig,
   type MarkdocRenderer,
   type MarkdocTag,
   type MarkdocTreeNodeTransformer,
   type MarkdocTreeWalkStuff,
   type RenderMarkdocConfig,
-  renderMarkdocToHTML,
-  toPascalCase,
 } from '@vessel-js/app/node';
 import * as path from 'pathe';
 
@@ -19,11 +19,7 @@ export const svelteMarkdocTags: MarkdocConfig['tags'] = {
   fragment: {
     render: 'svelte:fragment',
     transform(node, config) {
-      return new Markdoc.Tag(
-        'svelte:fragment',
-        node.attributes,
-        node.transformChildren(config),
-      );
+      return new Markdoc.Tag('svelte:fragment', node.attributes, node.transformChildren(config));
     },
   },
   slot: {
@@ -31,21 +27,13 @@ export const svelteMarkdocTags: MarkdocConfig['tags'] = {
     transform(node, config) {
       node.attributes.slot = node.attributes.name;
       delete node.attributes.name;
-      return new Markdoc.Tag(
-        'svelte:fragment',
-        node.attributes,
-        node.transformChildren(config),
-      );
+      return new Markdoc.Tag('svelte:fragment', node.attributes, node.transformChildren(config));
     },
   },
   component: {
     render: 'svelte:component',
     transform(node, config) {
-      return new Markdoc.Tag(
-        'svelte:component',
-        node.attributes,
-        node.transformChildren(config),
-      );
+      return new Markdoc.Tag('svelte:component', node.attributes, node.transformChildren(config));
     },
   },
 };
@@ -66,12 +54,7 @@ const renderAttr: RenderMarkdocConfig['attr'] = (_, name, value) => {
     : `${name}={${isString ? value.replace(objRE, '') : value}}`;
 };
 
-export const renderMarkdoc: MarkdocRenderer = ({
-  meta,
-  content,
-  imports,
-  stuff,
-}) => {
+export const renderMarkdoc: MarkdocRenderer = ({ meta, content, imports, stuff }) => {
   let markup = renderMarkdocToHTML(content, { attr: renderAttr });
 
   markup = markup
@@ -84,12 +67,9 @@ export const renderMarkdoc: MarkdocRenderer = ({
     '</script>',
   ].join('\n');
 
-  const script =
-    imports.length > 0 ? ['<script>', ...imports, '</script>'].join('\n') : '';
+  const script = imports.length > 0 ? ['<script>', ...imports, '</script>'].join('\n') : '';
 
-  const svelteHead = stuff.head
-    ? `<svelte:head>\n${stuff.head}\n</svelte:head>\n\n`
-    : '';
+  const svelteHead = stuff.head ? `<svelte:head>\n${stuff.head}\n</svelte:head>\n\n` : '';
 
   return `${scriptModule}\n\n${script}\n\n${svelteHead}\n\n${markup}`;
 };
@@ -100,10 +80,7 @@ const svelteHeadNameRE = /^svelte:head$/;
 const svelteComponentNameRE = /^svelte:component$/;
 const imgRE = /^img$/;
 
-export const transformTreeNode: MarkdocTreeNodeTransformer = ({
-  node,
-  stuff,
-}) => {
+export const transformTreeNode: MarkdocTreeNodeTransformer = ({ node, stuff }) => {
   if (node && typeof node !== 'string') {
     const name = node.name;
 

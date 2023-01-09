@@ -23,9 +23,7 @@ export const DEFAULT_INDEX_HTML = `
 export function readIndexHtmlFile(app: App): string {
   const indexPath = app.dirs.app.resolve('index.html');
 
-  const html = fs.existsSync(indexPath)
-    ? fs.readFileSync(indexPath, 'utf-8')
-    : DEFAULT_INDEX_HTML;
+  const html = fs.existsSync(indexPath) ? fs.readFileSync(indexPath, 'utf-8') : DEFAULT_INDEX_HTML;
 
   return html.replace('{{ version }}', app.version);
 }

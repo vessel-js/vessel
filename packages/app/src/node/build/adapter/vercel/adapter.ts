@@ -28,9 +28,7 @@ const defaultEdgeConfig = {
   entrypoint: 'index.js',
 };
 
-export function createVercelBuildAdapter(
-  config?: VercelBuildAdapterConfig,
-): BuildAdapterFactory {
+export function createVercelBuildAdapter(config?: VercelBuildAdapterConfig): BuildAdapterFactory {
   return async (app, build) => {
     const vercelDirs = {
       root: createDirectory(app.dirs.root.resolve('.vercel')),
@@ -40,10 +38,7 @@ export function createVercelBuildAdapter(
 
     const trailingSlashes = app.config.routes.trailingSlash;
 
-    const staticAdapter = await createStaticBuildAdapter({ output: false })(
-      app,
-      build,
-    );
+    const staticAdapter = await createStaticBuildAdapter({ output: false })(app, build);
 
     return {
       name: 'vercel',
@@ -59,12 +54,10 @@ export function createVercelBuildAdapter(
 
         const edgeRoutes = build.edge.routes;
 
-        const hasEdgeRoutes =
-          edgeRoutes.size || build.server.configs.edge?.apiRoutes.length;
+        const hasEdgeRoutes = edgeRoutes.size || build.server.configs.edge?.apiRoutes.length;
 
         const hasNodeRoutes =
-          build.server.loaders.size ||
-          build.server.configs.node?.apiRoutes.length;
+          build.server.loaders.size || build.server.configs.node?.apiRoutes.length;
 
         if (!serverRoutes.length && !hasEdgeRoutes && !hasNodeRoutes) {
           return;
@@ -74,21 +67,19 @@ export function createVercelBuildAdapter(
 
         copyDir(app.dirs.vessel.client.path, vercelDirs.static.path);
 
-        const redirects = Array.from(build.static.redirects.values()).map(
-          (redirect) => ({
-            src: redirect.from.replace(/\/$/, '/?'),
-            headers: {
-              Location: isLinkExternal(redirect.to, app.vite.resolved!.base)
-                ? redirect.to
-                : redirect.to === '/'
-                ? '/'
-                : trailingSlashes
-                ? endslash(redirect.to)
-                : noendslash(redirect.to),
-            },
-            status: redirect.status,
-          }),
-        );
+        const redirects = Array.from(build.static.redirects.values()).map((redirect) => ({
+          src: redirect.from.replace(/\/$/, '/?'),
+          headers: {
+            Location: isLinkExternal(redirect.to, app.vite.resolved!.base)
+              ? redirect.to
+              : redirect.to === '/'
+              ? '/'
+              : trailingSlashes
+              ? endslash(redirect.to)
+              : noendslash(redirect.to),
+          },
+          status: redirect.status,
+        }));
 
         const overrides: Record<string, { path: string }> = {};
         for (const page of build.static.renders.values()) {
@@ -135,9 +126,7 @@ export function createVercelBuildAdapter(
           }
         }
 
-        const rootRoute = app.routes
-          .toArray()
-          .find((route) => route.id === '/');
+        const rootRoute = app.routes.toArray().find((route) => route.id === '/');
 
         // SPA fallback so we can render 404 page.
         if (rootRoute) {
@@ -214,10 +203,7 @@ async function bundleEdge(
     plugins: [noopStaticLoader()],
   });
 
-  await writeFile(
-    path.resolve(outdir, 'package.json'),
-    JSON.stringify({ type: 'module' }),
-  );
+  await writeFile(path.resolve(outdir, 'package.json'), JSON.stringify({ type: 'module' }));
 
   await writeFile(
     path.resolve(outdir, '.vc-config.json'),
@@ -276,10 +262,7 @@ async function bundleNode(
     JSON.stringify({ ...defaultFunctionsConfig, ...config }),
   );
 
-  fs.writeFileSync(
-    `${outdir}/package.json`,
-    JSON.stringify({ type: 'module' }),
-  );
+  fs.writeFileSync(`${outdir}/package.json`, JSON.stringify({ type: 'module' }));
 
   spinner.stopAndPersist({
     text: kleur.bold(`Bundled node functions`),

@@ -3,12 +3,7 @@ import { isArray, isFunction } from 'shared/utils/unit';
 import { tryResolveResponseError } from './errors';
 import { createVesselRequest, type RequestParams } from './request';
 import { createVesselResponse } from './response';
-import type {
-  InferRPCParams,
-  InferRPCResponse,
-  RPCFetchInfo,
-  RPCHandler,
-} from './rpc';
+import type { InferRPCParams, InferRPCResponse, RPCFetchInfo, RPCHandler } from './rpc';
 
 export type ClientFetchInit<Params = RequestParams> = RequestInit & {
   params?: Params;
@@ -59,18 +54,12 @@ export function coerceFetchInput(
       ? input
       : isArray(input)
       ? new Request(new URL(input[1], baseURL), { ...init, method: input[0] })
-      : new Request(
-          typeof input === 'string' ? new URL(input, baseURL) : input,
-          init,
-        ),
+      : new Request(typeof input === 'string' ? new URL(input, baseURL) : input, init),
   );
 
   if (init?.params) {
     for (const key of Object.keys(init.params)) {
-      request.URL.searchParams.append(
-        'rpc_params',
-        `${key}=${init.params[key]}`,
-      );
+      request.URL.searchParams.append('rpc_params', `${key}=${init.params[key]}`);
     }
   }
 
@@ -84,9 +73,7 @@ export function coerceFetchInput(
 }
 
 // From: https://github.com/whatwg/fetch/issues/905#issuecomment-491970649
-export function composeAbortSignals(
-  ...signals: (AbortSignal | null | undefined)[]
-) {
+export function composeAbortSignals(...signals: (AbortSignal | null | undefined)[]) {
   const controller = new AbortController();
 
   function onAbort() {

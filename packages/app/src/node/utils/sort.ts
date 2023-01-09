@@ -1,11 +1,7 @@
 import LRUCache from 'lru-cache';
 import { slashedSplit } from 'shared/utils/url';
 
-export function sortedInsert<T>(
-  items: T[],
-  item: T,
-  comparator: (a: T, b: T) => number,
-) {
+export function sortedInsert<T>(items: T[], item: T, comparator: (a: T, b: T) => number) {
   const lastItem = items[items.length - 1];
   if (!lastItem || comparator(item, lastItem) >= 0) {
     // fast path
@@ -27,11 +23,7 @@ const orderedPageTokenRE = /^\[(\d)\]/;
 
 const sortCache = new LRUCache<string, number>({ max: 2048 });
 
-export function comparePaths(
-  pathA: string,
-  pathB: string,
-  { ordered = false } = {},
-): number {
+export function comparePaths(pathA: string, pathB: string, { ordered = false } = {}): number {
   const cacheKey = pathA + pathB;
 
   if (sortCache.has(cacheKey)) return sortCache.get(cacheKey)!;

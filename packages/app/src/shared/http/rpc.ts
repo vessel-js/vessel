@@ -10,10 +10,13 @@ export interface RPCHandler {
 
 export type RPCFetchInfo = [method: string, path: string];
 
-export type InferRPCParams<RPC extends RPCHandler> =
-  RPC extends ServerRequestHandler<infer Params> ? Params : RequestParams;
+export type InferRPCParams<RPC extends RPCHandler> = RPC extends ServerRequestHandler<infer Params>
+  ? Params
+  : RequestParams;
 
-export type InferRPCResponse<RPC extends RPCHandler> =
-  RPC extends ServerRequestHandler<never, infer Data>
-    ? Promise<Data extends Response ? Data : VesselResponse>
-    : Promise<VesselResponse>;
+export type InferRPCResponse<RPC extends RPCHandler> = RPC extends ServerRequestHandler<
+  never,
+  infer Data
+>
+  ? Promise<Data extends Response ? Data : VesselResponse>
+  : Promise<VesselResponse>;

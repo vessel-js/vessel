@@ -1,9 +1,6 @@
 function DevErrorFallback(props) {
   return (
-    <div
-      class="error"
-      style="border: 2px solid red; padding: 1.5rem; font-family: monospace;"
-    >
+    <div class="error" style="border: 2px solid red; padding: 1.5rem; font-family: monospace;">
       <b class="title" style="font-size: 1.5rem;">
         Error
       </b>
@@ -17,9 +14,7 @@ function DevErrorFallback(props) {
         </pre>
       )}
 
-      <button onClick={props.reset}>
-        Loading this section failed. Click to try again.
-      </button>
+      <button onClick={props.reset}>Loading this section failed. Click to try again.</button>
     </div>
   );
 }

@@ -10,10 +10,9 @@ export type VesselResponse = Response & {
   cookies: Cookies;
 };
 
-export type VesselJSONResponse<T extends JSONData = JSONData> = Omit<
-  VesselResponse,
-  'json'
-> & { json(): Promise<T> };
+export type VesselJSONResponse<T extends JSONData = JSONData> = Omit<VesselResponse, 'json'> & {
+  json(): Promise<T>;
+};
 
 const VESSEL_RESPONSE = Symbol('VESSEL_RESPONSE');
 
@@ -46,10 +45,9 @@ export function appendHeaders(body: Request | Response, headers: Headers) {
 
 export type JSONData = Record<string, any>;
 
-export type JSONResponse<T extends JSONData = JSONData> = Omit<
-  Response,
-  'json'
-> & { json(): Promise<T> };
+export type JSONResponse<T extends JSONData = JSONData> = Omit<Response, 'json'> & {
+  json(): Promise<T>;
+};
 
 /**
  * This is a shortcut for creating `application/json` responses. Converts `data` to JSON and sets
@@ -72,10 +70,7 @@ export function json<Data extends JSONData>(
   });
 }
 
-export type RedirectFunction = (
-  url: string,
-  init?: number | ResponseInit,
-) => JSONResponse<never>;
+export type RedirectFunction = (url: string, init?: number | ResponseInit) => JSONResponse<never>;
 
 export function isResponse(value: unknown): value is Response {
   return value instanceof Response;
@@ -86,9 +81,7 @@ export function isVesselResponse(value: unknown): value is VesselResponse {
 }
 
 const redirectStatusCodes = new Set([301, 302, 303, 307, 308]);
-export function isRedirectResponse(
-  response: unknown,
-): response is JSONResponse<never> {
+export function isRedirectResponse(response: unknown): response is JSONResponse<never> {
   return isResponse(response) && redirectStatusCodes.has(response.status);
 }
 
@@ -129,15 +122,11 @@ export const clientRedirect: RedirectFunction = (url, init = 307) => {
   return response;
 };
 
-export function isClientRedirectResponse(
-  response: unknown,
-): response is JSONResponse<never> {
+export function isClientRedirectResponse(response: unknown): response is JSONResponse<never> {
   return isResponse(response) && response.headers.has('X-Vessel-Redirect');
 }
 
-export async function resolveResponseData<Data = unknown>(
-  response: Response,
-): Promise<Data> {
+export async function resolveResponseData<Data = unknown>(response: Response): Promise<Data> {
   const contentType = response.headers.get('Content-Type');
   return contentType && /\bapplication\/json\b/.test(contentType)
     ? response.json()
@@ -156,10 +145,7 @@ export type InferAnyResponseData<T> = T extends Response
     : any
   : T;
 
-export function coerceAnyResponse(
-  url: URL,
-  response: AnyResponse,
-): VesselResponse {
+export function coerceAnyResponse(url: URL, response: AnyResponse): VesselResponse {
   return createVesselResponse(
     url,
     isResponse(response)
@@ -175,10 +161,7 @@ export type ResponseDetails = {
   cookies: Cookies;
 };
 
-export function createResponseDetails(
-  url: URL,
-  init?: Partial<ResponseDetails>,
-): ResponseDetails {
+export function createResponseDetails(url: URL, init?: Partial<ResponseDetails>): ResponseDetails {
   const headers = init?.headers ?? new Headers();
   const cookies = init?.cookies ?? new Cookies({ url, headers });
   return { headers, cookies };

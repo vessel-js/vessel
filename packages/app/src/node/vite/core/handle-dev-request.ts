@@ -34,8 +34,7 @@ export async function handleDevRequest({
   try {
     const route = matchRoute(url, app.routes.filterHasType('page'));
 
-    manifest.dev!.stylesheets = async () =>
-      route ? resolveDevStylesheets(app, route) : '';
+    manifest.dev!.stylesheets = async () => (route ? resolveDevStylesheets(app, route) : '');
 
     manifest.staticData.loaders = {};
 

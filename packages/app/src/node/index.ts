@@ -6,10 +6,7 @@ export * from './app/files';
 export * from './app/routes';
 export type { BuildBundles, BuildData } from './build';
 export type { BuildAdapter, BuildAdapterFactory } from './build/adapter';
-export {
-  type AutoBuildAdapterConfig,
-  createAutoBuildAdapter,
-} from './build/adapter';
+export { type AutoBuildAdapterConfig, createAutoBuildAdapter } from './build/adapter';
 export type { StaticBuildAdapterConfig } from './build/adapter/static/adapter';
 export type { VercelBuildAdapterConfig } from './build/adapter/vercel/adapter';
 export * from './http';

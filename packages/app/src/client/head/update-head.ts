@@ -16,9 +16,7 @@ export function updateHead(
 
   let headCountEl = head.querySelector(`meta[name="${HEAD_COUNT_KEY}"]`);
 
-  const headCount = headCountEl
-    ? Number(headCountEl.getAttribute('content'))
-    : 0;
+  const headCount = headCountEl ? Number(headCountEl.getAttribute('content')) : 0;
 
   const bodyMetaElements = body.querySelectorAll(`[${BODY_TAG_ATTR_NAME}]`);
 
@@ -27,10 +25,7 @@ export function updateHead(
 
   if (bodyMetaElements) {
     for (let i = 0; i < bodyMetaElements.length; i++) {
-      if (
-        bodyMetaElements[i] &&
-        bodyMetaElements[i].tagName?.toLowerCase() === type
-      ) {
+      if (bodyMetaElements[i] && bodyMetaElements[i].tagName?.toLowerCase() === type) {
         oldBodyElements.push(bodyMetaElements[i]);
       }
     }
@@ -89,10 +84,7 @@ export function updateHead(
 
   headCountEl.setAttribute(
     'content',
-    '' +
-      (headCount -
-        oldHeadElements.length +
-        newElements.filter((t) => !t.body).length),
+    '' + (headCount - oldHeadElements.length + newElements.filter((t) => !t.body).length),
   );
 }
 
@@ -110,11 +102,7 @@ function createElement(
       el.setAttribute(BODY_TAG_ATTR_NAME, 'true');
     } else {
       const value = resolve(attrs[key]);
-      if (
-        key === 'renderPriority' ||
-        key === 'key' ||
-        (!value && value !== 0 && value !== '')
-      ) {
+      if (key === 'renderPriority' || key === 'key' || (!value && value !== 0 && value !== '')) {
         continue;
       } else if (key === 'children') {
         el.textContent = value + '';

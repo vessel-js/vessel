@@ -3,11 +3,7 @@ import * as path from 'pathe';
 import { toPascalCase } from 'shared/utils/string';
 
 import type { App } from '../App';
-import {
-  type SystemFileMeta,
-  SystemFiles,
-  type SystemFilesOptions,
-} from './system-files';
+import { SystemFiles, type SystemFileMeta, type SystemFilesOptions } from './system-files';
 
 export const STRIP_MARKDOC_DIR_RE = /\/\.markdoc\/.+/;
 
@@ -31,9 +27,7 @@ export class MarkdocFiles extends SystemFiles<MarkdocFile> {
   async add(filePath: string) {
     const file = this._createFile(filePath);
 
-    const owningDir = path.dirname(
-      file.path.root.replace(STRIP_MARKDOC_DIR_RE, '/root.md'),
-    );
+    const owningDir = path.dirname(file.path.root.replace(STRIP_MARKDOC_DIR_RE, '/root.md'));
 
     const name = path
       .basename(file.path.route, path.extname(file.path.route))
@@ -43,13 +37,9 @@ export class MarkdocFiles extends SystemFiles<MarkdocFile> {
     const type = this.isNode(filePath) ? 'node' : 'tag';
 
     if (type === 'node' && !isValidMarkdownNodeName(name)) {
-      const validValues = `${kleur.bold('Valid values')}: ${Array.from(
-        getValidNodeNames(),
-      )}`;
+      const validValues = `${kleur.bold('Valid values')}: ${Array.from(getValidNodeNames())}`;
 
-      this._app.logger.warn(
-        `Invalid markdown node name [${kleur.bold(name)}]. \n\n${validValues}`,
-      );
+      this._app.logger.warn(`Invalid markdown node name [${kleur.bold(name)}]. \n\n${validValues}`);
     }
 
     const cname = toPascalCase(name);
@@ -83,9 +73,7 @@ export class MarkdocFiles extends SystemFiles<MarkdocFile> {
   getOwnedNodes(ownerFilePath: string, type: '*' | 'node' | 'tag') {
     const root = path.dirname(this._getRootPath(ownerFilePath));
     return Array.from(this._files).filter((node) => {
-      return (
-        (type === '*' || node.type === type) && root.startsWith(node.owningDir)
-      );
+      return (type === '*' || node.type === type) && root.startsWith(node.owningDir);
     });
   }
 }

@@ -1,9 +1,6 @@
 import type { BuildConfig, ResolvedBuildConfig } from './build-config';
 import type { ClientConfig, ResolvedClientConfig } from './client-config';
-import type {
-  DirectoriesConfig,
-  ResolvedDirectoriesConfig,
-} from './directories-config';
+import type { DirectoriesConfig, ResolvedDirectoriesConfig } from './directories-config';
 import type { ResolvedEntryConfig } from './entry-config';
 import type { MarkdownConfig, ResolvedMarkdownConfig } from './markdown-config';
 import type { ResolvedRoutesConfig, RoutesConfig } from './routes-config';

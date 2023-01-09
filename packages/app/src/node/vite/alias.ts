@@ -16,7 +16,7 @@ export const virtualModuleRequestPath = Object.keys(virtualModuleId).reduce(
     [key]: `/${virtualModuleId[key]}`,
   }),
   {} as {
-    [P in keyof typeof virtualModuleId]: `/${typeof virtualModuleId[P]}`;
+    [P in keyof typeof virtualModuleId]: `/${(typeof virtualModuleId)[P]}`;
   },
 );
 

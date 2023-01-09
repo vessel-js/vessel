@@ -1,10 +1,6 @@
 import { type VesselRequest } from './request';
 import { type VesselRequestHandler } from './request-handler';
-import {
-  type AnyResponse,
-  coerceAnyResponse,
-  type VesselResponse,
-} from './response';
+import { coerceAnyResponse, type AnyResponse, type VesselResponse } from './response';
 
 export type FetchMiddleware = (
   request: VesselRequest,
@@ -22,9 +18,7 @@ export type ComposedFetchMiddleware = FetchMiddleware[];
 export function composeFetchMiddleware(
   ...middlewares: (MaybeFetchMiddleware | MaybeFetchMiddleware[])[]
 ): ComposedFetchMiddleware {
-  return middlewares
-    .flat()
-    .filter((middleware) => !!middleware) as ComposedFetchMiddleware;
+  return middlewares.flat().filter((middleware) => !!middleware) as ComposedFetchMiddleware;
 }
 
 export async function withMiddleware(

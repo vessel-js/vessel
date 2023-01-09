@@ -16,9 +16,9 @@ import { isFunction } from 'shared/utils/unit';
 
 import { handleApiRequest } from './handlers/handle-api-request';
 
-export function createServerRequestEvent<
-  Params extends RequestParams = RequestParams,
->(init: ServerRequestEventInit<Params>): ServerRequestEvent<Params> {
+export function createServerRequestEvent<Params extends RequestParams = RequestParams>(
+  init: ServerRequestEventInit<Params>,
+): ServerRequestEvent<Params> {
   const request = init.request;
   const response = createResponseDetails(request.URL);
   const serverFetch = createServerFetch(request.URL, init.manifest, init.page);
@@ -54,11 +54,7 @@ export function createServerFetch(
       throw Error('[vessel] server fetch RPC call was not transformed');
     }
 
-    const request = coerceFetchInput(
-      isFunction(input) ? input.rpc! : input,
-      init,
-      baseURL,
-    );
+    const request = coerceFetchInput(isFunction(input) ? input.rpc! : input, init, baseURL);
 
     if (request.URL.origin === baseURL.origin) {
       const route = matchRoute(request.URL, manifest.routes.api);

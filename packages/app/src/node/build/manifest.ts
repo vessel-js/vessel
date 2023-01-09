@@ -1,14 +1,7 @@
 import type { App } from 'node/app/App';
-import { type AppRoute, toRoute } from 'node/app/routes';
-import type {
-  ServerLoadableApiRoute,
-  ServerLoadablePageRoute,
-} from 'server/types';
-import {
-  compareRoutes,
-  getRouteComponentTypes,
-  type RouteComponentType,
-} from 'shared/routing';
+import { toRoute, type AppRoute } from 'node/app/routes';
+import type { ServerLoadableApiRoute, ServerLoadablePageRoute } from 'server/types';
+import { compareRoutes, getRouteComponentTypes, type RouteComponentType } from 'shared/routing';
 import { stripImportQuotesFromJson } from 'shared/utils/json';
 import { noendslash } from 'shared/utils/url';
 
@@ -16,8 +9,7 @@ import type { BuildData } from './build-data';
 import { resolveApiChunkMethods } from './chunks';
 
 export function buildServerManifests(app: App, build: BuildData) {
-  const baseUrl =
-    app.vite.resolved!.base === '/' ? '/' : noendslash(app.vite.resolved!.base);
+  const baseUrl = app.vite.resolved!.base === '/' ? '/' : noendslash(app.vite.resolved!.base);
 
   const sharedInit: SharedSerializeManifestInit = {
     production: !app.config.debug,
@@ -117,9 +109,7 @@ function createManifestInit(
     document: {
       entry: hasPageRoutes ? shared.document.entry : '',
       template: hasPageRoutes ? shared.document.template : '',
-      resources: hasPageRoutes
-        ? { ...build.resources, routes: routeResources }
-        : undefined,
+      resources: hasPageRoutes ? { ...build.resources, routes: routeResources } : undefined,
     },
     routes: {
       pages: Array.from(pageRoutes).map((route) => {
@@ -139,8 +129,7 @@ function createManifestInit(
         return { ...pageRoute, pattern: undefined };
       }),
       api: apiRoutes.map((route) => {
-        const { fileName } = build.bundles.server.routes.chunks.get(route.id)!
-          .api!;
+        const { fileName } = build.bundles.server.routes.chunks.get(route.id)!.api!;
 
         return {
           ...toRoute(route),
@@ -190,9 +179,7 @@ export default {
     resources: ${JSON.stringify(document.resources, null, 2)},
   },
   staticData: {
-    loaders: ${stripImportQuotesFromJson(
-      JSON.stringify(staticData.loaders, null, 2),
-    )},
+    loaders: ${stripImportQuotesFromJson(JSON.stringify(staticData.loaders, null, 2))},
     clientHashRecord: ${JSON.stringify(staticData.clientHashRecord, null, 2)},
     serverHashRecord: ${JSON.stringify(staticData.serverHashRecord, null, 2)},
   },
@@ -226,32 +213,20 @@ type SerializeManifestInit = SharedSerializeManifestInit & {
   };
 };
 
-type SerializablePageRoute = Omit<
-  ServerLoadablePageRoute,
-  'pattern' | RouteComponentType
-> & {
+type SerializablePageRoute = Omit<ServerLoadablePageRoute, 'pattern' | RouteComponentType> & {
   [P in RouteComponentType]?: {
     loader: string;
     canFetch?: boolean;
   };
 };
 
-type SerializableApiRoute = Omit<
-  ServerLoadableApiRoute,
-  'loader' | 'pattern'
-> & {
+type SerializableApiRoute = Omit<ServerLoadableApiRoute, 'loader' | 'pattern'> & {
   loader: string;
   methods: string[];
 };
 
-function filterEdgePageRoutes(
-  app: App,
-  build: BuildData,
-  pageRoutes: AppRoute[],
-) {
-  const edgePages = pageRoutes.filter((route) =>
-    build.edge.routes.has(route.id),
-  );
+function filterEdgePageRoutes(app: App, build: BuildData, pageRoutes: AppRoute[]) {
+  const edgePages = pageRoutes.filter((route) => build.edge.routes.has(route.id));
 
   if (edgePages.length === 0) return [];
 

@@ -12,17 +12,14 @@ import { writeFile } from 'node:fs/promises';
 import ora from 'ora';
 import type { OutputBundle } from 'rollup';
 import { createServerRouter } from 'server/http';
-import {
-  installServerConfigs,
-  ServerConfig,
-} from 'server/http/app/configure-server';
+import { installServerConfigs, ServerConfig } from 'server/http/app/configure-server';
 import { createStaticLoaderDataMap } from 'server/static-data';
 import type { ServerEntryModule, ServerManifest } from 'server/types';
 import {
+  normalizeURL as __normalizeURL,
   cleanRoutePath,
   findRoute,
   getRouteComponentTypes,
-  normalizeURL as __normalizeURL,
 } from 'shared/routing';
 import { isFunction } from 'shared/utils/unit';
 import { isLinkExternal, slash } from 'shared/utils/url';
@@ -71,10 +68,7 @@ export async function build(
   const startTime = Date.now();
   const entries = createAppEntries(app, { isSSR: true });
 
-  const template = await fs.readFileSync(
-    app.dirs.vessel.client.resolve('app/index.html'),
-    'utf-8',
-  );
+  const template = await fs.readFileSync(app.dirs.vessel.client.resolve('app/index.html'), 'utf-8');
 
   rimraf(app.dirs.vessel.client.resolve('app'));
 
@@ -83,30 +77,16 @@ export async function build(
     await fs.promises.readFile(viteManifestPath, 'utf-8'),
   ) as ViteManifest;
 
-  const { chunks: clientChunks, assets: clientAssets } =
-    resolveChunksAndAssets(clientBundle);
+  const { chunks: clientChunks, assets: clientAssets } = resolveChunksAndAssets(clientBundle);
 
   const serverChunks = resolveChunks(serverBundle);
 
-  const entryChunkInfo = resolveEntryChunkInfo(
-    app,
-    clientManifest,
-    clientChunks,
-    serverChunks,
-  );
+  const entryChunkInfo = resolveEntryChunkInfo(app, clientManifest, clientChunks, serverChunks);
 
-  const appChunkInfo = resolveAppChunkInfo(
-    app,
-    clientManifest,
-    clientChunks,
-    serverChunks,
-  );
+  const appChunkInfo = resolveAppChunkInfo(app, clientManifest, clientChunks, serverChunks);
 
   const serverConfigChunks = resolveServerConfigChunks(app, serverChunks);
-  const { serverRouteChunks, serverRouteChunkFiles } = resolveServerRouteChunks(
-    app,
-    serverChunks,
-  );
+  const { serverRouteChunks, serverRouteChunkFiles } = resolveServerRouteChunks(app, serverChunks);
 
   const bundles: BuildBundles = {
     entries,
@@ -145,9 +125,7 @@ export async function build(
   await Promise.all(
     Object.keys(serverConfigChunks).map(async (key) => {
       serverConfigs[key] = (
-        await import(
-          app.dirs.vessel.server.resolve(serverConfigChunks[key].fileName)
-        )
+        await import(app.dirs.vessel.server.resolve(serverConfigChunks[key].fileName))
       ).default;
     }),
   );
@@ -293,13 +271,9 @@ export async function build(
   console.log(kleur.magenta('+ build\n'));
 
   const testTrailingSlash = (pathname: string) =>
-    pathname === '/' || hasTrailingSlash
-      ? /\/$/.test(pathname)
-      : !/\/$/.test(pathname);
+    pathname === '/' || hasTrailingSlash ? /\/$/.test(pathname) : !/\/$/.test(pathname);
 
-  const { render } = (await import(
-    entryChunkInfo.server.path
-  )) as ServerEntryModule;
+  const { render } = (await import(entryChunkInfo.server.path)) as ServerEntryModule;
 
   async function buildPage(url: URL, pageRoute: AppRoute) {
     const normalizedURL = normalizeURL(url);
@@ -317,10 +291,7 @@ export async function build(
       return;
     }
 
-    const { redirect, matches, dataMap } = await loadRoute(
-      normalizedURL,
-      pageRoute,
-    );
+    const { redirect, matches, dataMap } = await loadRoute(normalizedURL, pageRoute);
 
     // Redirect.
     if (redirect) {
@@ -375,10 +346,7 @@ export async function build(
 
   // Start with static page paths and then crawl additional links.
   for (const route of pageRoutes.filter((route) => !route.dynamic).reverse()) {
-    await buildPage(
-      new URL(`${serverOrigin}${cleanRoutePath(route.pattern.pathname)}`),
-      route,
-    );
+    await buildPage(new URL(`${serverOrigin}${cleanRoutePath(route.pattern.pathname)}`), route);
   }
 
   const renderingSpinner = ora();
@@ -428,8 +396,7 @@ export async function build(
       const seen = new Set<string>();
 
       const dataSpinner = logger.withSpinner('Writing server data files...', {
-        successTitle: () =>
-          `Committed ${kleur.underline(seen.size)} server data files`,
+        successTitle: () => `Committed ${kleur.underline(seen.size)} server data files`,
       });
 
       const dataDir = app.dirs.vessel.server.resolve('.data');
@@ -464,10 +431,7 @@ export async function build(
     await manifestSpinner(async () => {
       await Promise.all(
         manifestNames.map(async (name) => {
-          app.dirs.vessel.server.write(
-            `${manifestsDir}/${name}.js`,
-            manifests[name]!,
-          );
+          app.dirs.vessel.server.write(`${manifestsDir}/${name}.js`, manifests[name]!);
         }),
       );
     });
@@ -517,9 +481,7 @@ export async function build(
       Array.from(deoptimized)
         .map(
           ([route, layouts]) =>
-            `\n- ${kleur.bold(
-              route.page?.path.route ?? route.id,
-            )}\n  ${layouts.map(
+            `\n- ${kleur.bold(route.page?.path.route ?? route.id)}\n  ${layouts.map(
               (route) => `  - ${kleur.red(route.layout!.path.route)}`,
             )}`,
         )

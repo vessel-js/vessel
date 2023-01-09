@@ -17,11 +17,7 @@ export type VesselPlugin = VitePlugin & {
      */
     config?: (
       config: ResolvedAppConfig,
-    ) =>
-      | Omit<AppConfig, 'dirs'>
-      | null
-      | void
-      | Promise<Omit<AppConfig, 'dirs'> | null | void>;
+    ) => Omit<AppConfig, 'dirs'> | null | void | Promise<Omit<AppConfig, 'dirs'> | null | void>;
     /**
      * Called immediately after the config has been resolved.
      */

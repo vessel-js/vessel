@@ -22,10 +22,10 @@ import {
   getRouteComponentTypes,
   matchAllRoutes,
   matchRoute,
+  stripRouteComponentTypes,
   type Route,
   type RouteComponentType,
   type RouteMatch,
-  stripRouteComponentTypes,
 } from 'shared/routing';
 import type { Mutable } from 'shared/types';
 import { isFunction, isString } from 'shared/utils/unit';
@@ -35,10 +35,7 @@ import { getDevServerOrigin } from './dev-server';
 
 // Create fetcher to ensure relative paths work when fetching inside `staticLoader`. Also
 // ensures requests are able to load HTTP modules so they can respond because there's no server here.
-export function createStaticLoaderFetch(
-  app: App,
-  manifest: ServerManifest,
-): ServerFetch {
+export function createStaticLoaderFetch(app: App, manifest: ServerManifest): ServerFetch {
   const ssrOrigin = getDevServerOrigin(app);
   const ssrURL = new URL(ssrOrigin);
   return async (input, init) => {
@@ -48,11 +45,7 @@ export function createStaticLoaderFetch(
       const route = matchRoute(request.URL, manifest.routes.api);
 
       if (!route) {
-        return handleApiError(
-          request,
-          httpError('route not found', 404),
-          manifest,
-        );
+        return handleApiError(request, httpError('route not found', 404), manifest);
       }
 
       return handleApiRequest(request, route, manifest);
@@ -67,17 +60,11 @@ export type LoadStaticRouteResult = {
   redirect?: ServerRedirect;
 };
 
-const getServerModuleKey = (
-  route: Route & RouteMatch,
-  type: RouteComponentType,
-) => route.id + type;
+const getServerModuleKey = (route: Route & RouteMatch, type: RouteComponentType) => route.id + type;
 const serverModules = new Map<string, ServerPageModule>();
 
-const getStaticDataKey = (
-  url: URL,
-  route: Route & RouteMatch,
-  type: RouteComponentType,
-) => route.id + type + url.pathname;
+const getStaticDataKey = (url: URL, route: Route & RouteMatch, type: RouteComponentType) =>
+  route.id + type + url.pathname;
 const staticData = new Map<string, MaybeStaticLoaderResponse>();
 
 export async function loadStaticRoute(
@@ -117,12 +104,7 @@ export async function loadStaticRoute(
               const modKey = getServerModuleKey(match, type);
               const mod = serverModules.get(modKey)!;
               if (mod) {
-                const data = await callStaticLoader(
-                  url,
-                  match,
-                  serverFetch,
-                  mod.staticLoader,
-                );
+                const data = await callStaticLoader(url, match, serverFetch, mod.staticLoader);
 
                 staticData.set(key, data);
               }
@@ -140,8 +122,7 @@ export async function loadStaticRoute(
   for (let i = matches.length - 1; i >= 0; i--) {
     const match = matches[i];
 
-    const result: Mutable<ServerLoadedPageRoute> =
-      stripRouteComponentTypes(match);
+    const result: Mutable<ServerLoadedPageRoute> = stripRouteComponentTypes(match);
 
     for (const type of getRouteComponentTypes()) {
       if (match[type]) {
@@ -221,8 +202,7 @@ export async function callStaticLoader(
 
   const isDataValid =
     !response ||
-    (typeof response === 'object' &&
-      (!response.data || typeof response.data === 'object'));
+    (typeof response === 'object' && (!response.data || typeof response.data === 'object'));
 
   if (isDataValid && isFunction(response?.cache)) {
     const cacheKey = await response!.cache(input);

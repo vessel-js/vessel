@@ -1,15 +1,8 @@
 import enquirer from 'enquirer';
 
-import {
-  BUILDER_ADDONS,
-  BuilderAddon,
-  JS_FRAMEWORKS,
-  JSFramework,
-} from './builder';
+import { BUILDER_ADDONS, BuilderAddon, JS_FRAMEWORKS, JSFramework } from './builder';
 
-export function overwriteDirectoryPrompt(
-  name?: string,
-): Promise<{ overwrite: boolean }> {
+export function overwriteDirectoryPrompt(name?: string): Promise<{ overwrite: boolean }> {
   return enquirer.prompt({
     type: 'confirm',
     name: 'overwrite',

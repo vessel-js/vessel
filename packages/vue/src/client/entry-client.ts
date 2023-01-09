@@ -1,7 +1,6 @@
+import App from ':virtual/vessel/vue/app';
 import { init } from '@vessel-js/app';
 import { createSSRApp, nextTick } from 'vue';
-
-import App from ':virtual/vessel/vue/app';
 
 import { createContext } from './context';
 import { ROUTER_KEY } from './context-keys';

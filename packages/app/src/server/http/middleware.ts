@@ -14,9 +14,7 @@ export function resolveMiddleware(
   const seen = new Set<string | FetchMiddleware>(nonGroupedMiddleware);
   const middlewares: FetchMiddleware[] = [...nonGroupedMiddleware];
 
-  const withDefaultGroup = defaultGroup
-    ? [defaultGroup, ...provided]
-    : provided;
+  const withDefaultGroup = defaultGroup ? [defaultGroup, ...provided] : provided;
 
   for (const middleware of withDefaultGroup) {
     if (seen.has(middleware)) continue;

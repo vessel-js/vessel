@@ -8,11 +8,7 @@ import {
 } from 'solid-js';
 
 import { useVesselContext } from './context';
-import {
-  SERVER_DATA_KEY,
-  SERVER_ERROR_KEY,
-  STATIC_DATA_KEY,
-} from './context-keys';
+import { SERVER_DATA_KEY, SERVER_ERROR_KEY, STATIC_DATA_KEY } from './context-keys';
 
 type RouteProps = {
   component?: ClientLoadedRoute['page'];

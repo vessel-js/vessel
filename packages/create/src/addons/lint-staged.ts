@@ -26,9 +26,7 @@ export async function lintStagedAddon(builder: Builder) {
   }
 
   if (builder.hasAddon('prettier')) {
-    const glob = `*.{${[...lintExts.map((s) => s.slice(1)), 'md', 'json'].join(
-      ',',
-    )}}`;
+    const glob = `*.{${[...lintExts.map((s) => s.slice(1)), 'md', 'json'].join(',')}}`;
     lintStaged[glob] = 'prettier --write';
   }
 
@@ -36,13 +34,7 @@ export async function lintStagedAddon(builder: Builder) {
   if (!builder.dirs.target.exists(preCommitPath)) {
     await builder.dirs.target.write(
       preCommitPath,
-      [
-        '#!/bin/sh',
-        '',
-        '. "$(dirname "$0")/_/husky.sh"',
-        '',
-        'npx lint-staged',
-      ].join('\n'),
+      ['#!/bin/sh', '', '. "$(dirname "$0")/_/husky.sh"', '', 'npx lint-staged'].join('\n'),
     );
   } else {
     await builder.dirs.target.append(preCommitPath, 'npx lint-staged');

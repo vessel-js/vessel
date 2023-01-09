@@ -6,10 +6,7 @@ import { installPolyfills } from 'node/polyfills';
 import { rimraf } from 'node/utils';
 import * as path from 'pathe';
 import type { OutputBundle } from 'rollup';
-import {
-  type Plugin as VitePlugin,
-  type ResolvedConfig as ViteResolvedConfig,
-} from 'vite';
+import { type Plugin as VitePlugin, type ResolvedConfig as ViteResolvedConfig } from 'vite';
 
 import { virtualAliases, virtualModuleRequestPath } from './alias';
 import { configureDevServer } from './core/dev-server';
@@ -98,10 +95,7 @@ export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
           return { id: app.config.entry.client };
         }
 
-        if (
-          id === virtualModuleRequestPath.noop ||
-          id === virtualModuleRequestPath.config
-        ) {
+        if (id === virtualModuleRequestPath.noop || id === virtualModuleRequestPath.config) {
           return id;
         }
 
@@ -111,12 +105,9 @@ export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
         if (id === virtualModuleRequestPath.config) {
           const id = app.config.client.app;
           const baseUrl = app.vite.resolved!.base;
-          return [
-            'export default {',
-            `  id: "${id}",`,
-            `  baseUrl: "${baseUrl}",`,
-            `};`,
-          ].join('\n');
+          return ['export default {', `  id: "${id}",`, `  baseUrl: "${baseUrl}",`, `};`].join(
+            '\n',
+          );
         }
 
         if (id === virtualModuleRequestPath.noop) {

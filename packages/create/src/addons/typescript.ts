@@ -29,10 +29,7 @@ export async function typescriptAddon(builder: Builder) {
           jsxImportSource: preact ? 'preact' : solid ? 'solid-js' : undefined,
         });
 
-  await builder.dirs.target.write(
-    'tsconfig.json',
-    JSON.stringify(config, null, 2),
-  );
+  await builder.dirs.target.write('tsconfig.json', JSON.stringify(config, null, 2));
 }
 
 function resolveSvelteConfig() {

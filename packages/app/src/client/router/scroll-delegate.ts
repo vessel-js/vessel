@@ -52,9 +52,9 @@ export const createSimpleScrollDelegate: ScrollDelegateFactory = (router) => {
  * you to perform complex scrolling logic during navigation whilst adjusting base position and
  * behavior.
  */
-export const createComplexScrollDelegate: ScrollDelegateFactory<
-  ComplexScrollDelegate
-> = (router) => {
+export const createComplexScrollDelegate: ScrollDelegateFactory<ComplexScrollDelegate> = (
+  router,
+) => {
   let scrollPositions: Record<string, ScrollPosition> = {},
     _base: () => ScrollBase | undefined,
     _behavior: ScrollBehaviorHook | undefined;
@@ -101,9 +101,7 @@ export const createComplexScrollDelegate: ScrollDelegateFactory<
 
     if (cancelled) return;
 
-    const deepLinked = hash
-      ? document.getElementById(decodeURI(hash).slice(1))
-      : null;
+    const deepLinked = hash ? document.getElementById(decodeURI(hash).slice(1)) : null;
 
     const scrollTo = (options: ScrollToOptions) => {
       if ('scrollBehavior' in document.documentElement.style) {
@@ -232,11 +230,7 @@ export function scrollPosition(): ScrollPosition {
   };
 }
 
-export type ScrollTarget =
-  | void
-  | null
-  | false
-  | (ScrollToOptions & { el?: string | HTMLElement });
+export type ScrollTarget = void | null | false | (ScrollToOptions & { el?: string | HTMLElement });
 
 export type ScrollToTarget = (info: { cancel: ScrollCancel }) => ScrollTarget;
 

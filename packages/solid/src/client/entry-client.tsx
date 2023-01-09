@@ -1,7 +1,6 @@
+import App from ':virtual/vessel/solid/app';
 import { init, tick } from '@vessel-js/app';
 import { hydrate } from 'solid-js/web';
-
-import App from ':virtual/vessel/solid/app';
 
 import { createContext, VesselContext } from './context';
 import { ROUTER_KEY } from './context-keys';

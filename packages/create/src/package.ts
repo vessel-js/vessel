@@ -49,24 +49,17 @@ export class PackageJsonBuilder {
   }
 
   findScriptName(name: string) {
-    return Object.keys(this._pkg.scripts).some(
-      (scriptName) => scriptName === name,
-    );
+    return Object.keys(this._pkg.scripts).some((scriptName) => scriptName === name);
   }
 
   testScriptName(regex: RegExp) {
-    return Object.values(this._pkg.scripts).some((script) =>
-      regex.test(script),
-    );
+    return Object.values(this._pkg.scripts).some((script) => regex.test(script));
   }
 
   addScript(name: string, script: string, overwrite: RegExp | boolean = false) {
-    const boolCheck =
-      typeof overwrite === 'boolean' &&
-      (overwrite || !this.findScriptName(name));
+    const boolCheck = typeof overwrite === 'boolean' && (overwrite || !this.findScriptName(name));
 
-    const regexCheck =
-      overwrite instanceof RegExp && !this.testScriptName(overwrite);
+    const regexCheck = overwrite instanceof RegExp && !this.testScriptName(overwrite);
 
     if (boolCheck || regexCheck) {
       this._pkg.scripts[name] = script;
@@ -107,10 +100,7 @@ export class PackageJsonBuilder {
       this._pkg.dependencies = undefined;
     }
 
-    await this._target.write(
-      'package.json',
-      JSON.stringify(this._pkg, null, 2),
-    );
+    await this._target.write('package.json', JSON.stringify(this._pkg, null, 2));
   }
 
   protected _whichPkgManager(): NodePackageManager {
@@ -133,9 +123,7 @@ export class PackageJsonBuilder {
 }
 
 export function isValidPackageName(name: string) {
-  return /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(
-    name,
-  );
+  return /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(name);
 }
 
 export function toValidPackageName(name: string) {

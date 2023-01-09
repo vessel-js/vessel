@@ -2,11 +2,9 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import * as path from 'pathe';
 
-export const isTypeScriptFile = (filePath: string): boolean =>
-  /\.(ts|tsx)($|\?)/.test(filePath);
+export const isTypeScriptFile = (filePath: string): boolean => /\.(ts|tsx)($|\?)/.test(filePath);
 
-export const isCommonJsFile = (filePath: string): boolean =>
-  /\.cjs($|\?)/.test(filePath);
+export const isCommonJsFile = (filePath: string): boolean => /\.cjs($|\?)/.test(filePath);
 
 export function checksumFile(algorithm: string, path: string): Promise<string> {
   return new Promise((resolve, reject) => {

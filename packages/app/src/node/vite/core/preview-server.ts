@@ -10,16 +10,11 @@ import type { PreviewServerHook } from 'vite';
 
 import { handleDevServerError, logDevError } from './dev-server';
 
-export async function configurePreviewServer(
-  app: App,
-  server: Parameters<PreviewServerHook>[0],
-) {
+export async function configurePreviewServer(app: App, server: Parameters<PreviewServerHook>[0]) {
   await installPolyfills();
 
   const protocol =
-    app.vite.resolved!.server.https || app.vite.resolved!.preview.https
-      ? 'https'
-      : 'http';
+    app.vite.resolved!.server.https || app.vite.resolved!.preview.https ? 'https' : 'http';
 
   const manifestPath = app.dirs.vessel.server.resolve('.manifests/node.js');
 
@@ -42,19 +37,11 @@ export async function configurePreviewServer(
               throw new Error('[vessel] incomplete request');
             }
 
-            const base = `${protocol}://${
-              req.headers[':authority'] || req.headers.host
-            }`;
+            const base = `${protocol}://${req.headers[':authority'] || req.headers.host}`;
 
-            return await handleIncomingMessage(
-              base,
-              req,
-              res,
-              handler,
-              (error) => {
-                logDevError(app, req, coerceError(error));
-              },
-            );
+            return await handleIncomingMessage(base, req, res, handler, (error) => {
+              logDevError(app, req, coerceError(error));
+            });
           } catch (error) {
             handleDevServerError(app, req, res, error);
             return;
@@ -69,10 +56,7 @@ function immutableHeaderMiddleware(server: Parameters<PreviewServerHook>[0]) {
   server.middlewares.use((req, res, next) => {
     if (req.url?.startsWith('/_immutable')) {
       res.setHeader('Cache-Control', 'public, immutable, max-age=31536000');
-      res.setHeader(
-        'ETag',
-        path.basename(req.url, path.extname(req.url)).replace(/^.+-/, ''),
-      );
+      res.setHeader('ETag', path.basename(req.url, path.extname(req.url)).replace(/^.+-/, ''));
     }
 
     next();

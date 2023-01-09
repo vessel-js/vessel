@@ -21,9 +21,7 @@ type RouteErrorBoundaryProps = {
   boundary?: ClientLoadedRoute['errorBoundary'];
 };
 
-const RouteErrorBoundary: ParentComponent<RouteErrorBoundaryProps> = (
-  props,
-) => {
+const RouteErrorBoundary: ParentComponent<RouteErrorBoundaryProps> = (props) => {
   const [loadError, setLoadError] = createSignal(props.error);
   const [renderError, setRenderError] = createSignal();
 

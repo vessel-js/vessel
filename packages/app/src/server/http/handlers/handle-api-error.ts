@@ -31,11 +31,7 @@ export async function handleApiError(
 
     response.headers.set('X-Vessel-Expected', 'yes');
   } else {
-    const handled = await runErrorHandlers(
-      request,
-      error,
-      manifest.errorHandlers?.api ?? [],
-    );
+    const handled = await runErrorHandlers(request, error, manifest.errorHandlers?.api ?? []);
 
     if (handled) return handled;
 

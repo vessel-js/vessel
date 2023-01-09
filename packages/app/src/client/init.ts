@@ -1,3 +1,5 @@
+import config from ':virtual/vessel/config';
+import manifest from ':virtual/vessel/manifest';
 import { MarkdownMeta } from 'shared/markdown';
 import { installURLPattern } from 'shared/polyfills';
 import {
@@ -6,14 +8,7 @@ import {
   type RouteComponentType,
 } from 'shared/routing';
 
-import config from ':virtual/vessel/config';
-import manifest from ':virtual/vessel/manifest';
-
-import {
-  type ClientLoadableRoute,
-  Router,
-  type RouterFrameworkDelegate,
-} from './router';
+import { Router, type ClientLoadableRoute, type RouterFrameworkDelegate } from './router';
 import type { ClientManifest } from './router/types';
 import { isMarkdownModule } from './utils';
 
@@ -43,15 +38,7 @@ export async function init({ frameworkDelegate }: ClientInitOptions) {
   if (import.meta.hot) {
     import.meta.hot.on(
       'vessel::md_meta',
-      ({
-        id,
-        type,
-        meta,
-      }: {
-        id: string;
-        type: RouteComponentType;
-        meta: MarkdownMeta;
-      }) => {
+      ({ id, type, meta }: { id: string; type: RouteComponentType; meta: MarkdownMeta }) => {
         const route = frameworkDelegate.route.get();
         if (!route[type]) return;
         if (isMarkdownModule(route[type]!.module) && route.id === id) {
@@ -86,10 +73,7 @@ export async function init({ frameworkDelegate }: ClientInitOptions) {
 
 const routeIds = new Set<string>();
 
-function readManifest(
-  router: Router,
-  { loaders, fetch, routes }: ClientManifest,
-) {
+function readManifest(router: Router, { loaders, fetch, routes }: ClientManifest) {
   let loaderIndex = 0;
   const clientRoutes: ClientLoadableRoute[] = [];
 

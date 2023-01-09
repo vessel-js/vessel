@@ -6,11 +6,7 @@ import {
   type Router,
 } from '@vessel-js/app';
 import type { HttpErrorData } from '@vessel-js/app/http';
-import type {
-  LoadedServerData,
-  LoadedStaticData,
-  RouteParams,
-} from '@vessel-js/app/routing';
+import type { LoadedServerData, LoadedStaticData, RouteParams } from '@vessel-js/app/routing';
 import type {
   InferServerLoaderData,
   InferStaticLoaderData,
@@ -18,13 +14,7 @@ import type {
   StaticLoader,
 } from '@vessel-js/app/server';
 import { getContext } from 'svelte';
-import {
-  derived,
-  get,
-  type Readable,
-  type Writable,
-  writable,
-} from 'svelte/store';
+import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
 
 import {
   FRONTMATTER_KEY,
@@ -57,9 +47,7 @@ export function useRouter(): Router {
 export function useRoute(): RouteStore {
   return getContext(ROUTE_KEY);
 }
-export function useRouteParams<
-  T extends RouteParams = RouteParams,
->(): RouteParamsStore<T> {
+export function useRouteParams<T extends RouteParams = RouteParams>(): RouteParamsStore<T> {
   return getContext(ROUTE_PARAMS_KEY);
 }
 
@@ -95,9 +83,7 @@ export function useServerData<
   return getContext(SERVER_DATA_KEY);
 }
 
-export function useServerError<
-  T extends HttpErrorData = HttpErrorData,
->(): ServerErrorStore<T> {
+export function useServerError<T extends HttpErrorData = HttpErrorData>(): ServerErrorStore<T> {
   return getContext(SERVER_ERROR_KEY);
 }
 
