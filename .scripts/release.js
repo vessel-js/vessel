@@ -1,35 +1,23 @@
-/**
- * Thanks: https://github.com/vuejs/vue-next/blob/master/scripts/release.js
- */
-
 import prompt from 'enquirer';
 import { execa } from 'execa';
+import fs from 'fs';
 import kleur from 'kleur';
 import minimist from 'minimist';
-import fs from 'node:fs';
-import { createRequire } from 'node:module';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { createRequire } from 'module';
+import path from 'path';
 import semver from 'semver';
+import { fileURLToPath } from 'url';
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
 const args = minimist(process.argv.slice(2));
 const isDryRun = args.dry;
-const skipBuild = args.skipBuild;
 const skippedPackages = [];
 const currentVersion = require('../package.json').version;
-
-if (isDryRun) console.log(kleur.cyan('\n☂️  Running in dry mode...\n'));
-
-const packages = fs
-  .readdirSync(path.resolve(__dirname, '../packages'))
-  .filter((p) => !p.startsWith('.'));
-
+const packagesDir = fs.readdirSync(path.resolve(__dirname, '../packages'));
+const packages = packagesDir.filter((p) => !p.startsWith('.'));
 const preId =
-  args.preid || (semver.prerelease(currentVersion) && semver.prerelease(currentVersion)[0]);
-
+  args.preid || (semver.prerelease(currentVersion) && semver.prerelease(currentVersion)?.[0]);
 const versionIncrements = [
   'patch',
   'minor',
@@ -102,25 +90,21 @@ async function main() {
     return;
   }
 
-  // update all package versions and inter-dependencies
   step('Updating cross dependencies...');
   updateVersions(targetVersion);
 
-  // update lockfile
-  step('Updating lockfile...');
-  await run(`pnpm`, ['install']);
-
-  // build all packages
-  step('Building all packages...');
-  if (!skipBuild && !isDryRun) {
-    await run('npm', ['run', 'build']);
-  } else {
-    console.log(`(skipped)`);
-  }
-
-  // generate changelog
   step('Generating changelog...');
   await run(`npm`, ['run', 'changelog']);
+
+  for (const pkg of packages) {
+    await publishPackage(pkg, targetVersion, runIfNotDry);
+  }
+
+  step('Adding back workspace settings...');
+  updateVersions('workspace:*');
+
+  step('Updating lockfile...');
+  await run(`pnpm`, ['install']);
 
   const { stdout } = await run('git', ['diff'], { stdio: 'pipe' });
   if (stdout) {
@@ -131,16 +115,10 @@ async function main() {
     console.log('No changes to commit.');
   }
 
-  // publish packages
-  for (const pkg of packages) {
-    await publishPackage(pkg, targetVersion, runIfNotDry);
-  }
-
-  // push to GitHub
   step('Pushing to GitHub...');
   await runIfNotDry('git', ['tag', `v${targetVersion}`]);
-  await runIfNotDry('git', ['push', 'origin', `refs/tags/v${targetVersion}`]);
-  await runIfNotDry('git', ['push']);
+  await runIfNotDry('git', ['push', 'upstream', `refs/tags/v${targetVersion}`]);
+  await runIfNotDry('git', ['push', 'upstream', 'main']);
 
   if (isDryRun) {
     console.log(`\nDry run finished - run git diff to see package changes.`);
@@ -163,13 +141,17 @@ function updateVersions(version) {
   packages.forEach((p) => updatePackageVersion(getPkgRoot(p), version));
 }
 
-function updatePackageVersion(pkgRoot, version, includeDevDeps = false) {
+function updatePackageVersion(pkgRoot, version) {
   const pkgPath = path.resolve(pkgRoot, 'package.json');
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-  pkg.version = version;
-  updatePackageDeps(pkg, 'dependencies', version);
-  updatePackageDeps(pkg, 'peerDependencies', version);
-  if (includeDevDeps) updatePackageDeps(pkg, 'devDependencies', version);
+
+  if (version !== 'workspace:*') pkg.version = version;
+
+  if (!pkg.private) {
+    updatePackageDeps(pkg, 'dependencies', version);
+    updatePackageDeps(pkg, 'peerDependencies', version);
+  }
+
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
 }
 
@@ -177,8 +159,9 @@ function updatePackageDeps(pkg, depType, version) {
   const deps = pkg[depType];
   if (!deps) return;
   Object.keys(deps).forEach((dep) => {
-    if (dep.startsWith('@vessel') && packages.includes(dep.replace(/^@vessel\//, ''))) {
-      console.log(kleur.yellow(`🦠 ${pkg.name} -> ${depType} -> ${dep}@${version}`));
+    if (/^@?vessel/.test(dep) && packages.includes(dep.replace(/^@?vessel\//, ''))) {
+      const color = version === 'workspace:*' ? 'cyan' : 'yellow';
+      console.log(kleur[color](`🦠 ${pkg.name} -> ${depType} -> ${dep}@${version}`));
       deps[dep] = version;
     }
   });
@@ -194,6 +177,7 @@ async function publishPackage(pkgName, version, runIfNotDry) {
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
 
   if (pkg.private) {
+    console.log(kleur.red(`\n🚫 Skipping private package: ${pkg.name}`));
     return;
   }
 
@@ -214,30 +198,24 @@ async function publishPackage(pkgName, version, runIfNotDry) {
 
   try {
     await runIfNotDry(
-      // use of yarn is intentional here as we rely on its publishing behavior.
       'yarn',
-      [
-        'publish',
-        '--new-version',
-        version,
-        ...(releaseTag ? ['--tag', releaseTag] : []),
-        '--access',
-        'public',
-      ],
+      ['publish', '--new-version', version, '--tag', releaseTag, '--access', 'public'],
       {
         cwd: pkgRoot,
         stdio: 'pipe',
       },
     );
-    console.log(kleur.green(`✅ Successfully published ${pkgName}@${version}`));
+    console.log(kleur.green(`\n✅ Successfully published ${pkgName}@${version}`));
   } catch (e) {
     if (/** @type {any} */ (e).stderr.match(/previously published/)) {
-      console.log(kleur.red(`🚫 Skipping already published: ${pkgName}`));
+      console.log(kleur.red(`\n🚫 Skipping already published: ${pkgName}`));
     } else {
       throw e;
     }
   }
 }
+
+if (isDryRun) console.log(kleur.cyan('\n☂️  Running in dry mode...\n'));
 
 main().catch((err) => {
   console.error(err);

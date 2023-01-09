@@ -12,7 +12,7 @@
     "format": "prettier packages --write --loglevel warn",
     "preinstall": "node .scripts/check-for-pnpm.js && node .scripts/check-node-version.js",
     "prepare": "husky install",
-    "release": "node .scripts/release.js",
+    "release": "pnpm build && node .scripts/release.js",
     "test:node-esm": "node .scripts/test-node-esm.js"
   },
   "lint-staged": {
