@@ -1,6 +1,6 @@
 {
   "name": "@vessel-js/vue",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "type": "module",
   "types": "index.d.ts",
   "sideEffects": false,
@@ -43,20 +43,20 @@
     "dev": "DEV=true pnpm run build --watch"
   },
   "dependencies": {
-    "globby": "^13.1.1",
-    "pathe": "^0.3.8"
+    "globby": "^13.0.0",
+    "pathe": "^1.0.0"
   },
   "peerDependencies": {
-    "@vessel-js/app": "0.1.0",
+    "@vessel-js/app": "0.0.1",
     "vue": "^3.0.0"
   },
   "devDependencies": {
-    "@types/node": "^16.0.0",
+    "@types/node": "^18.0.0",
     "@vessel-js/app": "workspace:*",
-    "fast-glob": "^3.2.11",
-    "tsup": "^6.2.3",
-    "typescript": "^4.7.4",
-    "vite": "^3.0.0",
+    "fast-glob": "^3.2.0",
+    "tsup": "^6.5.0",
+    "typescript": "^4.9.0",
+    "vite": "^4.0.0",
     "vue": "^3.0.0"
   },
   "engines": {
