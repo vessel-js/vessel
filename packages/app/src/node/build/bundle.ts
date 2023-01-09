@@ -34,7 +34,7 @@ export function resolveBuildConfig(app: App): ViteConfig {
 
   return {
     appType: 'custom',
-    logLevel: 'warn',
+    logLevel: app.config.isBuild ? 'warn' : 'info',
     publicDir: ssr ? false : app.dirs.public.path,
     esbuild: { treeShaking: !ssr },
     build: {
@@ -46,7 +46,9 @@ export function resolveBuildConfig(app: App): ViteConfig {
       cssCodeSplit: true,
       assetsDir: `${immutableDir}/assets`,
       minify: !ssr && !app.config.debug,
-      polyfillModulePreload: true,
+      modulePreload: {
+        polyfill: true,
+      },
       outDir: ssr
         ? app.dirs.root.relative(app.dirs.vessel.server.path)
         : app.dirs.root.relative(app.dirs.vessel.client.path),

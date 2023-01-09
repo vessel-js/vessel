@@ -2,15 +2,14 @@
  * Thanks: https://github.com/vuejs/vue-next/blob/master/scripts/release.js
  */
 
+import prompt from 'enquirer';
+import { execa } from 'execa';
+import kleur from 'kleur';
+import minimist from 'minimist';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-import prompt from 'enquirer';
-import kleur from 'kleur';
-import execa from 'execa';
-import minimist from 'minimist';
 import semver from 'semver';
 
 const require = createRequire(import.meta.url);
@@ -28,13 +27,8 @@ const packages = fs
   .readdirSync(path.resolve(__dirname, '../packages'))
   .filter((p) => !p.startsWith('.'));
 
-const examples = fs
-  .readdirSync(path.resolve(__dirname, '../examples'))
-  .filter((p) => !p.startsWith('.'));
-
 const preId =
-  args.preid ||
-  (semver.prerelease(currentVersion) && semver.prerelease(currentVersion)[0]);
+  args.preid || (semver.prerelease(currentVersion) && semver.prerelease(currentVersion)[0]);
 
 const versionIncrements = [
   'patch',
@@ -61,10 +55,6 @@ function getPkgRoot(pkgName) {
   return path.resolve(__dirname, '../packages/' + pkgName);
 }
 
-function getExampleRoot(pkgName) {
-  return path.resolve(__dirname, '../examples/' + pkgName);
-}
-
 function step(msg) {
   console.info('\n✨ ' + kleur.cyan(msg) + '\n');
 }
@@ -78,9 +68,7 @@ async function main() {
         type: 'select',
         name: 'release',
         message: 'Select release type',
-        choices: versionIncrements
-          .map((i) => `${i} (${inc(i)})`)
-          .concat(['custom']),
+        choices: versionIncrements.map((i) => `${i} (${inc(i)})`).concat(['custom']),
       })
     );
 
@@ -138,11 +126,7 @@ async function main() {
   if (stdout) {
     step('Committing changes...');
     await runIfNotDry('git', ['add', '-A']);
-    await runIfNotDry('git', [
-      'commit',
-      '-m',
-      `chore(release): v${targetVersion}`,
-    ]);
+    await runIfNotDry('git', ['commit', '-m', `chore(release): v${targetVersion}`]);
   } else {
     console.log('No changes to commit.');
   }
@@ -165,9 +149,7 @@ async function main() {
   if (skippedPackages.length) {
     console.log(
       kleur.yellow(
-        `The following packages are skipped and NOT published:\n- ${skippedPackages.join(
-          '\n- ',
-        )}`,
+        `The following packages are skipped and NOT published:\n- ${skippedPackages.join('\n- ')}`,
       ),
     );
   }
@@ -179,10 +161,6 @@ function updateVersions(version) {
   updatePackageVersion(path.resolve(__dirname, '..'), version);
   // 2. update all packages
   packages.forEach((p) => updatePackageVersion(getPkgRoot(p), version));
-  // 3. update examples
-  examples.forEach((p) =>
-    updatePackageVersion(getExampleRoot(p), version, true),
-  );
 }
 
 function updatePackageVersion(pkgRoot, version, includeDevDeps = false) {
@@ -199,13 +177,8 @@ function updatePackageDeps(pkg, depType, version) {
   const deps = pkg[depType];
   if (!deps) return;
   Object.keys(deps).forEach((dep) => {
-    if (
-      dep.startsWith('@vessel') &&
-      packages.includes(dep.replace(/^@vessel\//, ''))
-    ) {
-      console.log(
-        kleur.yellow(`🦠 ${pkg.name} -> ${depType} -> ${dep}@${version}`),
-      );
+    if (dep.startsWith('@vessel') && packages.includes(dep.replace(/^@vessel\//, ''))) {
+      console.log(kleur.yellow(`🦠 ${pkg.name} -> ${depType} -> ${dep}@${version}`));
       deps[dep] = version;
     }
   });
@@ -234,8 +207,7 @@ async function publishPackage(pkgName, version, runIfNotDry) {
   } else if (version.includes('rc')) {
     releaseTag = 'rc';
   } else {
-    // TODO: remove on 1.0
-    releaseTag = 'next';
+    releaseTag = 'latest';
   }
 
   step(`Publishing ${pkgName}...`);

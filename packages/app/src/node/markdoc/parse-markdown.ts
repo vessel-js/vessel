@@ -1,6 +1,6 @@
 /* eslint-disable import/no-named-as-default-member */
 
-import Markdoc, { Tag, type RenderableTreeNode } from '@markdoc/markdoc';
+import Markdoc, { type RenderableTreeNode, type Tag } from '@markdoc/markdoc';
 import matter from 'gray-matter';
 import yaml from 'js-yaml';
 import LRUCache from 'lru-cache';
@@ -187,7 +187,7 @@ function walkRenderTree(
   callback: (node: RenderableTreeNode, stuff: MarkdocTreeWalkStuff) => void,
 ) {
   callback(node, stuff);
-  if (Tag.isTag(node)) {
+  if (Markdoc.Tag.isTag(node)) {
     for (const child of node.children) {
       walkRenderTree(child, stuff, callback);
     }
@@ -201,7 +201,7 @@ const linkNameRE = /^(a|link|Link)$/;
 const importRE = /^import$/;
 
 function forEachRenderNode(node: RenderableTreeNode, stuff: MarkdocTreeWalkStuff) {
-  if (Tag.isTag(node)) {
+  if (Markdoc.Tag.isTag(node)) {
     const name = node.name;
 
     if (codeNameRE.test(name)) {
@@ -267,7 +267,11 @@ function highlightCodeFences(tag: Tag, highlight: HighlightCodeBlock) {
 
 function collectHeadings(tag: Tag, headings: MarkdownHeading[]) {
   const child = tag.children[0];
-  const title = Tag.isTag(child) ? child?.children[0] ?? child?.attributes.content ?? '' : child;
+
+  const title = Markdoc.Tag.isTag(child)
+    ? child?.children[0] ?? child?.attributes.content ?? ''
+    : child;
+
   if (typeof title === 'string') {
     const id = tag.attributes.id ?? slugify(title);
 
