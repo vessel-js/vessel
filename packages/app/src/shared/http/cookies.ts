@@ -2,19 +2,13 @@
  * Copied and slightly adapted from SvelteKit: https://github.com/sveltejs/kit
  */
 
-import { parse, serialize, type CookieParseOptions, type CookieSerializeOptions } from 'cookie';
+import { Cookie, type CookieParseOptions, type CookieSerializeOptions } from './cookie';
 
 const DEFAULT_SERIALIZE_OPTIONS = {
   httpOnly: true,
   secure: true,
   sameSite: 'lax',
 } as const;
-
-export interface Cookie {
-  name: string;
-  value: string;
-  options: CookieSerializeOptions;
-}
 
 export interface CookiesInit {
   url: URL;
@@ -40,7 +34,7 @@ export class Cookies implements Iterable<[string, Cookie]> {
     const headers = this.init.headers;
     if (headers) {
       const decode = options?.decode || decodeURIComponent;
-      const cookie = parse(headers.get('cookie') ?? '', { decode });
+      const cookie = Cookie.parse(headers.get('cookie') ?? '', { decode });
       return cookie[name];
     }
 
@@ -48,14 +42,13 @@ export class Cookies implements Iterable<[string, Cookie]> {
   }
 
   set(name: string, value: string, options?: CookieSerializeOptions) {
-    this._cookies.set(name, {
+    this._cookies.set(
       name,
-      value,
-      options: {
+      new Cookie(name, value, {
         ...DEFAULT_SERIALIZE_OPTIONS,
         ...options,
-      },
-    });
+      }),
+    );
   }
 
   delete(name: string) {
@@ -69,7 +62,7 @@ export class Cookies implements Iterable<[string, Cookie]> {
   attach(body: Request | Response) {
     for (const newCookie of this._cookies.values()) {
       const { name, value, options } = newCookie;
-      body.headers.append('set-cookie', serialize(name, value, options));
+      body.headers.append('set-cookie', Cookie.serialize(name, value, options));
     }
   }
 

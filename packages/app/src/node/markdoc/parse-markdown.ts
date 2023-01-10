@@ -205,7 +205,6 @@ const importRE = /^import$/;
 function forEachRenderNode(node: RenderableTreeNode, stuff: MarkdocTreeWalkStuff) {
   if (Markdoc.Tag.isTag(node)) {
     const name = node.name;
-
     if (codeNameRE.test(name)) {
       transformCode(node);
     } else if (fenceNameRE.test(name)) {
@@ -226,7 +225,6 @@ function forEachRenderNode(node: RenderableTreeNode, stuff: MarkdocTreeWalkStuff
 function transformCode(tag: Tag) {
   const isComponent = tag.name === 'Code';
   const code = isComponent ? tag.attributes.content : tag.children[0];
-
   if (isComponent && typeof code === 'string') {
     tag.attributes.code = escapeHTML(code);
     tag.children[0] = null;
@@ -238,9 +236,7 @@ const preTagRE = /<\/?pre(.*?)>/g;
 const preTagStyleAttrRE = /<pre.*?style="(.*?)"/;
 function highlightCodeFences(tag: Tag, highlight: HighlightCodeBlock) {
   const isComponent = tag.name === 'Fence';
-
   const lang = isComponent ? tag.attributes.language : tag.attributes['data-language'];
-
   const code = isComponent ? tag.attributes.content : tag.children[0];
 
   if (typeof code === 'string') {
@@ -276,7 +272,6 @@ function collectHeadings(tag: Tag, headings: MarkdownHeading[]) {
 
   if (typeof title === 'string') {
     const id = tag.attributes.id ?? slugify(title);
-
     const level = tag.attributes.level ?? Number(tag.name.match(/h(\d+)/)?.[1] ?? 0);
 
     tag.attributes.id = id;

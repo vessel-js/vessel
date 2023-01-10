@@ -48,11 +48,8 @@ export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
           appType: 'custom',
           envPrefix: 'PUBLIC_',
           resolve: { alias: virtualAliases },
-          optimizeDeps: {
-            include: ['cookie'],
-            exclude: clientPackages,
-          },
-          ssr: { external: ['cookie'], noExternal: clientPackages },
+          optimizeDeps: { exclude: clientPackages },
+          ssr: { noExternal: clientPackages },
           server: {
             fs: {
               allow: [
