@@ -1,3 +1,9 @@
+## [0.1.3](https://github.com/vessel-js/vessel/compare/v0.1.2...v0.1.3) (2023-01-10)
+
+### Bug Fixes
+
+- ensure peer deps are set correctly by release script ([2fd8c27](https://github.com/vessel-js/vessel/commit/2fd8c27a2533d7bda7ecc6ad2235c58262c06146))
+
 ## [0.1.2](https://github.com/vessel-js/vessel/compare/v0.1.1...v0.1.2) (2023-01-10)
 
 ### Bug Fixes
