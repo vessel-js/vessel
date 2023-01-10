@@ -1,3 +1,20 @@
+## [0.1.2](https://github.com/vessel-js/vessel/compare/v0.1.1...v0.1.2) (2023-01-10)
+
+### Bug Fixes
+
+- **app:** handle root and nested route groups correctly ([ad928c6](https://github.com/vessel-js/vessel/commit/ad928c65a13507ab111d52aac69381c2617bb8d7))
+- **app:** include `.js` and `.ts` pages in default config ([f71ce35](https://github.com/vessel-js/vessel/commit/f71ce354e029a664a30490770951d0f5da512276))
+- **app:** mark shiki and starry-night as external ([8ab2ea4](https://github.com/vessel-js/vessel/commit/8ab2ea458c211b93275b67c76cde536ec70a7477))
+- **app:** remove optional peer deps ([d194106](https://github.com/vessel-js/vessel/commit/d19410625778168c6b887d032f362e34eb794a80))
+- **app:** remove troublesome `cookie` package ([10d16ce](https://github.com/vessel-js/vessel/commit/10d16ceed918e6ad53abe36dc03e32f059dca43c))
+- check node is tag in markdoc integrations ([9015c2d](https://github.com/vessel-js/vessel/commit/9015c2d6b0f45f28cebc6e18beb6f31aa51e8a92))
+- **create:** drop `+` prefix on app files as the default ([81778d9](https://github.com/vessel-js/vessel/commit/81778d9325355b9e7ce2efb63af3c7c7825d5fab))
+- rename `index.html` -> `app.html` ([15b1f30](https://github.com/vessel-js/vessel/commit/15b1f30c9e7e668e72b99798d4e8b06f42e3fa02))
+
+### Features
+
+- **app:** export url utils from http module ([c63db9b](https://github.com/vessel-js/vessel/commit/c63db9ba9bec717a636020c9295099148679c323))
+
 ## [0.1.1](https://github.com/vessel-js/vessel/compare/v0.1.0...v0.1.1) (2023-01-09)
 
 ### Bug Fixes
