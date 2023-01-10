@@ -1,6 +1,7 @@
+import type { Plugin as VitePlugin } from 'vite';
+
 import type { App } from 'node/app/App';
 import type { AppConfig, ResolvedAppConfig } from 'node/app/config';
-import type { Plugin as VitePlugin } from 'vite';
 
 export interface VesselPlugin extends VitePlugin {
   vessel?: {

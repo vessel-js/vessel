@@ -1,7 +1,8 @@
+import { existsSync } from 'node:fs';
+
 import { globbySync } from 'globby';
 import kleur from 'kleur';
 import minimist from 'minimist';
-import { existsSync } from 'node:fs';
 import * as path from 'pathe';
 
 import { eslintAddon } from './addons/eslint';

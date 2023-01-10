@@ -1,7 +1,8 @@
 import * as lexer from 'es-module-lexer';
+import * as path from 'pathe';
+
 import type { App } from 'node/app/App';
 import { parseAndReplaceVars } from 'node/utils/acorn';
-import * as path from 'pathe';
 
 import type { VesselPlugin } from './Plugin';
 

@@ -2,10 +2,11 @@
 import Table from 'cli-table3';
 import { gzipSizeSync } from 'gzip-size';
 import kleur from 'kleur';
-import type { App } from 'node';
-import { comparePathDepth, LoggerIcon } from 'node/utils';
 import prettyBytes from 'pretty-bytes';
 import type { OutputChunk } from 'rollup';
+
+import type { App } from 'node';
+import { comparePathDepth, LoggerIcon } from 'node/utils';
 import { ALL_HTTP_METHODS } from 'shared/http';
 import { noslash } from 'shared/utils/url';
 

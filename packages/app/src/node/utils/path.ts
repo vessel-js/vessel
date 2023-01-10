@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+
 import * as path from 'pathe';
 
 export function trimExt(filePath: string) {

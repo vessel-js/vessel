@@ -1,4 +1,6 @@
 import type { ServerResponse } from 'http';
+import type { Connect } from 'vite';
+
 import type { App } from 'node/app/App';
 import { handleIncomingMessage } from 'node/http';
 import { createServer } from 'server/http';
@@ -6,7 +8,6 @@ import type { ServerManifest } from 'server/types';
 import { resolveStaticDataAssetId } from 'shared/data';
 import { getRouteComponentTypes, matchRoute } from 'shared/routing';
 import { coerceError } from 'shared/utils/error';
-import type { Connect } from 'vite';
 
 import { handleDevServerError, logDevError } from './dev-server';
 import { resolveDevStylesheets } from './resolve-stylesheets';

@@ -1,7 +1,9 @@
+import fs from 'node:fs/promises';
+
 import * as lexer from 'es-module-lexer';
 import { Plugin as EsBuildPlugin } from 'esbuild';
+
 import { parseAndReplaceVars } from 'node/utils/acorn';
-import fs from 'node:fs/promises';
 
 export function noopStaticLoader(): EsBuildPlugin {
   let installed = false;

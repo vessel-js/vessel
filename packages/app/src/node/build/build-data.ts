@@ -1,6 +1,8 @@
+import type { OutputAsset, OutputBundle, OutputChunk } from 'rollup';
+import type { Manifest as ViteManifest } from 'vite';
+
 import type { RouteFileType } from 'node/app/files';
 import type { AppRoute } from 'node/app/routes';
-import type { OutputAsset, OutputBundle, OutputChunk } from 'rollup';
 import type { ServerConfig } from 'server/http/app/configure-server';
 import type {
   ServerLoadedPageRoute,
@@ -9,7 +11,6 @@ import type {
   ServerRenderResult,
 } from 'server/types';
 import type { RouteComponentType } from 'shared/routing';
-import type { Manifest as ViteManifest } from 'vite';
 
 export interface BuildBundles {
   entries: Record<string, string>;

@@ -1,5 +1,6 @@
-import type { App } from 'node/app/App';
 import fs from 'node:fs';
+
+import type { App } from 'node/app/App';
 
 export const DEFAULT_INDEX_HTML = `
 <!DOCTYPE html>

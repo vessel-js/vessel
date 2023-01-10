@@ -1,10 +1,11 @@
 import kleur from 'kleur';
+import * as path from 'pathe';
+import { mergeConfig, type ConfigEnv, type UserConfig as ViteUserConfig } from 'vite';
+
 import { MarkdocSchema } from 'node/markdoc/markdoc-schema';
 import { logger, trimExt } from 'node/utils';
 import type { VesselPlugin } from 'node/vite/Plugin';
-import * as path from 'pathe';
 import { installURLPattern } from 'shared/polyfills';
-import { mergeConfig, type ConfigEnv, type UserConfig as ViteUserConfig } from 'vite';
 
 import type { App, AppDetails, AppFactory } from '../App';
 import { resolveAppConfig, type AppConfig, type ResolvedAppConfig } from '../config';

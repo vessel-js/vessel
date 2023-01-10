@@ -1,12 +1,13 @@
+import * as path from 'pathe';
+import type { OutputBundle } from 'rollup';
+import type { Plugin as VitePlugin, ResolvedConfig as ViteResolvedConfig } from 'vite';
+
 import type { App, AppFactory } from 'node/app/App';
 import type { AppConfig } from 'node/app/config';
 import { createAppFactory } from 'node/app/create/app-factory';
 import { build, createServerBundle, resolveBuildConfig } from 'node/build';
 import { installPolyfills } from 'node/polyfills';
 import { rimraf } from 'node/utils';
-import * as path from 'pathe';
-import type { OutputBundle } from 'rollup';
-import type { Plugin as VitePlugin, ResolvedConfig as ViteResolvedConfig } from 'vite';
 
 import { virtualAliases, virtualModuleRequestPath } from './alias';
 import { configureDevServer } from './core/dev-server';

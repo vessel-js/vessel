@@ -1,9 +1,11 @@
-import kleur from 'kleur';
-import { ensureDir, LoggerIcon, type App } from 'node';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
+
+import kleur from 'kleur';
 import ora from 'ora';
 import * as path from 'pathe';
+
+import { ensureDir, LoggerIcon, type App } from 'node';
 import { STATIC_DATA_ASSET_BASE_PATH } from 'shared/data';
 import { escapeHTML } from 'shared/utils/html';
 import { isString } from 'shared/utils/unit';

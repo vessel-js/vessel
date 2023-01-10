@@ -1,10 +1,12 @@
+import type { ServerResponse } from 'node:http';
+
 import { watch } from 'chokidar';
 import kleur from 'kleur';
+import type { Connect, ViteDevServer } from 'vite';
+
 import type { App } from 'node/app/App';
-import type { ServerResponse } from 'node:http';
 import { STATIC_DATA_ASSET_BASE_PATH } from 'shared/data';
 import { coerceError } from 'shared/utils/error';
-import type { Connect, ViteDevServer } from 'vite';
 
 import { initDevServerManifest, updateDevServerManifestRoutes } from './dev-server-manifest';
 import { handleDevRequest } from './handle-dev-request';

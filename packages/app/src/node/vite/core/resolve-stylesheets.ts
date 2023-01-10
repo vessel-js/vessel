@@ -1,6 +1,7 @@
+import type { ModuleNode, ViteDevServer } from 'vite';
+
 import type { App } from 'node/app/App';
 import type { AppRoute } from 'node/app/routes';
-import type { ModuleNode, ViteDevServer } from 'vite';
 
 export async function resolveDevStylesheets(app: App, route: AppRoute) {
   const stylesMap = await Promise.all(

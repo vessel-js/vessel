@@ -1,6 +1,7 @@
+import type { IncomingMessage, ServerResponse } from 'node:http';
+
 import { handleIncomingMessage } from 'node/http';
 import { installPolyfills } from 'node/polyfills';
-import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createServer } from 'server/http';
 import type { ServerManifest } from 'server/types';
 import type { RequestHandler } from 'shared/http';

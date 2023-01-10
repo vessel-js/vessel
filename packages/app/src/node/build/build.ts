@@ -1,4 +1,11 @@
+import fs from 'node:fs';
+import { writeFile } from 'node:fs/promises';
+
 import kleur from 'kleur';
+import ora from 'ora';
+import type { OutputBundle } from 'rollup';
+import type { Manifest as ViteManifest } from 'vite';
+
 import type { App } from 'node/app/App';
 import { createAppEntries } from 'node/app/create/app-factory';
 import type { RouteFileType } from 'node/app/files';
@@ -7,10 +14,6 @@ import { installPolyfills } from 'node/polyfills';
 import { hash, logger, LoggerIcon, mkdirp, rimraf } from 'node/utils';
 import { createStaticLoaderFetch, loadStaticRoute } from 'node/vite/core';
 import { getDevServerOrigin } from 'node/vite/core/dev-server';
-import fs from 'node:fs';
-import { writeFile } from 'node:fs/promises';
-import ora from 'ora';
-import type { OutputBundle } from 'rollup';
 import { createServerRouter } from 'server/http';
 import { installServerConfigs, ServerConfig } from 'server/http/app/configure-server';
 import { createStaticLoaderDataMap } from 'server/static-data';
@@ -23,7 +26,6 @@ import {
 } from 'shared/routing';
 import { isFunction } from 'shared/utils/unit';
 import { isLinkExternal, slash } from 'shared/utils/url';
-import type { Manifest as ViteManifest } from 'vite';
 
 import { createAutoBuildAdapter } from './adapter';
 import type { BuildBundles, BuildData } from './build-data';

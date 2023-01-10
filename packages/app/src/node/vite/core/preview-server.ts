@@ -1,12 +1,14 @@
+import fs from 'node:fs';
+
+import * as path from 'pathe';
+import type { PreviewServerHook } from 'vite';
+
 import type { App } from 'node/app/App';
 import { handleIncomingMessage } from 'node/http';
 import { installPolyfills } from 'node/polyfills';
-import fs from 'node:fs';
-import * as path from 'pathe';
 import { createServer } from 'server/http';
 import type { ServerManifest } from 'server/types';
 import { coerceError } from 'shared/utils/error';
-import type { PreviewServerHook } from 'vite';
 
 import { handleDevServerError, logDevError } from './dev-server';
 

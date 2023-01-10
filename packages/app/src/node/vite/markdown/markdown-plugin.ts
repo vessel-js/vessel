@@ -2,6 +2,9 @@ import { createFilter } from '@rollup/pluginutils';
 import { readFile } from 'fs/promises';
 import { toHtml } from 'hast-util-to-html';
 import kleur from 'kleur';
+import * as path from 'pathe';
+import type { ViteDevServer } from 'vite';
+
 import type { App } from 'node/app/App';
 import { resolveRouteIdFromFilePath, RouteDir, RouteFile, RouteFileType } from 'node/app/files';
 import {
@@ -10,9 +13,7 @@ import {
   type HighlightCodeBlock,
   type ParseMarkdownResult,
 } from 'node/markdoc';
-import * as path from 'pathe';
 import type { MarkdownMeta } from 'shared/markdown';
-import type { ViteDevServer } from 'vite';
 
 import { invalidateRouteModule } from '../files/files-hmr';
 import type { VesselPlugin } from '../Plugin';

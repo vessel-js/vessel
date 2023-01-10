@@ -1,6 +1,7 @@
 /* eslint-disable import/no-named-as-default-member */
 
 import Markdoc, { type Config as MarkdocConfig } from '@markdoc/markdoc';
+
 import type { App } from 'node/app/App';
 import type { MarkdocFiles } from 'node/app/files';
 

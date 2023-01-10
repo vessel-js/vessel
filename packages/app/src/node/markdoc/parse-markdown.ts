@@ -1,13 +1,15 @@
 /* eslint-disable import/no-named-as-default-member */
 
+import fs from 'node:fs';
+
 import Markdoc, { type RenderableTreeNode, type Tag } from '@markdoc/markdoc';
 import matter from 'gray-matter';
 import yaml from 'js-yaml';
 import LRUCache from 'lru-cache';
+import * as path from 'pathe';
+
 import { resolveStaticRouteFromFilePath, type RouteFile } from 'node';
 import type { App } from 'node/app/App';
-import fs from 'node:fs';
-import * as path from 'pathe';
 import type { MarkdownFrontmatter, MarkdownHeading, MarkdownMeta } from 'shared/markdown';
 import { escapeHTML } from 'shared/utils/html';
 import { isLinkExternal } from 'shared/utils/url';

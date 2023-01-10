@@ -1,4 +1,5 @@
 import kleur from 'kleur';
+
 import { sortedInsert, trimExt } from 'node/utils';
 import type { ServerApiModule, ServerLoadablePageRoute, ServerPageModule } from 'server';
 import { getRouteComponentTypes, type Route } from 'shared/routing';

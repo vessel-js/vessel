@@ -1,6 +1,7 @@
-import type { App } from 'node/app/App';
 import { existsSync } from 'node:fs';
 import fs from 'node:fs/promises';
+
+import type { App } from 'node/app/App';
 
 export async function watchRoutesTypes(app: App) {
   await updateRoutesTypes(app);

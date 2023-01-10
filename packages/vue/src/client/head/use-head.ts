@@ -3,8 +3,9 @@
  */
 
 import type { HeadConfig, HeadManager } from '@vessel-js/app/head';
-import { HEAD_MANAGER } from 'client/context-keys';
 import { inject, onBeforeUnmount, watchEffect } from 'vue';
+
+import { HEAD_MANAGER } from 'client/context-keys';
 
 export function useHeadManager(): HeadManager {
   return inject(HEAD_MANAGER)!;

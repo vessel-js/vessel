@@ -1,7 +1,8 @@
-import { VM_PREFIX, type VesselPlugins } from '@vessel-js/app/node';
-import { globbySync } from 'globby';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
+
+import { VM_PREFIX, type VesselPlugins } from '@vessel-js/app/node';
+import { globbySync } from 'globby';
 import * as path from 'pathe';
 
 import { renderMarkdoc, svelteMarkdocTags, transformTreeNode } from './markdoc';

@@ -1,5 +1,6 @@
-import { trimExt } from 'node/utils';
 import * as path from 'pathe';
+
+import { trimExt } from 'node/utils';
 import { calcRoutePathScore, type Route } from 'shared/routing';
 import { isFunction } from 'shared/utils/unit';
 import { slash } from 'shared/utils/url';

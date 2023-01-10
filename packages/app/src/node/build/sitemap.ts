@@ -1,7 +1,9 @@
+import fs from 'node:fs';
+
 import { createFilter } from '@rollup/pluginutils';
+
 import type { App } from 'node/app/App';
 import type { ResolvedSitemapConfig, SitemapURL } from 'node/app/config';
-import fs from 'node:fs';
 import { isFunction } from 'shared/utils/unit';
 import { slash } from 'shared/utils/url';
 

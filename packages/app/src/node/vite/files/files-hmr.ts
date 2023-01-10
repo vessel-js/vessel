@@ -1,7 +1,8 @@
-import type { App } from 'node/app/App';
-import type { RouteFile } from 'node/app/files';
 import * as path from 'pathe';
 import type { ViteDevServer } from 'vite';
+
+import type { App } from 'node/app/App';
+import type { RouteFile } from 'node/app/files';
 
 import { clearMarkdownCache } from '../../markdoc';
 import { virtualModuleRequestPath } from '../alias';

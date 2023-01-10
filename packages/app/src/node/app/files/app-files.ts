@@ -1,4 +1,5 @@
 import * as path from 'pathe';
+
 import type { ServerConfig } from 'server/http/app/configure-server';
 
 import type { App } from '../App';

@@ -1,5 +1,6 @@
 import config from ':virtual/vessel/config';
 import manifest from ':virtual/vessel/manifest';
+
 import type { MarkdownMeta } from 'shared/markdown';
 import { installURLPattern } from 'shared/polyfills';
 import {

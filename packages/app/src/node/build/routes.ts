@@ -1,4 +1,5 @@
 import kleur from 'kleur';
+
 import type { App } from 'node/app/App';
 import { logger } from 'node/utils';
 import { slash } from 'shared/utils/url';

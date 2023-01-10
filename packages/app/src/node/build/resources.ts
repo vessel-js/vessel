@@ -1,7 +1,8 @@
+import type { Manifest as ViteManifest } from 'vite';
+
 import type { App } from 'node/app/App';
 import { createPageResource, type ServerPageResource, type ServerPageResourceEntry } from 'server';
 import { noendslash } from 'shared/utils/url';
-import type { Manifest as ViteManifest } from 'vite';
 
 import type { BuildBundles } from './build-data';
 

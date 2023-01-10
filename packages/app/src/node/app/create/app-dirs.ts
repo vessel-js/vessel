@@ -1,5 +1,6 @@
-import { globbySync } from 'globby';
 import fs from 'node:fs';
+
+import { globbySync } from 'globby';
 import * as path from 'pathe';
 import { searchForWorkspaceRoot } from 'vite';
 

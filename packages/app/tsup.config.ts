@@ -1,5 +1,6 @@
-import globby from 'fast-glob';
 import fs from 'node:fs/promises';
+
+import globby from 'fast-glob';
 import * as path from 'pathe';
 import { defineConfig, type Options } from 'tsup';
 

@@ -1,6 +1,7 @@
 import { createFilter } from '@rollup/pluginutils';
-import { comparePathDepth, sortedInsert } from 'node/utils';
 import * as path from 'pathe';
+
+import { comparePathDepth, sortedInsert } from 'node/utils';
 import { getRouteComponentTypes, type RouteComponentType } from 'shared/routing';
 
 import type { App } from '../App';

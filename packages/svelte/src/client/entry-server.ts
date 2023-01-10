@@ -1,5 +1,6 @@
 import App from ':virtual/vessel/svelte/app';
 import type { ServerRenderer } from '@vessel-js/app/server';
+
 import type { SvelteServerModule } from 'node';
 
 import { createContext } from './context';

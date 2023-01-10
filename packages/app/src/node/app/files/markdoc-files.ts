@@ -1,5 +1,6 @@
 import kleur from 'kleur';
 import * as path from 'pathe';
+
 import { toPascalCase } from 'shared/utils/string';
 
 import type { App } from '../App';

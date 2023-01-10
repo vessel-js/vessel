@@ -2,6 +2,7 @@ import { exec } from 'node:child_process';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
+
 import * as path from 'pathe';
 
 import { createSystemDirectory, type SystemDirectory } from './directory';

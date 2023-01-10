@@ -1,6 +1,7 @@
 import * as lexer from 'es-module-lexer';
-import type { App } from 'node/app/App';
 import * as path from 'pathe';
+
+import type { App } from 'node/app/App';
 import { HTTP_METHOD_RE, HTTP_METHODS, resolveHandlerHttpMethod } from 'shared/http';
 
 import type { VesselPlugin } from './Plugin';

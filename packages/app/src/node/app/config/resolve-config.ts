@@ -1,6 +1,7 @@
+import * as path from 'pathe';
+
 import { createAutoBuildAdapter } from 'node/build/adapter';
 import { resolveRelativePath } from 'node/utils';
-import * as path from 'pathe';
 import { isArray } from 'shared/utils/unit';
 
 import type { AppConfig, ResolvedAppConfig } from './app-config';

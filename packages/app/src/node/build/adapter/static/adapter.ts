@@ -1,4 +1,6 @@
 import kleur from 'kleur';
+import ora from 'ora';
+
 import {
   createStaticDataScriptTag,
   formatCommittedFilesTitle,
@@ -8,7 +10,6 @@ import {
 } from 'node/build/build-utils';
 import { buildAllSitemaps } from 'node/build/sitemap';
 import { copyDir, logger, LoggerIcon } from 'node/utils';
-import ora from 'ora';
 import { createPageResourceLinkTags } from 'server';
 
 import type { BuildAdapterFactory } from '../build-adapter';

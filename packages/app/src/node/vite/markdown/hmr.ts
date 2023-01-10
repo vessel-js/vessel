@@ -1,7 +1,8 @@
+import * as path from 'pathe';
+
 import type { App } from 'node/app/App';
 import { STRIP_MARKDOC_DIR_RE } from 'node/app/files';
 import { clearMarkdownCache } from 'node/markdoc';
-import * as path from 'pathe';
 
 export function handleMarkdownHMR(app: App) {
   const schema = app.markdoc;

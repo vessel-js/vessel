@@ -1,7 +1,8 @@
 import { createFilter } from '@rollup/pluginutils';
 import { globbySync } from 'globby';
-import { comparePathDepth, sortedInsert } from 'node/utils';
 import * as path from 'pathe';
+
+import { comparePathDepth, sortedInsert } from 'node/utils';
 import { isString } from 'shared/utils/unit';
 
 import type { App } from '../App';

@@ -1,4 +1,5 @@
 import kleur from 'kleur';
+
 import type { App } from 'node/app/App';
 import type { RouteFileType } from 'node/app/files';
 import type { AppRoute } from 'node/app/routes';

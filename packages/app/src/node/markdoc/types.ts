@@ -1,4 +1,5 @@
 import type { Node, RenderableTreeNode } from '@markdoc/markdoc';
+
 import type { MarkdownFrontmatter, MarkdownHeading, MarkdownMeta } from 'shared/markdown';
 
 export interface HighlightCodeBlock {
