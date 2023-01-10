@@ -10,7 +10,7 @@ import { STATIC_DATA_ASSET_BASE_PATH } from 'shared/data';
 import { escapeHTML } from 'shared/utils/html';
 import { isString } from 'shared/utils/unit';
 
-import { type BuildData } from './build-data';
+import type { BuildData } from './build-data';
 
 export function pluralize(word: string, count: number) {
   return count === 1 ? word : `${word}s`;

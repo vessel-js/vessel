@@ -31,7 +31,7 @@ export function resolveBuildConfig(app: App): ViteConfig {
     ...createAppEntries(app),
   };
 
-  if (!ssr) input.index = app.dirs.app.resolve('index.html');
+  if (!ssr) input.index = app.dirs.app.resolve('app.html');
 
   return {
     appType: 'custom',

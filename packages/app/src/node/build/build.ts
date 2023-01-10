@@ -70,7 +70,7 @@ export async function build(
   const startTime = Date.now();
   const entries = createAppEntries(app, { isSSR: true });
 
-  const template = await fs.readFileSync(app.dirs.vessel.client.resolve('app/index.html'), 'utf-8');
+  const template = await fs.readFileSync(app.dirs.vessel.client.resolve('app/app.html'), 'utf-8');
 
   rimraf(app.dirs.vessel.client.resolve('app'));
 
