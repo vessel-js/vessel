@@ -7,3 +7,4 @@ export * from './request';
 export * from './request-handler';
 export * from './response';
 export * from './rpc';
+export * from '../utils/url';
