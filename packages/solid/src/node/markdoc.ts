@@ -66,9 +66,8 @@ const fenceNameRE = /^(pre|Fence)$/;
 const solidComponentNameRE = /^solid:component$/;
 
 export const transformTreeNode: MarkdocTreeNodeTransformer = ({ node, stuff }) => {
-  if (node && typeof node !== 'string') {
+  if (Markdoc.Tag.isTag(node)) {
     const name = node.name;
-
     if (codeNameRE.test(name)) {
       escapeCodeContent(node);
     } else if (fenceNameRE.test(name)) {

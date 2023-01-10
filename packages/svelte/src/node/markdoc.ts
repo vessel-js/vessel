@@ -81,9 +81,8 @@ const svelteComponentNameRE = /^svelte:component$/;
 const imgRE = /^img$/;
 
 export const transformTreeNode: MarkdocTreeNodeTransformer = ({ node, stuff }) => {
-  if (node && typeof node !== 'string') {
+  if (Markdoc.Tag.isTag(node)) {
     const name = node.name;
-
     if (codeNameRE.test(name)) {
       escapeCodeContent(node);
     } else if (fenceNameRE.test(name)) {
@@ -107,7 +106,7 @@ function resolveImg(tag: MarkdocTag, stuff: MarkdocTreeWalkStuff) {
 
 function resolveSvelteHead(tag: MarkdocTag, stuff: MarkdocTreeWalkStuff) {
   tag.attributes.__ignore = true;
-  if (typeof tag.children[0] === 'object') {
+  if (Markdoc.Tag.isTag(tag.children[0])) {
     if (Array.isArray(tag.children[0]?.children)) {
       stuff.head = tag.children[0]!.children.join('');
     }
