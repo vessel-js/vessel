@@ -49,7 +49,7 @@ export function resolveAppConfig(
     },
   };
 
-  const pageExts = `md,svelte,vue,jsx,tsx`;
+  const pageExts = `md,svelte,vue,js,ts,jsx,tsx`;
   const apiExts = 'js,ts';
 
   const __routes: ResolvedRoutesConfig = {
