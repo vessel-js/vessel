@@ -66,7 +66,6 @@ importers:
       pkg-up: ^4.0.0
       pretty-bytes: ^6.0.0
       rollup: ^3.0.0
-      set-cookie-parser: ^2.5.1
       shiki: ^0.12.0
       tsup: ^6.5.0
       typescript: ^4.9.0
@@ -93,7 +92,6 @@ importers:
       pathe: 1.0.0
       pkg-up: 4.0.0
       pretty-bytes: 6.0.0
-      set-cookie-parser: 2.5.1
       undici: 5.14.0
       urlpattern-polyfill: 6.0.2
     devDependencies:
@@ -3445,10 +3443,6 @@ packages:
     dependencies:
       lru-cache: 6.0.0
     dev: true
-
-  /set-cookie-parser/2.5.1:
-    resolution: {integrity: sha512-1jeBGaKNGdEq4FgIrORu/N570dwoPYio8lSoYLWmX7sQ//0JY08Xh9o5pBcgmHQ/MbsYp/aZnOe1s1lIsbLprQ==}
-    dev: false
 
   /shebang-command/1.2.0:
     resolution: {integrity: sha512-EV3L1+UQWGor21OmnvojK36mhg+TyIKDh3iFBKBohr5xeXIhNBcx8oWdgkTEEQ+BEFFYdLRuqMfd5L84N1V5Vg==}

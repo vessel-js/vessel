@@ -12,6 +12,7 @@ export function base(extend?: { external?: (string | RegExp)[] }): Options {
       'rollup',
       'chokidar',
       'esbuild',
+      'vite',
       ':virtual',
       'shiki',
       '@wooorm/starry-night',
