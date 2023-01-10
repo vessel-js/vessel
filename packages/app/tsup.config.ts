@@ -13,6 +13,8 @@ export function base(extend?: { external?: (string | RegExp)[] }): Options {
       'chokidar',
       'esbuild',
       ':virtual',
+      'shiki',
+      '@wooorm/starry-night',
       ...(extend?.external ?? []),
     ],
     treeshake: true,
