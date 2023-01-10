@@ -117,8 +117,8 @@ async function main() {
 
   step('Pushing to GitHub...');
   await runIfNotDry('git', ['tag', `v${targetVersion}`]);
-  await runIfNotDry('git', ['push', 'upstream', `refs/tags/v${targetVersion}`]);
-  await runIfNotDry('git', ['push', 'upstream', 'main']);
+  await runIfNotDry('git', ['push', 'origin', `refs/tags/v${targetVersion}`]);
+  await runIfNotDry('git', ['push', 'origin', 'main']);
 
   if (isDryRun) {
     console.log(`\nDry run finished - run git diff to see package changes.`);
@@ -159,7 +159,7 @@ function updatePackageDeps(pkg, depType, version) {
   const deps = pkg[depType];
   if (!deps) return;
   Object.keys(deps).forEach((dep) => {
-    if (/^@?vessel/.test(dep) && packages.includes(dep.replace(/^@?vessel\//, ''))) {
+    if (/^@?vessel-js/.test(dep)) {
       const color = version === 'workspace:*' ? 'cyan' : 'yellow';
       console.log(kleur[color](`🦠 ${pkg.name} -> ${depType} -> ${dep}@${version}`));
       deps[dep] = version;
