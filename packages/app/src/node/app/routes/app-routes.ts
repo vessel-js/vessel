@@ -53,14 +53,26 @@ export class AppRoutes implements Iterable<AppRoute> {
   }
 
   add(file: RouteFile) {
-    const existingRoute = this._routes.find((route) => route.id === file.routeId);
+    const isRouteGroup = /\(.*?\)/.test(file.dir.route);
 
-    if (
-      existingRoute &&
-      existingRoute[file.type] &&
-      existingRoute[file.type]!.path.route !== file.path.route
-    ) {
-      this._onDuplicateRoute(file.path.root, existingRoute[file.type]!.path.root);
+    const existingRouteIndex = isRouteGroup
+      ? this._routes.findIndex((route) => route.dir.route === file.dir.route)
+      : this._routes.findIndex((route) => route.id === file.routeId);
+
+    const existingRoute = this._routes[existingRouteIndex];
+
+    if (existingRoute) {
+      if ((file.type === 'page' || file.type === 'api') && isRouteGroup) {
+        const nextRoute = this._routes[existingRouteIndex + 1];
+        if (nextRoute && nextRoute.id === existingRoute.id && nextRoute[file.type]) {
+          this._onDuplicateRoute(file.path.root, nextRoute[file.type]!.path.root);
+        }
+      } else if (
+        existingRoute[file.type] &&
+        existingRoute[file.type]!.path.route !== file.path.route
+      ) {
+        this._onDuplicateRoute(file.path.root, existingRoute[file.type]!.path.root);
+      }
     }
 
     const routeInfo = resolveRouteFromFilePath(
@@ -86,7 +98,9 @@ export class AppRoutes implements Iterable<AppRoute> {
     }
 
     if (!existingRoute) {
-      sortedInsert(this._routes, route, (a, b) => b.score - a.score);
+      sortedInsert(this._routes, route, (a, b) => {
+        return b.score === a.score ? b.dir.length - a.dir.length : b.score - a.score;
+      });
     }
 
     for (const callback of this._onAdd) {

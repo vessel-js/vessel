@@ -21,7 +21,6 @@ export function createServer(manifest: ServerManifest): RequestHandler {
 
   return async (req) => {
     const request = createVesselRequest(req);
-
     const redirect = resolveTrailingSlashRedirect(request.URL, manifest.trailingSlash);
 
     if (redirect) return redirect;

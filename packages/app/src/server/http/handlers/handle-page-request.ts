@@ -90,7 +90,6 @@ async function renderDocument(request: VesselRequest, manifest: ServerManifest):
   const { render } = await manifest.entry();
 
   const page = createResponseDetails(request.URL);
-
   const matches = matchAllRoutes(request.URL, manifest.routes.pages, manifest.trailingSlash);
 
   const loadResults = await loadRoutes(

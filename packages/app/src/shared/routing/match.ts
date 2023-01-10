@@ -81,16 +81,18 @@ export function filterMatchingRouteSegments<T extends Route>(
       url,
     );
 
-    const match = routes
-      .slice(start)
-      .findIndex(
-        (route) =>
-          testRoute(segmentURL, route) && (!segments[0] || segments[0][1].id.startsWith(route.id)),
-      );
-
-    if (match >= 0) {
-      segments.push([segmentURL, routes[start + match]]);
-      start = match + 1;
+    let stop = routes.length;
+    for (let j = start; j < stop; j++) {
+      const route = routes[j];
+      if (
+        testRoute(segmentURL, route) &&
+        (!segments[0] || segments[0][1].id.startsWith(route.id))
+      ) {
+        segments.push([segmentURL, route]);
+        start = j + 1;
+        // Once matched, we only look for consecutive matches and stop immediately on fail.
+        stop = Math.min(j + 2, routes.length);
+      }
     }
   }
 

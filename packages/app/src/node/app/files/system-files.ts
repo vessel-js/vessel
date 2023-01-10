@@ -25,6 +25,8 @@ export interface SystemDirPath {
   readonly root: string;
   /** System directory path relative to `<app>`. */
   readonly route: string;
+  /** The number of segments. */
+  readonly length: number;
 }
 
 export interface SystemFileMeta {
@@ -178,6 +180,7 @@ export abstract class SystemFiles<T extends SystemFileMeta> implements Iterable<
         absolute: path.dirname(filePath),
         root: rootDir === '.' ? '' : rootDir,
         route: routeDir === '.' ? '' : routeDir,
+        length: rootPath.split('/').length,
       },
       ext,
       reset,

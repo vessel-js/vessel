@@ -8,7 +8,7 @@ import { slash } from 'shared/utils/url';
 import type { RouteMatcher, RouteMatcherConfig } from '../config';
 
 const STRIP_ROUTE_ORDER_RE = /\/\[(\d+)\]/g;
-const STRIP_ROUTE_GROUPS_RE = /\/\(.*?\)\//g;
+const STRIP_ROUTE_GROUPS_RE = /\/\(.*?\)(\/|$)/g;
 
 export function stripRouteOrder(filePath: string) {
   return filePath.replace(STRIP_ROUTE_ORDER_RE, '/');
@@ -40,7 +40,7 @@ export function resolveRouteFromFilePath(
   filePath: string,
   matchers: RouteMatcherConfig = [],
 ): Route {
-  const id = resolveRouteIdFromFilePath(appDir, filePath);
+  let id = resolveRouteIdFromFilePath(appDir, filePath) || '/';
   const { pathname, dynamic, score } = resolveRouteMetaFromFilePath(id, matchers);
   const pattern = new URLPattern({ pathname });
   return { id, pathname, pattern, dynamic, score };
