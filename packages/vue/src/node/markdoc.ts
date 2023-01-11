@@ -46,7 +46,7 @@ export const renderMarkdoc: MarkdocRenderer = ({ meta, content, imports }) => {
 
   const scriptModule = [
     '<script>',
-    `  export const __markdownMeta = ${JSON.stringify(meta)};`,
+    `  export const meta = ${JSON.stringify(meta)};`,
     '</script>',
   ].join('\n');
 

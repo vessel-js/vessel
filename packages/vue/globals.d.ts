@@ -5,8 +5,8 @@ declare module '*.vue' {
 }
 
 declare module '*.md' {
-  const __markdownMeta: import('@vessel-js/app').MarkdownMeta;
-  export { __markdownMeta };
+  const meta: import('@vessel-js/app').MarkdownMeta;
+  export { meta };
   // eslint-disable-next-line @typescript-eslint/ban-types
   const component: import('vue').DefineComponent<{}, {}, any>;
   export default component;

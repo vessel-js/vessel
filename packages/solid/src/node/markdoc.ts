@@ -46,7 +46,7 @@ export const renderMarkdoc: MarkdocRenderer = ({ meta, content, imports }) => {
 
   const moduleCode =
     imports.length > 0
-      ? [...imports, '', `export const __markdownMeta = ${JSON.stringify(meta)};`].join('\n')
+      ? [...imports, '', `export const meta = ${JSON.stringify(meta)};`].join('\n')
       : '';
 
   const componentCode = [

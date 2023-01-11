@@ -121,9 +121,7 @@ function createReactive<T>(store: Readable<T> | Writable<T>): Reactive<T> {
 
 function createMarkdownStore(route: RouteStore): MarkdownStore {
   return derived(route, ($route) =>
-    $route.page && isMarkdownModule($route.page.module)
-      ? $route.page.module.__markdownMeta
-      : undefined,
+    $route.page && isMarkdownModule($route.page.module) ? $route.page.module.meta : undefined,
   );
 }
 

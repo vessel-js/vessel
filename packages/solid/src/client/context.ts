@@ -166,7 +166,7 @@ function createReactive<T>([get, set]: Signal<T>): Reactive<T> {
 function createMarkdownSignal(route: RouteSignal): MarkdownAccessor {
   return () => {
     const page = route().page;
-    return page && isMarkdownModule(page.module) ? page.module.__markdownMeta : undefined;
+    return page && isMarkdownModule(page.module) ? page.module.meta : undefined;
   };
 }
 

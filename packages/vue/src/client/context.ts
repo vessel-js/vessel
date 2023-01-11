@@ -157,7 +157,7 @@ function createReactive<T>(ref: Ref<T> | ComputedRef<T>): Reactive<T> {
 function createMarkdownStore(route: RouteRef): MarkdownRef {
   return computed(() =>
     route.value.page && isMarkdownModule(route.value.page.module)
-      ? route.value.page.module.__markdownMeta
+      ? route.value.page.module.meta
       : undefined,
   );
 }

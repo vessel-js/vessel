@@ -5,7 +5,7 @@ import type { ClientModule } from './router/types';
 export function isMarkdownModule<T extends ClientModule>(
   mod: T,
 ): mod is T & { module: T['module'] & MarkdownModule } {
-  return '__markdownMeta' in mod;
+  return 'meta' in mod;
 }
 
 export function removeSSRStyles() {

@@ -4,8 +4,8 @@ declare module '*.svelte' {
 }
 
 declare module '*.md' {
-  const __markdownMeta: import('@vessel-js/app').MarkdownMeta;
-  export { __markdownMeta };
+  const meta: import('@vessel-js/app').MarkdownMeta;
+  export { meta };
   const component: typeof import('svelte').SvelteComponent;
   export default component;
 }

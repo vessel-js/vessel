@@ -14,5 +14,5 @@ export interface MarkdownHeading {
 }
 
 export interface MarkdownModule {
-  __markdownMeta: MarkdownMeta;
+  meta: MarkdownMeta;
 }

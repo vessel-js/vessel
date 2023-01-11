@@ -10,7 +10,7 @@ import type { ScrollToTarget } from './scroll-delegate';
 export interface ClientModule {
   [id: string]: unknown;
   default: any;
-  __markdownMeta?: MarkdownMeta;
+  meta?: MarkdownMeta;
 }
 
 export interface ClientModuleLoader {

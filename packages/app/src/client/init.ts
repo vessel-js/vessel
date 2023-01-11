@@ -50,7 +50,7 @@ export async function init({ frameworkDelegate }: ClientInitOptions) {
               ...component,
               module: {
                 ...component.module,
-                __markdownMeta: meta,
+                meta: meta,
               },
             },
           });
