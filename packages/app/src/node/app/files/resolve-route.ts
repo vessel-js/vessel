@@ -7,6 +7,7 @@ import { slash } from 'shared/utils/url';
 
 import type { RouteMatcher, RouteMatcherConfig } from '../config';
 
+const PARAM_ARGS_RE = /\/\[(\w*?)=(.*?)\]/g;
 const STRIP_ROUTE_ORDER_RE = /\/\[(\d+)\]/g;
 const STRIP_ROUTE_GROUPS_RE = /\/\(.*?\)/g;
 
@@ -51,6 +52,14 @@ export function resolveRouteFromFilePath(
 
 function resolveRouteMetaFromFilePath(routeId: string, matchers: RouteMatcherConfig = []) {
   let route = stripRouteGroups(trimExt(routeId)) || '/';
+
+  const paramArgs = route.matchAll(PARAM_ARGS_RE);
+  for (const arg of paramArgs) {
+    const [_, name, value] = arg;
+    if (name && value) route = route.replace(`[${name}]`, value);
+  }
+
+  route = route.replace(PARAM_ARGS_RE, '');
 
   for (const matcher of matchers) {
     if (isFunction(matcher)) {
