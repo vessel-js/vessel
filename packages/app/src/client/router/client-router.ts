@@ -654,7 +654,14 @@ export class Router {
       url,
       matches.map((match) => {
         const existing = prevMatches.find((route) => !route.error && route.id === match.id);
-        return existing ? { ...existing, page: existing.page ?? match.page } : match;
+        return existing
+          ? {
+              ...existing,
+              matchedURL: match.matchedURL,
+              params: match.params,
+              page: existing.page ?? match.page,
+            }
+          : match;
       }),
     );
   }
