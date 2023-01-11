@@ -95,7 +95,7 @@ export function resolveAppConfig(
     exclude: markdown.exclude ?? [],
     markdoc: markdown.markdoc ?? {},
     highlighter: false,
-    shiki: { theme: 'material-palenight', langs: [] },
+    shiki: { theme: 'material-palenight' },
     hastToHtml: {},
     nodes: {
       include: [`**/.markdoc/**/*.{${markdocExts}}`],

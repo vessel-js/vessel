@@ -78,7 +78,6 @@ export function markdownPlugin(): VesselPlugin {
               (typeof config.shiki.theme === 'string'
                 ? config.shiki.theme
                 : config.shiki.theme?.name) ?? 'material-palenight';
-
             highlight = (code, lang) => {
               const tokens = shiki.codeToThemedTokens(code, lang);
               return mod.renderToHtml(tokens, {
