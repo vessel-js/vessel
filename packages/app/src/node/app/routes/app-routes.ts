@@ -26,6 +26,8 @@ export type AppRoute = Route & {
   };
 };
 
+const routeGroupRE = /\(.*?\)/;
+
 export class AppRoutes implements Iterable<AppRoute> {
   protected _app!: App;
   protected _routesDir!: string;
@@ -53,25 +55,14 @@ export class AppRoutes implements Iterable<AppRoute> {
   }
 
   add(file: RouteFile) {
-    const isRouteGroup = /\(.*?\)/.test(file.dir.route);
+    const existingRoute = this._routes.find((route) => route.id === file.routeId);
 
-    const existingRouteIndex = isRouteGroup
-      ? this._routes.findIndex((route) => route.dir.route === file.dir.route)
-      : this._routes.findIndex((route) => route.id === file.routeId);
-
-    const existingRoute = this._routes[existingRouteIndex];
-
-    if (existingRoute) {
-      if ((file.type === 'page' || file.type === 'api') && isRouteGroup) {
-        const nextRoute = this._routes[existingRouteIndex + 1];
-        if (nextRoute && nextRoute.id === existingRoute.id && nextRoute[file.type]) {
-          this._onDuplicateRoute(file.path.root, nextRoute[file.type]!.path.root);
-        }
-      } else if (
-        existingRoute[file.type] &&
-        existingRoute[file.type]!.path.route !== file.path.route
-      ) {
-        this._onDuplicateRoute(file.path.root, existingRoute[file.type]!.path.root);
+    if (existingRoute && (file.type === 'page' || file.type === 'api')) {
+      const matchingRoute = this._routes.find(
+        (route) => route.pathname === existingRoute.pathname && route !== existingRoute,
+      );
+      if (matchingRoute && matchingRoute[file.type]) {
+        this._onDuplicateRoute(file.path.root, matchingRoute[file.type]!.path.root);
       }
     }
 
@@ -99,7 +90,19 @@ export class AppRoutes implements Iterable<AppRoute> {
 
     if (!existingRoute) {
       sortedInsert(this._routes, route, (a, b) => {
-        return b.score === a.score ? b.dir.length - a.dir.length : b.score - a.score;
+        const diff = b.score - a.score;
+
+        // Ensure route groups are put infront of their parent directories.
+        if (Math.abs(diff) <= 1) {
+          const segment = Math.min(a.dir.length, b.dir.length),
+            isARouteGroup = routeGroupRE.test(a.dir.root.split('/')[segment]),
+            isBRouteGroup = routeGroupRE.test(b.dir.root.split('/')[segment]);
+          if (isARouteGroup && !isBRouteGroup) return -1;
+          else if (isBRouteGroup && !isARouteGroup) return 1;
+          else if (isARouteGroup && isBRouteGroup) return b.dir.length - a.dir.length;
+        }
+
+        return diff;
       });
     }
 

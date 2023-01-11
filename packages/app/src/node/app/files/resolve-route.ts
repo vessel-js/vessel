@@ -8,7 +8,7 @@ import { slash } from 'shared/utils/url';
 import type { RouteMatcher, RouteMatcherConfig } from '../config';
 
 const STRIP_ROUTE_ORDER_RE = /\/\[(\d+)\]/g;
-const STRIP_ROUTE_GROUPS_RE = /\/\(.*?\)(\/|$)/g;
+const STRIP_ROUTE_GROUPS_RE = /\/\(.*?\)/g;
 
 export function stripRouteOrder(filePath: string) {
   return filePath.replace(STRIP_ROUTE_ORDER_RE, '/');
@@ -22,6 +22,9 @@ export function stripRouteMeta(dirname: string) {
   return stripRouteGroups(stripRouteOrder(dirname));
 }
 
+// /name.ts, /[name].ts, /[[name]].ts ,/[...name].ts, /[[...name]].ts
+const namedPageRE = /(\[?\[?\.?\.?\.?\w.*?\]?\]?)\./;
+
 export function resolveRouteIdFromFilePath(appDir: string, filePath: string) {
   const basename = path.basename(filePath);
   const isNamed = /\.(page|api)/.test(basename);
@@ -29,10 +32,10 @@ export function resolveRouteIdFromFilePath(appDir: string, filePath: string) {
   const id = isNamed
     ? path
         .relative(appDir, filePath)
-        .replace(basename, basename.match(/(\[?\[?\w.*?)\./)![1] + path.extname(basename))
+        .replace(basename, basename.match(namedPageRE)![1] + path.extname(basename))
     : path.dirname(path.relative(appDir, filePath));
 
-  return stripRouteMeta(id === '.' ? '/' : `/${id}`);
+  return stripRouteOrder(id === '.' ? '/' : `/${id}`) || '/';
 }
 
 export function resolveRouteFromFilePath(
@@ -40,14 +43,14 @@ export function resolveRouteFromFilePath(
   filePath: string,
   matchers: RouteMatcherConfig = [],
 ): Route {
-  let id = resolveRouteIdFromFilePath(appDir, filePath) || '/';
+  let id = resolveRouteIdFromFilePath(appDir, filePath);
   const { pathname, dynamic, score } = resolveRouteMetaFromFilePath(id, matchers);
   const pattern = new URLPattern({ pathname });
   return { id, pathname, pattern, dynamic, score };
 }
 
 function resolveRouteMetaFromFilePath(routeId: string, matchers: RouteMatcherConfig = []) {
-  let route = trimExt(routeId);
+  let route = stripRouteGroups(trimExt(routeId)) || '/';
 
   for (const matcher of matchers) {
     if (isFunction(matcher)) {

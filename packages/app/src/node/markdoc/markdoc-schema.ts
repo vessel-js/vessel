@@ -20,9 +20,12 @@ export class MarkdocSchema {
   getOwnedConfig(ownerFilePath: string): MarkdocConfig {
     const base = this._app.config.markdown.markdoc;
 
-    const isLeaf = this._app.files.routes.isLeafFile(ownerFilePath);
-    const nodes = isLeaf ? this._getOwnedNodesConfig(ownerFilePath) : {};
-    const tags = isLeaf ? this._getOwnedTagsConfig(ownerFilePath) : {};
+    const isValid =
+      this._app.files.routes.isLeafFile(ownerFilePath) ||
+      this._app.files.routes.isLayoutFile(ownerFilePath);
+
+    const nodes = isValid ? this._getOwnedNodesConfig(ownerFilePath) : {};
+    const tags = isValid ? this._getOwnedTagsConfig(ownerFilePath) : {};
 
     const config: MarkdocConfig = {
       ...base,

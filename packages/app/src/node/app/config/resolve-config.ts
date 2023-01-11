@@ -49,7 +49,8 @@ export function resolveAppConfig(
     },
   };
 
-  const pageExts = `md,svelte,vue,js,ts,jsx,tsx`;
+  const pageExts = 'md,svelte,vue,js,ts,jsx,tsx';
+  const markdocExts = 'md,svelte,vue,jsx,tsx';
   const apiExts = 'js,ts';
 
   const __routes: ResolvedRoutesConfig = {
@@ -62,6 +63,7 @@ export function resolveAppConfig(
       { name: 'bool', matcher: /(true|false)/ },
       (route) => route.replace(/\[\[\.\.\.(.*?)\]\]/g, ':$1*'),
       (route) => route.replace(/\[\.\.\.(.*?)\]/g, ':$1+'),
+      (route) => route.replace(/\[\[(.*?)\]\]/g, ':$1?'),
       (route) => route.replace(/\[(.*?)\]/g, ':$1'),
     ],
     log: routes.log ?? 'table',
@@ -96,7 +98,7 @@ export function resolveAppConfig(
     shiki: { theme: 'material-palenight', langs: [] },
     hastToHtml: {},
     nodes: {
-      include: [`**/.markdoc/**/*.{${pageExts}}`],
+      include: [`**/.markdoc/**/*.{${markdocExts}}`],
       exclude: [],
       ...markdown.nodes,
     },

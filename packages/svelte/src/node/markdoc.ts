@@ -68,10 +68,10 @@ export const renderMarkdoc: MarkdocRenderer = ({ meta, content, imports, stuff }
   ].join('\n');
 
   const script = imports.length > 0 ? ['<script>', ...imports, '</script>'].join('\n') : '';
-
   const svelteHead = stuff.head ? `<svelte:head>\n${stuff.head}\n</svelte:head>\n\n` : '';
+  const result = `${scriptModule}\n\n${script}\n\n${svelteHead}\n\n${markup}`;
 
-  return `${scriptModule}\n\n${script}\n\n${svelteHead}\n\n${markup}`;
+  return result;
 };
 
 const codeNameRE = /^(code|Code)$/;

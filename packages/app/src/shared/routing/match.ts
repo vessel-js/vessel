@@ -2,7 +2,7 @@ import { endslash, noendslash } from 'shared/utils/url';
 
 import type { Route, RouteComponentType, RouteMatch } from './types';
 
-export function matchRoute<T extends Route>(url: URL, routes: T[]) {
+export function matchRoute<T extends Route>(url: URL, routes: T[]): (T & RouteMatch) | null {
   const route = routes.find((route) => testRoute(url, route));
   return route ? createMatchedRoute(url, route) : null;
 }
@@ -81,17 +81,11 @@ export function filterMatchingRouteSegments<T extends Route>(
       url,
     );
 
-    let stop = routes.length;
-    for (let j = start; j < stop; j++) {
+    for (let j = start; j < routes.length; j++) {
       const route = routes[j];
-      if (
-        testRoute(segmentURL, route) &&
-        (!segments[0] || segments[0][1].id.startsWith(route.id))
-      ) {
+      if (testRoute(segmentURL, route)) {
         segments.push([segmentURL, route]);
-        start = j + 1;
-        // Once matched, we only look for consecutive matches and stop immediately on fail.
-        stop = Math.min(j + 2, routes.length);
+        if (!route.dynamic) start = j + 1;
       }
     }
   }

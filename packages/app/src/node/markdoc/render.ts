@@ -1,4 +1,5 @@
 import type { RenderableTreeNodes } from '@markdoc/markdoc';
+import Markdoc from '@markdoc/markdoc';
 
 // HTML elements that do not have a matching close tag
 // Defined in the HTML standard: https://html.spec.whatwg.org/#void-elements
@@ -36,7 +37,7 @@ export function renderMarkdocToHTML(
 
   if (Array.isArray(node)) return node.map((n) => renderMarkdocToHTML(n, config)).join('');
 
-  if (node === null || typeof node !== 'object') return '';
+  if (!Markdoc.Tag.isTag(node)) return '';
 
   const { name, attributes, children = [] } = node;
 
@@ -58,7 +59,7 @@ export function renderMarkdocToHTML(
 
   if (voidElements.has(name as string)) return output;
 
-  if ((children as string).length) output += renderMarkdocToHTML(children, config);
+  if (children.length) output += renderMarkdocToHTML(children, config);
   output += `</${name}>`;
 
   return output;

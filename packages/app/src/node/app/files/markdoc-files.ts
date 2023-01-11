@@ -39,7 +39,6 @@ export class MarkdocFiles extends SystemFiles<MarkdocFile> {
 
     if (type === 'node' && !isValidMarkdownNodeName(name)) {
       const validValues = `${kleur.bold('Valid values')}: ${Array.from(getValidNodeNames())}`;
-
       this._app.logger.warn(`Invalid markdown node name [${kleur.bold(name)}]. \n\n${validValues}`);
     }
 
@@ -72,6 +71,7 @@ export class MarkdocFiles extends SystemFiles<MarkdocFile> {
   }
 
   getOwnedNodes(ownerFilePath: string, type: '*' | 'node' | 'tag') {
+    if (this.isAnyNode(ownerFilePath)) return [];
     const root = path.dirname(this._getRootPath(ownerFilePath));
     return Array.from(this._files).filter((node) => {
       return (type === '*' || node.type === type) && root.startsWith(node.owningDir);

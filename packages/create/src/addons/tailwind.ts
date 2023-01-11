@@ -40,7 +40,11 @@ function resolveConfig(builder: Builder) {
   }
 
   const ext = getExt();
-  const content = [`'./app/app.html'`, `'./app/**/*.{md,${ext}}'`];
+  const content = [
+    `'./app/app.html'`,
+    `'./app/**/*.{md,${ext}}'`,
+    `'./app/**/.markdoc/**/*.{md,${ext}}'`,
+  ];
 
   return `/** @type {import('tailwindcss').Config} */
 module.exports = {
