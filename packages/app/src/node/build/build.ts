@@ -80,13 +80,9 @@ export async function build(
   ) as ViteManifest;
 
   const { chunks: clientChunks, assets: clientAssets } = resolveChunksAndAssets(clientBundle);
-
   const serverChunks = resolveChunks(serverBundle);
-
   const entryChunkInfo = resolveEntryChunkInfo(app, clientManifest, clientChunks, serverChunks);
-
   const appChunkInfo = resolveAppChunkInfo(app, clientManifest, clientChunks, serverChunks);
-
   const serverConfigChunks = resolveServerConfigChunks(app, serverChunks);
   const { serverRouteChunks, serverRouteChunkFiles } = resolveServerRouteChunks(app, serverChunks);
 

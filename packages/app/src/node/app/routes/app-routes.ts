@@ -74,6 +74,7 @@ export class AppRoutes implements Iterable<AppRoute> {
 
     const route: AppRoute = existingRoute ?? {
       ...routeInfo,
+      leaf: file.type === 'page' || file.type === 'errorBoundary',
       cleanId: trimExt(routeInfo.id),
       dir: file.dir,
       client: file.type !== 'api',
@@ -86,23 +87,14 @@ export class AppRoutes implements Iterable<AppRoute> {
 
     if (existingRoute && file.type !== 'api') {
       existingRoute.client = true;
+      if (file.type === 'page' || file.type === 'errorBoundary') {
+        (existingRoute as Mutable<AppRoute>).leaf = true;
+      }
     }
 
     if (!existingRoute) {
       sortedInsert(this._routes, route, (a, b) => {
-        const diff = b.score - a.score;
-
-        // Ensure route groups are put infront of their parent directories.
-        if (Math.abs(diff) <= 1) {
-          const segment = Math.min(a.dir.length, b.dir.length),
-            isARouteGroup = routeGroupRE.test(a.dir.root.split('/')[segment]),
-            isBRouteGroup = routeGroupRE.test(b.dir.root.split('/')[segment]);
-          if (isARouteGroup && !isBRouteGroup) return -1;
-          else if (isBRouteGroup && !isARouteGroup) return 1;
-          else if (isARouteGroup && isBRouteGroup) return b.dir.length - a.dir.length;
-        }
-
-        return diff;
+        return b.score - a.score;
       });
     }
 
@@ -120,6 +112,10 @@ export class AppRoutes implements Iterable<AppRoute> {
         this._routes = this._routes.filter((g) => route !== g);
       } else if (!getRouteComponentTypes().some((type) => route[type])) {
         route.client = false;
+      }
+
+      if (!route.page && !route.errorBoundary) {
+        (route as Mutable<AppRoute>).leaf = false;
       }
 
       for (const callback of this._onRemove) {
@@ -209,7 +205,7 @@ export class AppRoutes implements Iterable<AppRoute> {
   }
 }
 
-const validRouteKeys: (keyof Route)[] = ['id', 'score', 'pathname', 'pattern', 'dynamic'];
+const validRouteKeys: (keyof Route)[] = ['id', 'score', 'pathname', 'pattern', 'leaf', 'dynamic'];
 
 export function toRoute(appRoute: AppRoute): Route {
   const route: any = {};

@@ -246,11 +246,7 @@ export class Router {
    */
   matchAll(pathnameOrURL: string | URL): ClientMatchedRoute[] {
     const url = this.createURL(pathnameOrURL);
-    const matches = this.owns(url) ? matchAllRoutes(url, this._routes, this.trailingSlash) : [];
-    const leaf = matches.find((route) => route.page || route.errorBoundary);
-    return leaf
-      ? [leaf, ...matches.filter((route) => leaf.id.startsWith(route.id) && route !== leaf)]
-      : [];
+    return this.owns(url) ? matchAllRoutes(url, this._routes, this.trailingSlash) : [];
   }
 
   /**

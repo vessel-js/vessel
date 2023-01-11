@@ -95,8 +95,8 @@ export interface ClientManifest {
   fetch: number[];
   /** Client routes that were discovered by the build process. */
   routes: {
-    /** URL pathname used to construct `URLPattern` and it's route score. */
-    u: [id: string, pathname: string, score: number];
+    /** URL pathname used to construct `URLPattern`, route score, and whether it's dynamic. */
+    u: [id: string, pathname: string, score: number, dynamic?: 1];
     /** Whether this route contains a layout loader. */
     l?: 1;
     /** Whether this route contains an error boundary loader. */

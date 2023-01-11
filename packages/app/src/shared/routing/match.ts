@@ -12,8 +12,12 @@ export function matchAllRoutes<T extends Route>(
   routes: T[],
   trailingSlash = false,
 ): (RouteMatch & T)[] {
-  const segments = filterMatchingRouteSegments(url, routes, trailingSlash);
-  return segments.map(([url, route]) => createMatchedRoute(url, route));
+  const leaf = routes.find((route) => route.leaf && testRoute(url, route));
+  return leaf
+    ? matchSegments(url, leaf, routes, trailingSlash).map(([url, route]) =>
+        createMatchedRoute(url, route),
+      )
+    : [];
 }
 
 export function createMatchedRoute<T extends Route>(url: URL, route: T): T & RouteMatch {
@@ -62,19 +66,30 @@ export function stripRouteComponentTypes<T extends Route>(route: T): Omit<T, Rou
   return { ...route };
 }
 
-export function filterMatchingRouteSegments<T extends Route>(
+export function matchSegments<T extends Route>(
   url: URL,
+  leaf: T,
   routes: T[],
   trailingSlash = false,
 ) {
-  if (routes.length === 0) return [];
+  const leafIndex = routes.indexOf(leaf),
+    seen = new Set<T>([leaf]),
+    matches: [url: URL, route: T][] = [[url, leaf]],
+    segments = decodeURI(url.pathname).slice(1).split('/');
 
-  const segments: [url: URL, route: T][] = [];
-  const pathSegments = decodeURI(url.pathname).slice(1).split('/');
+  // search backwards for possible parent routes (this can happen with dynamic).
+  for (let i = leafIndex - 1; i >= 0; i--) {
+    const route = routes[i];
+    if (!leaf.id.startsWith(route.id)) break;
+    else if (!route.leaf) matches.push([url, route]);
+  }
 
-  let start = 0;
-  for (let i = pathSegments.length; i >= 0; i--) {
-    const segment = pathSegments.slice(0, i).join('/');
+  let start = leafIndex + 1;
+
+  for (let i = segments.length; i >= 0; i--) {
+    if (start >= routes.length) break;
+
+    const segment = segments.slice(0, i).join('/');
 
     const segmentURL = new URL(
       segment === '' ? '/' : `/${segment}${trailingSlash ? '/' : ''}`,
@@ -83,12 +98,13 @@ export function filterMatchingRouteSegments<T extends Route>(
 
     for (let j = start; j < routes.length; j++) {
       const route = routes[j];
-      if (testRoute(segmentURL, route)) {
-        segments.push([segmentURL, route]);
+      if (leaf.id.startsWith(route.id) && !seen.has(route) && testRoute(segmentURL, route)) {
+        seen.add(route);
+        matches.push([segmentURL, route]);
         if (!route.dynamic) start = j + 1;
       }
     }
   }
 
-  return segments;
+  return matches;
 }

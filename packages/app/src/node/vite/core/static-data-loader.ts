@@ -61,11 +61,12 @@ export type LoadStaticRouteResult = {
   redirect?: ServerRedirect;
 };
 
-const getServerModuleKey = (route: Route & RouteMatch, type: RouteComponentType) => route.id + type;
+const getServerModuleKey = (route: Route & RouteMatch, type: RouteComponentType) =>
+  route.id + '#' + type;
 const serverModules = new Map<string, ServerPageModule>();
 
 const getStaticDataKey = (url: URL, route: Route & RouteMatch, type: RouteComponentType) =>
-  route.id + type + url.pathname;
+  route.id + '#' + type + '#' + url.pathname;
 const staticData = new Map<string, MaybeStaticLoaderResponse>();
 
 export async function loadStaticRoute(
@@ -75,8 +76,8 @@ export async function loadStaticRoute(
   serverFetch: ServerFetch,
   load: (route: AppRoute, type: RouteFileType) => Promise<ServerPageModule>,
 ): Promise<LoadStaticRouteResult> {
-  const branch = app.routes.getBranch(route);
-  const matches = matchAllRoutes(url, branch, app.config.routes.trailingSlash);
+  const branch = app.routes.getBranch(route),
+    matches = matchAllRoutes(url, branch, app.config.routes.trailingSlash);
 
   // load modules - ensuring we only do it once for a given route/type combo
   await Promise.all(
@@ -106,7 +107,6 @@ export async function loadStaticRoute(
               const mod = serverModules.get(modKey)!;
               if (mod) {
                 const data = await callStaticLoader(url, match, serverFetch, mod.staticLoader);
-
                 staticData.set(key, data);
               }
             }

@@ -21,6 +21,10 @@ export interface Route {
    */
   readonly pattern: URLPattern;
   /**
+   * Whether this route is a leaf node.
+   */
+  readonly leaf?: boolean;
+  /**
    * Whether the route pattern is dynamic. This includes wildcards `*`, named groups `/:id`,
    * non-capturing groups `{/path}` and RegExp groups `(\\d+)`.
    *

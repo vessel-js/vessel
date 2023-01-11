@@ -86,12 +86,14 @@ function readManifest(router: Router, { loaders, fetch, routes }: ClientManifest
 
   for (let i = 0; i < routes.length; i++) {
     const route = routes[i];
-    const [id, pathname, score] = route.u;
+    const [id, pathname, score, dynamic] = route.u;
 
     const newRoute = {
       id,
       pathname,
       score,
+      leaf: !!(route.p || route.e),
+      dynamic: !!dynamic,
       pattern: new URLPattern({ pathname }),
     };
 

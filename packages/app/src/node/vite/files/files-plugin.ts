@@ -53,7 +53,9 @@ export function loadClientManifestModule(app: App) {
   for (let i = 0; i < clientRoutes.length; i++) {
     const route = clientRoutes[i];
     routes.push({
-      u: [route.id, route.pathname, route.score],
+      u: route.dynamic
+        ? [route.id, route.pathname, route.score, 1]
+        : [route.id, route.pathname, route.score],
       l: route.layout ? 1 : undefined,
       e: route.errorBoundary ? 1 : undefined,
       p: route.page ? 1 : undefined,
