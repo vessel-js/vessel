@@ -328,6 +328,8 @@ export class Router {
 
     const url = this.createURL(path);
 
+    if (this.listening && url.href === this._url.href) return;
+
     if (!this.disabled) {
       return this.navigate(url, {
         scroll,
@@ -481,12 +483,6 @@ export class Router {
 
     const matches = this.matchAll(url);
     const match = matches[0];
-
-    if (this.listening && match?.id === this._fw.route.get()?.id) {
-      nav.canHandle?.();
-      nav.accepted?.();
-      return;
-    }
 
     if (!match || match.matchedURL.pathname !== url.pathname) {
       cancel();
