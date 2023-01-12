@@ -34,7 +34,8 @@ export interface VesselPluginConfig extends AppConfig {}
 export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
   let app: App, appFactory: AppFactory, viteConfig: ViteResolvedConfig;
 
-  let isFirstBuild = true,
+  let startTime = 0,
+    isFirstBuild = true,
     clientBundle: OutputBundle | null = null,
     serverBundle: OutputBundle | null = null;
 
@@ -123,6 +124,7 @@ export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
         if (app.config.isSSR) return;
 
         // Reset for new build. Goes here because `build --watch` calls buildStart but not config.
+        startTime = Date.now();
         clientBundle = null;
         clientBundleSpinner.start(kleur.bold('Bundling client...'));
 
@@ -165,7 +167,7 @@ export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
           return;
         }
 
-        await build(app, clientBundle, serverBundle);
+        await build(startTime, app, clientBundle, serverBundle);
         clientBundle = null;
         serverBundle = null;
         app.destroy();

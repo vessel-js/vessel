@@ -53,6 +53,7 @@ import { resolveDocumentResourcesFromManifest } from './resources';
 import { resolveAllRoutes } from './routes';
 
 export async function build(
+  startTime: number,
   app: App,
   clientBundle: OutputBundle,
   serverBundle: OutputBundle,
@@ -67,9 +68,7 @@ export async function build(
 
   await installPolyfills();
 
-  const startTime = Date.now();
   const entries = createAppEntries(app, { isSSR: true });
-
   const template = await fs.readFileSync(app.dirs.vessel.client.resolve('app/app.html'), 'utf-8');
 
   rimraf(app.dirs.vessel.client.resolve('app'));
@@ -317,13 +316,16 @@ export async function build(
     });
 
     const hrefs = crawl(ssr.html);
-    for (let i = 0; i < hrefs.length; i++) {
-      await onFoundLink(pageRoute, hrefs[i]);
+    for (const href of hrefs) {
+      await onFoundLink(pageRoute, href);
     }
   }
 
+  const foundLinks = new Set<string>();
   async function onFoundLink(pageRoute: AppRoute, href: string) {
-    if (href.startsWith('#') || isLinkExternal(href)) return;
+    if (href.startsWith('#') || foundLinks.has(href) || isLinkExternal(href)) return;
+
+    foundLinks.add(href);
 
     const url = new URL(`${serverOrigin}${slash(href)}`);
     const pathname = normalizeURL(url).pathname;

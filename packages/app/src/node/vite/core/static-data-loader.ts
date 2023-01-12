@@ -76,8 +76,18 @@ export async function loadStaticRoute(
   serverFetch: ServerFetch,
   load: (route: AppRoute, type: RouteFileType) => Promise<ServerPageModule>,
 ): Promise<LoadStaticRouteResult> {
-  const branch = app.routes.getBranch(route),
+  let branch = app.routes.getBranch(route),
     matches = matchAllRoutes(url, branch, app.config.routes.trailingSlash);
+
+  matches = [
+    // leaf
+    matches[0],
+    ...matches.slice(1).map((match) => ({
+      ...match,
+      // remove pages from branch
+      page: undefined,
+    })),
+  ];
 
   // load modules - ensuring we only do it once for a given route/type combo
   await Promise.all(

@@ -4,9 +4,9 @@ import type { Manifest as ViteManifest } from 'vite';
 
 import type { App } from 'node/app/App';
 import { getRouteFileTypes, type RouteFileType } from 'node/app/files';
-import { AppRoute } from 'node/app/routes';
+import type { AppRoute } from 'node/app/routes';
 import { ALL_HTTP_METHODS, resolveHandlerHttpMethod } from 'shared/http';
-import { type RouteComponentType } from 'shared/routing';
+import type { RouteComponentType } from 'shared/routing';
 
 import type { BuildBundles, BuildData } from './build-data';
 
@@ -62,7 +62,6 @@ export function resolveServerConfigChunks(app: App, serverChunks: OutputChunk[])
 
   for (const config of app.files.serverConfigs) {
     const chunk = serverChunks.find((chunk) => chunk.facadeModuleId === config.path);
-
     if (chunk) chunks[config.type] = chunk;
   }
 

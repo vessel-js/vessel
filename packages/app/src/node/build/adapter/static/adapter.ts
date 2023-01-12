@@ -52,7 +52,6 @@ export function createStaticBuildAdapter({
           // Embedded as a string and `JSON.parsed` from the client because it's faster than
           // embedding as a JS object literal.
           const serializedRedirectsTable = JSON.stringify(JSON.stringify(redirectsTable));
-
           redirectsScriptTag = `<script>__VSL_STATIC_REDIRECTS_MAP__ = JSON.parse(${serializedRedirectsTable});</script>`;
         }
 
