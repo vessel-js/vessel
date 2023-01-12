@@ -1,3 +1,5 @@
+import kleur from 'kleur';
+import ora from 'ora';
 import * as path from 'pathe';
 import type { OutputBundle } from 'rollup';
 import type { Plugin as VitePlugin, ResolvedConfig as ViteResolvedConfig } from 'vite';
@@ -7,7 +9,7 @@ import type { AppConfig } from 'node/app/config';
 import { createAppFactory } from 'node/app/create/app-factory';
 import { build, createServerBundle, resolveBuildConfig } from 'node/build';
 import { installPolyfills } from 'node/polyfills';
-import { rimraf } from 'node/utils';
+import { LoggerIcon, rimraf } from 'node/utils';
 
 import { virtualAliases, virtualModuleRequestPath } from './alias';
 import { configureDevServer } from './core/dev-server';
@@ -35,6 +37,9 @@ export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
   let isFirstBuild = true,
     clientBundle: OutputBundle | null = null,
     serverBundle: OutputBundle | null = null;
+
+  const clientBundleSpinner = ora(),
+    serverBundeSpinner = ora();
 
   return [
     {
@@ -119,6 +124,7 @@ export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
 
         // Reset for new build. Goes here because `build --watch` calls buildStart but not config.
         clientBundle = null;
+        clientBundleSpinner.start(kleur.bold('Bundling client...'));
 
         if (app.config.isBuild) {
           rimraf(app.dirs.vessel.client.path);
@@ -136,9 +142,20 @@ export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
       },
       async writeBundle(_, bundle) {
         if (app.config.isSSR) return;
+
         clientBundle = bundle;
+        clientBundleSpinner.stopAndPersist({
+          symbol: LoggerIcon.Success,
+          text: kleur.bold(`Bundled client`),
+        });
+
+        serverBundeSpinner.start(kleur.bold('Bundling server...'));
         await createServerBundle((bundle) => {
           serverBundle = bundle;
+        });
+        serverBundeSpinner.stopAndPersist({
+          symbol: LoggerIcon.Success,
+          text: kleur.bold(`Bundled server`),
         });
       },
       async closeBundle() {

@@ -342,22 +342,13 @@ export async function build(
     });
   }
 
+  const renderingSpinner = ora();
+  renderingSpinner.start(kleur.bold(`Rendering pages...`));
+
   // Start with static page paths and then crawl additional links.
   for (const route of pageRoutes.filter((route) => !route.dynamic).reverse()) {
     await buildPage(new URL(`${serverOrigin}${cleanRoutePath(route.pattern.pathname)}`), route);
   }
-
-  const renderingSpinner = ora();
-  const staticPagesCount = build.static.pages.size;
-
-  renderingSpinner.start(
-    kleur.bold(
-      `Rendering ${kleur.underline(staticPagesCount)} ${pluralize(
-        'static HTML page',
-        staticPagesCount,
-      )}...`,
-    ),
-  );
 
   for (const entry of app.config.routes.entries) {
     const url = new URL(`${serverOrigin}${slash(entry)}`);
@@ -371,6 +362,7 @@ export async function build(
     }
   }
 
+  const staticPagesCount = build.static.pages.size;
   renderingSpinner.stopAndPersist({
     symbol: LoggerIcon.Success,
     text: kleur.bold(
