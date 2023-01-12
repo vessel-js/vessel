@@ -124,11 +124,12 @@ export function vesselPlugin(config: VesselPluginConfig = {}): VitePlugin[] {
         if (app.config.isSSR) return;
 
         // Reset for new build. Goes here because `build --watch` calls buildStart but not config.
-        startTime = Date.now();
         clientBundle = null;
-        clientBundleSpinner.start(kleur.bold('Bundling client...'));
 
         if (app.config.isBuild) {
+          startTime = Date.now();
+          clientBundleSpinner.start(kleur.bold('Bundling client...'));
+
           rimraf(app.dirs.vessel.client.path);
           rimraf(app.dirs.vessel.server.path);
           rimraf(app.dirs.build.path);
