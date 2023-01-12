@@ -3,7 +3,7 @@ import Table from 'cli-table3';
 import { gzipSizeSync } from 'gzip-size';
 import kleur from 'kleur';
 import prettyBytes from 'pretty-bytes';
-import type { OutputChunk } from 'rollup';
+import type { OutputAsset, OutputChunk } from 'rollup';
 
 import type { App } from 'node';
 import { comparePathDepth, LoggerIcon } from 'node/utils';
@@ -72,7 +72,7 @@ function logPagesTable(build: BuildData) {
       kleur.bold(route.methods.map((method) => METHOD_COLOR[method](method)).join('|')),
       uri.replace(/(\[.*?\])/g, (g) => kleur.bold(kleur.yellow(g))),
       typeColor(typeTitle),
-      prettySize(computeRouteSize(route.path, build)),
+      prettySize(computeRouteSize(build, link, route.route)),
     ]);
   }
 
@@ -151,14 +151,11 @@ function createRoutesTable(options: { sizes?: boolean } = {}) {
   });
 }
 
-export function computeRouteSize(routeId: string, build: BuildData) {
+export function computeRouteSize(build: BuildData, link: string, routeId?: string) {
   const chunks: OutputChunk[] = [];
-
-  const entries = [
-    ...build.resources.entry,
-    ...build.resources.app,
-    ...(build.resources.routes[routeId] ?? []),
-  ];
+  const assets: OutputAsset[] = [];
+  const entries = [...build.resources.entry, ...build.resources.app];
+  if (routeId) entries.push(...(build.resources.routes[routeId] ?? []));
 
   const seen = new Set<number>();
 
@@ -166,15 +163,40 @@ export function computeRouteSize(routeId: string, build: BuildData) {
     if (entry >= 0 && !seen.has(entry)) {
       const resource = build.resources.all[entry];
       const fileName = resource.href.slice(1);
-      const chunk = build.bundles.client.chunks.find((chunk) => chunk.fileName === fileName);
-      if (chunk) chunks.push(chunk);
+
+      if (resource.as === 'script') {
+        const chunk = build.bundles.client.chunks.find((chunk) => chunk.fileName === fileName);
+        if (chunk) chunks.push(chunk);
+      } else {
+        const asset = build.bundles.client.assets.find((asset) => asset.fileName === fileName);
+        if (asset) assets.push(asset);
+      }
+
       seen.add(entry);
     }
   }
 
   let size = 0;
+
   for (const chunk of chunks) {
     size += gzipSizeSync(chunk.code);
+  }
+
+  for (const asset of assets) {
+    if (typeof asset.source === 'string') {
+      size += gzipSizeSync(asset.source);
+    }
+  }
+
+  if (link) {
+    const render = build.static.renders.get(link);
+    if (render) {
+      size += gzipSizeSync(render.ssr.html);
+      for (const id of render.data) {
+        const data = build.static.data.get(id)?.serializedData;
+        if (data) size += gzipSizeSync(data);
+      }
+    }
   }
 
   return size;

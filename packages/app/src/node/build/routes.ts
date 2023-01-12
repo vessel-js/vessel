@@ -17,6 +17,7 @@ export async function resolveAllRoutes(app: App, build: BuildData) {
       path: link,
       methods: ['GET'],
       file: route.page!.path.route,
+      route: route.id,
     });
   }
 
@@ -42,10 +43,11 @@ export async function resolveAllRoutes(app: App, build: BuildData) {
 
   for (const route of build.server.pages) {
     pages.set(route.cleanId, {
-      path: route.pathname,
       type: build.edge.routes.has(route.id) ? 'edge' : 'node',
       methods: ['GET'],
       file: route.page?.path.route ?? route.id,
+      path: route.pathname,
+      route: route.id,
     });
   }
 

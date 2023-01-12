@@ -77,6 +77,7 @@ export interface BuildData {
         type: 'static' | 'server' | 'node' | 'edge';
         path: string;
         file?: string;
+        route?: string;
         notFound?: boolean;
         redirect?: { status: number };
         methods: string[];
@@ -144,7 +145,7 @@ export interface BuildData {
         ssr: ServerRenderResult;
         /**
          * All static data asset ID's that belong to this path. These can be used find matching
-         * records in the `staticData` object.
+         * records in the `static.data` object.
          */
         data: Set<string>;
       }
