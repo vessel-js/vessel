@@ -1,3 +1,23 @@
+# [0.2.0](https://github.com/vessel-js/vessel/compare/v0.1.3...v0.2.0) (2023-01-12)
+
+### Bug Fixes
+
+- **app:** additional route group fixes ([8bb5d7c](https://github.com/vessel-js/vessel/commit/8bb5d7c6ac55ee0fa2002a6145981a269d8d3162))
+- **app:** better feedback during build process ([75021cb](https://github.com/vessel-js/vessel/commit/75021cb4697ae4262f536b04e37b99f58e305f89))
+- **app:** do not load branch pages during static load process ([4cf7a0e](https://github.com/vessel-js/vessel/commit/4cf7a0e904b6dff475e58beab6a27bdd0c9e8696))
+- **app:** do not log bundling client msg during dev ([322c27e](https://github.com/vessel-js/vessel/commit/322c27ea175a7d11d938940f8be57ffaaaa3de33))
+- **app:** do not override shiki default bundled languages ([f251d35](https://github.com/vessel-js/vessel/commit/f251d35a4a77e549f3e4dcce59d0554bd8f3121b))
+- **app:** greatly improve route size estimates in final log ([70c0469](https://github.com/vessel-js/vessel/commit/70c0469a485641407f4dcd691129374be2152c56))
+- **app:** remove primitive route change detection for now ([313dcd0](https://github.com/vessel-js/vessel/commit/313dcd0b61249a29c99974e76e7292297779180b))
+- **app:** route matching improvements ([aaff0ab](https://github.com/vessel-js/vessel/commit/aaff0abb81f0afd640bb431d9dd9437208173c85))
+- **app:** update `matchedURL` and `params` on route change ([c46c703](https://github.com/vessel-js/vessel/commit/c46c703c472859d5727e43f3ce8624fd1dc21014))
+- **create:** add shebang to create file ([#2](https://github.com/vessel-js/vessel/issues/2)) ([71b37cb](https://github.com/vessel-js/vessel/commit/71b37cb19486e8278c85f0b3f84534afba82314d))
+- **svelte:** svelte removing markdown meta because it starts with `_` ([a3a2bcf](https://github.com/vessel-js/vessel/commit/a3a2bcf1b5a49cbde991675239c3a7da33217628))
+
+### Features
+
+- **app:** param overrides ([e9f2324](https://github.com/vessel-js/vessel/commit/e9f232406741c5ebf9db592e2f8834cad75ccf85))
+
 ## [0.1.3](https://github.com/vessel-js/vessel/compare/v0.1.2...v0.1.3) (2023-01-10)
 
 ### Bug Fixes
