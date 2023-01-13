@@ -15,7 +15,12 @@ const vesselPkg = JSON.parse(fs.readFileSync(vesselPkgPath, 'utf-8'));
 
 export type JSFramework = 'svelte' | 'vue' | 'solid' | 'preact';
 
-export const JS_FRAMEWORKS: JSFramework[] = ['svelte', 'vue', 'solid', 'preact'];
+export const JS_FRAMEWORKS: JSFramework[] = [
+  'svelte',
+  'vue',
+  'solid',
+  // 'preact'
+];
 
 export type BuilderAddon =
   | 'prettier'
