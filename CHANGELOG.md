@@ -1,3 +1,9 @@
+## [0.2.1](https://github.com/vessel-js/vessel/compare/v0.2.0...v0.2.1) (2023-01-13)
+
+### Bug Fixes
+
+- **create:** hide preact option for now until we add support ([3b69219](https://github.com/vessel-js/vessel/commit/3b69219fbe7e760dd80af1627536552447da6f9a))
+
 # [0.2.0](https://github.com/vessel-js/vessel/compare/v0.1.3...v0.2.0) (2023-01-12)
 
 ### Bug Fixes
