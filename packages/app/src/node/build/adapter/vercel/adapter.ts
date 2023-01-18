@@ -61,10 +61,6 @@ export function createVercelBuildAdapter(config?: VercelBuildAdapterConfig): Bui
         const hasNodeRoutes =
           build.server.loaders.size || build.server.configs.node?.apiRoutes.length;
 
-        if (!serverRoutes.length && !hasEdgeRoutes && !hasNodeRoutes) {
-          return;
-        }
-
         console.log(kleur.magenta('\n+ vercel\n'));
 
         copyDir(app.dirs.vessel.client.path, vercelDirs.static.path);
