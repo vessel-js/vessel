@@ -1,3 +1,9 @@
+## [0.2.2](https://github.com/vessel-js/vessel/compare/v0.2.1...v0.2.2) (2023-01-18)
+
+### Bug Fixes
+
+- vercel adapter not outputtingfiles if server routes dont exist ([0b3e215](https://github.com/vessel-js/vessel/commit/0b3e2150d94f6361aba4ce7f060b95c221c1728d))
+
 ## [0.2.1](https://github.com/vessel-js/vessel/compare/v0.2.0...v0.2.1) (2023-01-13)
 
 ### Bug Fixes
