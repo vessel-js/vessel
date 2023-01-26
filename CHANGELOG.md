@@ -1,3 +1,9 @@
+## [0.2.4](https://github.com/vessel-js/vessel/compare/v0.2.3...v0.2.4) (2023-01-26)
+
+### Bug Fixes
+
+- `data-noscroll` not applied correctly ([7461ebc](https://github.com/vessel-js/vessel/commit/7461ebc3458375b92b45cfb68bb012dd3508bc5b))
+
 ## [0.2.3](https://github.com/vessel-js/vessel/compare/v0.2.2...v0.2.3) (2023-01-26)
 
 ### Bug Fixes
