@@ -632,6 +632,7 @@ export class Router {
     this._url = url;
     this._fw.navigation.set(null);
 
+    await this._fw.tick();
     await this._scrollDelegate.scroll?.({
       from,
       to: currentRoute,
