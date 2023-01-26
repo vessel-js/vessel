@@ -1,3 +1,9 @@
+## [0.2.3](https://github.com/vessel-js/vessel/compare/v0.2.2...v0.2.3) (2023-01-26)
+
+### Bug Fixes
+
+- wait a `tick` before attempting scroll at end of navigation ([c06c233](https://github.com/vessel-js/vessel/commit/c06c23333c246dc6ddd5fbf5824a87f28b3124a8))
+
 ## [0.2.2](https://github.com/vessel-js/vessel/compare/v0.2.1...v0.2.2) (2023-01-18)
 
 ### Bug Fixes
