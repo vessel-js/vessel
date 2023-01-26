@@ -159,7 +159,9 @@ export class Router {
    * Set a new delegate for handling scroll-related tasks.
    */
   setScrollDelegate<T extends ScrollDelegate>(manager: T | ScrollDelegateFactory<T>): T {
-    return (this._scrollDelegate = isFunction(manager) ? manager?.(this) : manager);
+    const delegate = (this._scrollDelegate = isFunction(manager) ? manager?.(this) : manager);
+    if (this.url.hash) delegate.scroll?.({ hash: this.url.hash });
+    return delegate;
   }
   /**
    * Adds a new route comparator to handle matching, scoring, and sorting routes.

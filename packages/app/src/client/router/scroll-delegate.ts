@@ -114,24 +114,26 @@ export const createComplexScrollDelegate: ScrollDelegateFactory<ComplexScrollDel
     const base = _base?.();
     const baseTop = base?.top ?? 0;
     const baseLeft = base?.left ?? 0;
-    const baseBehavior = base?.behavior ?? 'auto';
 
-    if (scrollTarget || deepLinked) {
-      const el = isString(scrollTarget?.el)
-        ? document.querySelector(scrollTarget!.el)
-        : scrollTarget?.el ?? deepLinked;
+    if (scrollTarget) {
+      const el = isString(scrollTarget.el)
+        ? document.querySelector(scrollTarget.el)
+        : scrollTarget.el;
 
       const docRect = document.documentElement.getBoundingClientRect();
       const elRect = el?.getBoundingClientRect() ?? { top: 0, left: 0 };
-      const offsetTop = baseTop + (scrollTarget?.top ?? 0);
-      const offsetLeft = baseLeft + (scrollTarget?.left ?? 0);
-      const behavior = scrollTarget?.behavior ?? baseBehavior;
+      const offsetTop = baseTop + (scrollTarget.top ?? 0);
+      const offsetLeft = baseLeft + (scrollTarget.left ?? 0);
+      const baseBehavior = base?.behavior ?? 'auto';
+      const behavior = scrollTarget.behavior ?? baseBehavior;
 
       scrollTo({
         left: elRect.left - docRect.left - offsetLeft,
         top: elRect.top - docRect.top - offsetTop,
         behavior,
       });
+    } else if (deepLinked) {
+      deepLinked.scrollIntoView();
     } else {
       scrollTo({ top: baseTop, left: baseLeft });
     }
