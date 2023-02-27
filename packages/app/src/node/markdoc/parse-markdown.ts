@@ -271,7 +271,11 @@ function collectHeadings(tag: Tag, headings: MarkdownHeading[]) {
     : child;
 
   if (typeof title === 'string') {
-    const id = tag.attributes.id ?? slugify(title);
+    let id = tag.attributes.id ?? slugify(title);
+
+    const duplicates = headings.filter((heading) => heading.id.replace(/-\d+$/, '') === id).length;
+    if (duplicates) id = `${id}-${duplicates}`;
+
     const level = tag.attributes.level ?? Number(tag.name.match(/h(\d+)/)?.[1] ?? 0);
 
     tag.attributes.id = id;
