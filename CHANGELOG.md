@@ -1,3 +1,9 @@
+## [0.2.5](https://github.com/vessel-js/vessel/compare/v0.2.4...v0.2.5) (2023-02-27)
+
+### Bug Fixes
+
+- handle duplicate markdown headings with same id ([dce229c](https://github.com/vessel-js/vessel/commit/dce229c8982a72d7bc45e35c2c9b8d6eb22b8324))
+
 ## [0.2.4](https://github.com/vessel-js/vessel/compare/v0.2.3...v0.2.4) (2023-01-26)
 
 ### Bug Fixes
