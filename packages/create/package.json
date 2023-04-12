@@ -1,7 +1,7 @@
 {
   "name": "create-vessel",
   "type": "module",
-  "version": "0.2.5",
+  "version": "0.3.0",
   "license": "MIT",
   "main": "bin/create-vessel.js",
   "engines": {

@@ -1,3 +1,9 @@
+# [0.3.0](https://github.com/vessel-js/vessel/compare/v0.2.5...v0.3.0) (2023-04-12)
+
+### Features
+
+- upgrade all deps ([e2c4f88](https://github.com/vessel-js/vessel/commit/e2c4f885df8f29e940ed5354ae77f4541ec23019))
+
 ## [0.2.5](https://github.com/vessel-js/vessel/compare/v0.2.4...v0.2.5) (2023-02-27)
 
 ### Bug Fixes
