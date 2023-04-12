@@ -12,7 +12,7 @@
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
     "incremental": false,
-    "importsNotUsedAsValues": "error",
+    "verbatimModuleSyntax": true,
     "jsx": "preserve",
     "lib": ["dom", "dom.iterable", "es2017"],
     // tsconfig.json

@@ -36,25 +36,24 @@
   "dependencies": {
     "@markdoc/markdoc": "^0.2.0",
     "@rollup/pluginutils": "^5.0.0",
-    "@types/lru-cache": "^7.0.0",
     "@types/markdown-it": "^12.0.0",
     "acorn": "^8.8.0",
     "es-module-lexer": "^1.0.0",
-    "esbuild": "^0.16.0",
+    "esbuild": "^0.17.0",
     "globby": "^13.0.0",
     "gray-matter": "^4.0.0",
     "gzip-size": "^7.0.0",
     "hast-util-to-html": "^8.0.0",
     "js-yaml": "^4.1.0",
-    "lru-cache": "^7.0.0",
-    "magic-string": "^0.27.0",
+    "lru-cache": "^9.0.0",
+    "magic-string": "^0.30.0",
     "node-fetch": "^3.3.0",
-    "ora": "^6.0.0",
+    "ora": "^6.3.0",
     "pathe": "^1.0.0",
     "pkg-up": "^4.0.0",
     "pretty-bytes": "^6.0.0",
-    "undici": "^5.14.0",
-    "urlpattern-polyfill": "^6.0.0"
+    "undici": "^5.21.0",
+    "urlpattern-polyfill": "^7.0.0"
   },
   "peerDependencies": {
     "vite": "^4.0.0"
@@ -62,14 +61,14 @@
   "devDependencies": {
     "@types/node": "^18.0.0",
     "@types/react": "^18.0.0",
-    "@wooorm/starry-night": "^1.5.0",
+    "@wooorm/starry-night": "^2.0.0",
     "cli-table3": "^0.6.0",
     "fast-glob": "^3.2.0",
     "kleur": "^4.1.5",
-    "rollup": "^3.0.0",
-    "shiki": "^0.12.0",
-    "tsup": "^6.5.0",
-    "typescript": "^4.9.0",
+    "rollup": "^3.20.0",
+    "shiki": "^0.14.0",
+    "tsup": "^6.7.0",
+    "typescript": "^5.0.0",
     "vite": "^4.0.0"
   },
   "engines": {

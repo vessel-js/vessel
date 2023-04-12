@@ -73,4 +73,4 @@ export interface Directory {
   glob: (pattern: string | string[]) => string[];
 }
 
-export { DisposalBin };
+export { type DisposalBin };

@@ -9,13 +9,13 @@ import type { Manifest as ViteManifest } from 'vite';
 import type { App } from 'node/app/App';
 import { createAppEntries } from 'node/app/create/app-factory';
 import type { RouteFileType } from 'node/app/files';
-import { AppRoute, toRoute } from 'node/app/routes';
+import { toRoute, type AppRoute } from 'node/app/routes';
 import { installPolyfills } from 'node/polyfills';
 import { hash, logger, LoggerIcon, mkdirp, rimraf } from 'node/utils';
 import { createStaticLoaderFetch, loadStaticRoute } from 'node/vite/core';
 import { getDevServerOrigin } from 'node/vite/core/dev-server';
 import { createServerRouter } from 'server/http';
-import { installServerConfigs, ServerConfig } from 'server/http/app/configure-server';
+import { installServerConfigs, type ServerConfig } from 'server/http/app/configure-server';
 import { createStaticLoaderDataMap } from 'server/static-data';
 import type { ServerEntryModule, ServerManifest } from 'server/types';
 import {

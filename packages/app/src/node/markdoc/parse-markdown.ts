@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import Markdoc, { type RenderableTreeNode, type Tag } from '@markdoc/markdoc';
 import matter from 'gray-matter';
 import yaml from 'js-yaml';
-import LRUCache from 'lru-cache';
+import { LRUCache } from 'lru-cache';
 import * as path from 'pathe';
 
 import { resolveStaticRouteFromFilePath, type RouteFile } from 'node';
@@ -27,9 +27,9 @@ const cacheK = new LRUCache<string, Set<string>>({ max: 1024 });
 
 export function clearMarkdownCache(file?: string) {
   if (!file) {
-    cache.reset();
+    cache.clear();
   } else {
-    for (const key of cacheK.get(file) ?? []) cache.del(key);
+    for (const key of cacheK.get(file) ?? []) cache.delete(key);
   }
 }
 

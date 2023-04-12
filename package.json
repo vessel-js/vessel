@@ -19,12 +19,12 @@
     "*.{js,jsx,ts,tsx,vue,md,json}": "prettier --write"
   },
   "devDependencies": {
-    "@ianvs/prettier-plugin-sort-imports": "^3.5.0",
+    "@ianvs/prettier-plugin-sort-imports": "^3.7.0",
     "@types/node": "^18.0.0",
     "chokidar": "^3.5.0",
     "conventional-changelog-cli": "^2.0.0",
     "enquirer": "^2.3.0",
-    "execa": "^6.0.0",
+    "execa": "^7.0.0",
     "globby": "^13.0.0",
     "husky": "^8.0.0",
     "kleur": "^4.1.5",
@@ -34,7 +34,7 @@
     "prettier": "^2.8.0",
     "rimraf": "^3.0.2",
     "semver": "^7.3.5",
-    "typescript": "^4.9.0"
+    "typescript": "^5.0.0"
   },
   "engines": {
     "node": ">=16",
