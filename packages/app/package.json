@@ -1,6 +1,6 @@
 {
   "name": "@vessel-js/app",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "type": "module",
   "types": "index.d.ts",
   "license": "MIT",

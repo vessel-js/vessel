@@ -1,3 +1,9 @@
+## [0.3.2](https://github.com/vessel-js/vessel/compare/v0.3.1...v0.3.2) (2023-05-14)
+
+### Bug Fixes
+
+- static data should be keyed to full url path ([b6de11e](https://github.com/vessel-js/vessel/commit/b6de11ed9acc85ec54f79a6ce799a2f4acd12266))
+
 ## [0.3.1](https://github.com/vessel-js/vessel/compare/v0.3.0...v0.3.1) (2023-05-14)
 
 ### Bug Fixes
