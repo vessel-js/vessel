@@ -1,3 +1,9 @@
+## [0.3.1](https://github.com/vessel-js/vessel/compare/v0.3.0...v0.3.1) (2023-05-14)
+
+### Bug Fixes
+
+- include URL object in static loader event ([4663119](https://github.com/vessel-js/vessel/commit/46631198b06e53f157c188fb0d69750620fdd397))
+
 # [0.3.0](https://github.com/vessel-js/vessel/compare/v0.2.5...v0.3.0) (2023-04-12)
 
 ### Features
