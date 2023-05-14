@@ -250,6 +250,7 @@ export type InferServerLoaderData<T> = InferServerRequestHandlerData<T>;
 
 export interface StaticLoaderEvent<Params extends RequestParams = RequestParams>
   extends Readonly<{
+    url: URL;
     pathname: string;
     route: Route;
     params: Params;

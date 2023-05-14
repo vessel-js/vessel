@@ -15,6 +15,7 @@ export function createStaticLoaderInput(
   serverFetch: ServerFetch,
 ): StaticLoaderEvent {
   return {
+    url,
     pathname: url.pathname,
     route,
     params: route.params,
