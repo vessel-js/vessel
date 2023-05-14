@@ -96,7 +96,7 @@ async function renderDocument(request: VesselRequest, manifest: ServerManifest):
     request.URL,
     matches,
     async (_, route, type) => {
-      const id = resolveStaticDataAssetId(route, type);
+      const id = resolveStaticDataAssetId(request.URL, route, type);
       const hashedId = manifest.staticData.serverHashRecord?.[id] ?? id;
       return (await manifest.staticData.loaders?.[hashedId]?.())?.data;
     },
@@ -242,7 +242,7 @@ async function renderDocument(request: VesselRequest, manifest: ServerManifest):
         )});</script>`
       : '';
 
-  const staticDataMap = createStaticLoaderDataMap(loadedRoutes);
+  const staticDataMap = createStaticLoaderDataMap(request.URL, loadedRoutes);
   const staticDataScriptTag =
     manifest.staticData.serverHashRecord && staticDataMap.size > 0
       ? createStaticDataScriptTag(staticDataMap, manifest.staticData.serverHashRecord)

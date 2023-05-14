@@ -54,7 +54,7 @@ export async function loadStaticData(
     return { data: loadedRoute[type]!.staticData };
   }
 
-  const dataId = resolveStaticDataAssetId(route, type);
+  const dataId = resolveStaticDataAssetId(url, route, type);
 
   const hashedDataId = import.meta.env.PROD
     ? window['__VSL_STATIC_DATA_HASH_MAP__']?.[await hash(dataId)]
@@ -73,7 +73,8 @@ export async function loadStaticData(
     const searchParams = new URLSearchParams();
     searchParams.set('id', route.id);
     searchParams.set('type', type);
-    searchParams.set('pathname', route.matchedURL.pathname);
+    searchParams.set('pathname', url.pathname);
+    searchParams.set('matched_pathname', route.matchedURL.pathname);
 
     const response = await fetch(`${STATIC_DATA_ASSET_BASE_PATH}${route.id}.json?${searchParams}`, {
       credentials: 'same-origin',
@@ -163,6 +164,7 @@ export async function loadServerData(
   dataURL.searchParams.set('__data', '');
   dataURL.searchParams.set('route_id', route.id);
   dataURL.searchParams.set('route_type', type);
+  dataURL.searchParams.set('route_path', url.pathname);
 
   const response = await fetch(dataURL, {
     credentials: 'same-origin',

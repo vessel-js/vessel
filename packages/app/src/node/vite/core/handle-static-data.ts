@@ -24,11 +24,12 @@ export async function handleStaticDataRequest({
   manifest,
 }: HandleStaticDataRequestInit) {
   const pathname = decodeURIComponent(url.searchParams.get('pathname')!),
+    matched_pathname = decodeURIComponent(url.searchParams.get('matched_pathname')!),
     id = decodeURIComponent(url.searchParams.get('id')!),
     type = url.searchParams.get('type')! as RouteComponentType;
 
   const dataURL = new URL(url);
-  dataURL.pathname = pathname;
+  dataURL.pathname = matched_pathname;
 
   const route = app.routes.toArray().find((route) => route.id === id && route[type]);
 
@@ -51,7 +52,12 @@ export async function handleStaticDataRequest({
   const serverFetch = createStaticLoaderFetch(app, manifest);
 
   try {
-    const response = await callStaticLoader(dataURL, match, serverFetch, staticLoader);
+    const response = await callStaticLoader(
+      new URL(pathname, url),
+      match,
+      serverFetch,
+      staticLoader,
+    );
 
     if (response.redirect) {
       res.setHeader(

@@ -65,7 +65,7 @@ export async function handleDevRequest({
         for (const match of matches) {
           for (const type of getRouteComponentTypes()) {
             if (match[type]?.staticData) {
-              const id = resolveStaticDataAssetId(match, type);
+              const id = resolveStaticDataAssetId(url, match, type);
               manifest.staticData.loaders![id] = () =>
                 Promise.resolve({ data: match[type]!.staticData ?? {} });
             }

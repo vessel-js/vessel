@@ -230,7 +230,7 @@ export async function build(
       });
     }
 
-    const dataMap = createStaticLoaderDataMap(matches);
+    const dataMap = createStaticLoaderDataMap(url, matches);
     for (const id of dataMap.keys()) {
       const content = dataMap.get(id)!;
       if (Object.keys(content).length > 0) {

@@ -16,21 +16,24 @@ export function createStaticLoaderInput(
 ): StaticLoaderEvent {
   return {
     url,
-    pathname: url.pathname,
+    pathname: route.matchedURL.pathname,
     route,
     params: route.params,
     serverFetch,
   };
 }
 
-export function createStaticLoaderDataMap(routes: ServerLoadedPageRoute[]): StaticLoaderDataMap {
+export function createStaticLoaderDataMap(
+  url: URL,
+  routes: ServerLoadedPageRoute[],
+): StaticLoaderDataMap {
   const map: StaticLoaderDataMap = new Map();
 
   for (const route of routes) {
     for (const type of getRouteComponentTypes()) {
       const component = route[type];
       if (component) {
-        const id = resolveStaticDataAssetId(route, type);
+        const id = resolveStaticDataAssetId(url, route, type);
         if (component.staticData) {
           map.set(id, component.staticData);
         }
