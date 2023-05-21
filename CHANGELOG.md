@@ -1,3 +1,9 @@
+## [0.3.3](https://github.com/vessel-js/vessel/compare/v0.3.2...v0.3.3) (2023-05-21)
+
+### Bug Fixes
+
+- ignore data stale check for now ([050353e](https://github.com/vessel-js/vessel/commit/050353eb15e8d83bd824b9019aaaba7d8ee2b4df))
+
 ## [0.3.2](https://github.com/vessel-js/vessel/compare/v0.3.1...v0.3.2) (2023-05-14)
 
 ### Bug Fixes
