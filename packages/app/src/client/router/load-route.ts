@@ -49,10 +49,10 @@ export async function loadStaticData(
   if (!component) return;
 
   // Avoid undefined.
-  if (component.stale === false) {
-    const loadedRoute = route as ClientLoadedRoute;
-    return { data: loadedRoute[type]!.staticData };
-  }
+  // if (component.stale === false) {
+  //   const loadedRoute = route as ClientLoadedRoute;
+  //   return { data: loadedRoute[type]!.staticData };
+  // }
 
   const dataId = resolveStaticDataAssetId(url, route, type);
 
@@ -155,10 +155,10 @@ export async function loadServerData(
     }
   }
 
-  if (component.stale === false) {
-    const loadedRoute = route as ClientLoadedRoute;
-    return { data: loadedRoute[type]?.serverData };
-  }
+  // if (component.stale === false) {
+  //   const loadedRoute = route as ClientLoadedRoute;
+  //   return { data: loadedRoute[type]?.serverData };
+  // }
 
   const dataURL = new URL(route.matchedURL.href);
   dataURL.searchParams.set('__data', '');
